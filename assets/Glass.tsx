@@ -40,6 +40,7 @@ export function Glass({
     mountLiquidGlass(el, opts);
     const ro = new ResizeObserver(() => mountLiquidGlass(el, opts));
     ro.observe(el);
+    document.fonts?.ready.then(() => mountLiquidGlass(el, opts));   // text reflow can resize the glass
     return () => ro.disconnect();
   }, [liquid]);
 

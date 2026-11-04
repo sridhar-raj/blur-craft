@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northbank Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f5f3ee;
+  --surface:#fbfaf7;
+  --card:#ffffff;
+  --ink:#16201d;
+  --ink-2:#4a5551;
+  --ink-3:#848c88;
+  --line:rgba(22,32,29,.09);
+  --line-2:rgba(22,32,29,.14);
+  --brand:#1d4a3c;       /* deep bank green */
+  --brand-2:#2c6a56;
+  --brand-tint:#e6efe9;
+  --in:#2c6a56;
+  --out:#b9a88a;
+  --warn:#9a5b14;
+  --warn-tint:#f6ecdc;
+  --neg:#8e3a2c;
+  --shadow-sm:0 1px 0 rgba(22,32,29,.04),0 1px 2px rgba(22,32,29,.05);
+  --shadow-lg:0 1px 0 rgba(255,255,255,.6) inset,0 2px 4px rgba(22,32,29,.04),0 12px 24px -6px rgba(22,32,29,.10),0 40px 80px -20px rgba(22,32,29,.22);
+  --radius:16px;
+  --sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:"Newsreader",Georgia,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.locked{overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+svg{display:block}
+
+/* ---------- Top bar (frosted) ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  background:rgba(245,243,238,.72);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  backdrop-filter:blur(18px) saturate(160%);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset;
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .topbar{background:rgba(245,243,238,.97)}
+}
+.topbar-in{max-width:1328px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em;font-size:15px;white-space:nowrap}
+.logo-mark{width:26px;height:26px;border-radius:7px;background:var(--brand);display:grid;place-items:center}
+.switcher{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px 0 6px;border:1px solid var(--line-2);border-radius:10px;background:rgba(255,255,255,.6);margin-left:8px}
+.switcher .av{width:28px;height:28px;border-radius:7px;background:#e9e3d6;color:#5b4e33;display:grid;place-items:center;font-weight:600;font-size:12px}
+.switcher .t{display:flex;flex-direction:column;line-height:1.15;text-align:left}
+.switcher .t b{font-weight:500;font-size:13px}
+.switcher .t span{font-size:11.5px;color:var(--ink-3)}
+.search{flex:1;max-width:440px;margin:0 auto;position:relative}
+.search input{width:100%;height:40px;border-radius:10px;border:1px solid var(--line-2);background:rgba(255,255,255,.6);padding:0 56px 0 38px;font:inherit;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
+.search input::placeholder{color:var(--ink-3)}
+.search input:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(44,106,86,.15)}
+.search svg{position:absolute;left:12px;top:12px}
+.search kbd{position:absolute;right:10px;top:10px;font-family:var(--mono);font-size:11px;color:var(--ink-3);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;background:var(--card)}
+.tb-right{display:flex;align-items:center;gap:8px}
+.icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid transparent;background:none;display:grid;place-items:center;position:relative}
+.icon-btn:hover{background:rgba(22,32,29,.05)}
+.icon-btn .dot{position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--paper)}
+.profile{display:flex;align-items:center;gap:10px;padding:4px 4px 4px 4px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.6);padding-right:12px}
+.profile .ph{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#c9b99a,#8a7a5c);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
+.profile span{font-size:13px;font-weight:500}
+
+/* ---------- Page ---------- */
+main{max-width:1328px;margin:0 auto;padding:32px 24px 80px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px}
+.head h1{font-family:var(--serif);font-weight:400;font-size:34px;letter-spacing:-.015em;margin:0;line-height:1.1}
+.head p{margin:6px 0 0;color:var(--ink-3)}
+.actions{display:flex;gap:8px}
+.btn{height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--line-2);background:var(--card);font-weight:500;display:inline-flex;align-items:center;gap:8px;box-shadow:var(--shadow-sm);transition:background .15s,transform .1s}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#f4f1ea}
+.btn.primary:hover{background:#173d31}
+.btn:not(.primary):hover{background:var(--surface)}
+
+.notice{display:flex;align-items:center;gap:14px;background:var(--warn-tint);border:1px solid rgba(154,91,20,.18);border-radius:12px;padding:12px 14px;margin-bottom:20px}
+.notice .ic{width:30px;height:30px;border-radius:8px;background:rgba(154,91,20,.12);display:grid;place-items:center;flex:none}
+.notice .tx{flex:1;color:#5c3a10}
+.notice .tx b{font-weight:600}
+.notice .btn{height:32px;font-size:13px}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.c-bal{grid-column:span 5;padding:24px;display:flex;flex-direction:column}
+.c-flow{grid-column:span 7;padding:22px 24px 18px}
+.c-cards{grid-column:span 4;padding:22px 24px}
+.c-tx{grid-column:span 8;grid-row:span 2;padding:8px 0 4px;align-self:start}
+.grid{grid-auto-flow:row dense}
+.label{font-size:12.5px;color:var(--ink-3);font-weight:500;letter-spacing:.01em}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-h h2{font-size:15px;font-weight:600;margin:0;letter-spacing:-.005em}
+
+.bal-amt{font-family:var(--serif);font-size:56px;letter-spacing:-.025em;line-height:1;margin:14px 0 10px;font-weight:400;font-variant-numeric:lining-nums tabular-nums}
+.bal-amt small{font-size:30px;color:var(--ink-3)}
+.delta{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--in);background:var(--brand-tint);border-radius:999px;padding:3px 10px 3px 8px;font-weight:500}
+.bal-meta{display:flex;gap:28px;margin-top:auto;padding-top:26px;border-top:1px solid var(--line)}
+.bal-meta div{display:flex;flex-direction:column;gap:4px}
+.bal-meta .v{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums}
+.accts{margin-top:22px;display:flex;flex-direction:column;gap:2px}
+.acct{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px dashed var(--line-2);font-size:13.5px}
+.acct:first-child{border-top:0}
+.acct .n{display:flex;align-items:center;gap:10px}
+.acct .sw{width:8px;height:8px;border-radius:2px}
+.acct .meta{color:var(--ink-3);font-family:var(--mono);font-size:12px}
+
+.legend{display:flex;gap:16px;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:1px}
+.seg{display:inline-flex;background:var(--paper);border-radius:9px;padding:3px;border:1px solid var(--line)}
+.seg button{border:0;background:none;padding:5px 10px;border-radius:7px;font-size:12.5px;color:var(--ink-2)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow-sm)}
+.flow-sum{display:flex;gap:32px;margin:16px 0 6px}
+.flow-sum .v{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.chart{width:100%;height:220px;margin-top:4px;position:relative}
+.chart svg{width:100%;height:100%;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:#f3f1ec;border-radius:8px;padding:7px 10px;font-size:12px;white-space:nowrap;transform:translate(-50%,-110%);opacity:0;transition:opacity .12s}
+.tip .num{font-size:12px}
+
+/* cards */
+.pcard{margin-top:18px;aspect-ratio:1.586;border-radius:14px;position:relative;overflow:hidden;color:#efe9dc;padding:18px 20px;display:flex;flex-direction:column;justify-content:space-between;
+  background:
+    radial-gradient(120% 90% at 100% 0%,rgba(255,255,255,.10),transparent 55%),
+    linear-gradient(155deg,#24564a 0%,#163a31 55%,#0f2a23 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 14px 30px -12px rgba(15,42,35,.55)}
+.pcard::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 6px);pointer-events:none}
+.pcard .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.chip{width:34px;height:26px;border-radius:5px;background:linear-gradient(135deg,#d9c79d,#a8925f);opacity:.9}
+.pcard .pan{font-family:var(--mono);font-size:16px;letter-spacing:.12em}
+.pcard .bot{display:flex;justify-content:space-between;align-items:flex-end;font-size:12px}
+.pcard .bot b{display:block;font-weight:500;font-size:13px;letter-spacing:.02em}
+.pcard .bot span{opacity:.65}
+.spend{margin-top:18px}
+.bar{height:6px;border-radius:99px;background:var(--paper);overflow:hidden;margin:8px 0 6px}
+.bar i{display:block;height:100%;background:var(--brand-2);border-radius:99px}
+.row-sm{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-3)}
+.minis{display:flex;flex-direction:column;margin-top:16px;border-top:1px solid var(--line)}
+.mini{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.mini:last-child{border-bottom:0}
+.mini .mc{width:36px;height:24px;border-radius:4px;flex:none}
+.mini .t{flex:1;line-height:1.25}
+.mini .t b{font-weight:500;font-size:13.5px;display:block}
+.mini .t span{font-size:12px;color:var(--ink-3)}
+.tag{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--paper);color:var(--ink-2);border:1px solid var(--line)}
+.tag.frozen{background:#eef1f4;color:#4a5866}
+
+/* transactions */
+.c-tx .card-h{padding:14px 24px 10px}
+.filters{display:flex;gap:6px}
+.chipf{border:1px solid var(--line-2);background:var(--card);border-radius:99px;padding:4px 11px;font-size:12.5px;color:var(--ink-2)}
+.chipf.on{background:var(--ink);border-color:var(--ink);color:#f3f1ec}
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;font-weight:500;color:var(--ink-3);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+th:first-child,td:first-child{padding-left:24px}
+th:last-child,td:last-child{padding-right:24px;text-align:right}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--surface)}
+.who{display:flex;align-items:center;gap:12px}
+.lg{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:600;font-size:12.5px;flex:none}
+.who b{font-weight:500;display:block}
+.who span{font-size:12px;color:var(--ink-3)}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
+.status i{width:6px;height:6px;border-radius:50%;background:var(--in)}
+.status.pend{color:var(--warn)}
+.status.pend i{background:var(--warn)}
+.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.amt.pos{color:var(--in)}
+.muted{color:var(--ink-3)}
+tr.pending-row{background:linear-gradient(90deg,rgba(246,236,220,.7),rgba(246,236,220,0) 70%)}
+.review{border:1px solid rgba(154,91,20,.3);color:var(--warn);background:var(--card);border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:500}
+
+/* side: upcoming */
+.c-up{grid-column:span 4;padding:22px 24px;align-self:start}
+.up{display:flex;flex-direction:column;margin-top:14px}
+.up-i{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:center}
+.up-i:first-child{border-top:0}
+.date{width:40px;text-align:center;flex:none;border:1px solid var(--line-2);border-radius:8px;padding:3px 0;line-height:1.1}
+.date b{display:block;font-size:15px;font-weight:600}
+.date span{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.up-i .t{flex:1}
+.up-i .t b{font-weight:500;display:block;font-size:13.5px}
+.up-i .t span{font-size:12px;color:var(--ink-3)}
+
+/* ---------- Dialog ---------- */
+.scrim{
+  position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;
+  background:rgba(28,36,33,.30);
+  -webkit-backdrop-filter:blur(6px) saturate(90%);
+  backdrop-filter:blur(6px) saturate(90%);
+  opacity:0;visibility:hidden;transition:opacity .28s ease,visibility 0s linear .28s;
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .scrim{background:rgba(28,36,33,.45)}
+}
+.scrim.open{opacity:1;visibility:visible;transition:opacity .28s ease}
+.dialog{
+  width:100%;max-width:456px;background:var(--card);border-radius:20px;
+  box-shadow:var(--shadow-lg);border:1px solid rgba(22,32,29,.08);
+  transform:translateY(10px) scale(.985);opacity:0;transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .24s ease;
+  max-height:calc(100vh - 48px);overflow:auto;
+}
+.scrim.open .dialog{transform:none;opacity:1}
+.d-head{padding:22px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.d-head .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--warn);background:var(--warn-tint);padding:3px 10px 3px 8px;border-radius:99px}
+.d-head h3{margin:12px 0 0;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.close{width:32px;height:32px;border-radius:8px;border:0;background:none;display:grid;place-items:center;flex:none;margin:-4px -6px 0 0}
+.close:hover{background:var(--paper)}
+.d-amt{padding:20px 24px 22px;text-align:left}
+.d-amt .big{font-family:var(--serif);font-size:52px;line-height:1;letter-spacing:-.025em;font-variant-numeric:lining-nums tabular-nums}
+.d-amt .big small{font-size:28px;color:var(--ink-3)}
+.d-amt .sub{margin-top:8px;color:var(--ink-3);font-size:13px}
+.d-body{margin:0 24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.d-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:1px solid var(--line)}
+.d-row:first-child{border-top:0}
+.d-row .k{width:84px;font-size:12.5px;color:var(--ink-3);flex:none}
+.d-row .v{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.d-row .v b{font-weight:500;display:block}
+.d-row .v span{font-size:12px;color:var(--ink-3);font-family:var(--mono);white-space:nowrap}
+.verified{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--in);font-family:var(--sans)!important}
+.d-note{display:flex;gap:10px;margin:14px 24px 0;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.d-note svg{flex:none;margin-top:2px}
+.d-foot{display:flex;gap:10px;padding:20px 24px 22px;margin-top:18px;border-top:1px solid var(--line)}
+.d-foot .btn{flex:1;justify-content:center;height:44px;font-size:14px}
+.btn.decline{color:var(--neg)}
+.d-done{display:none;padding:36px 24px 28px;text-align:center}
+.d-done .ok{width:52px;height:52px;border-radius:50%;background:var(--brand-tint);display:grid;place-items:center;margin:0 auto 14px}
+.d-done h3{margin:0;font-size:18px;font-weight:600}
+.d-done p{margin:6px 0 20px;color:var(--ink-3)}
+.dialog.done .d-main{display:none}
+.dialog.done .d-done{display:block}
+
+:focus-visible{outline:2px solid var(--brand-2);outline-offset:2px}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1180px){
+  .c-bal{grid-column:span 12}.c-flow{grid-column:span 12}
+  .c-cards{grid-column:span 5}.c-up{grid-column:span 7}
+  .c-tx{grid-column:span 12;grid-row:auto}
+}
+@media (max-width:860px){
+  .search{display:none}
+  .tb-right{margin-left:auto}
+  .c-cards,.c-up{grid-column:span 12}
+  .profile span{display:none}.profile{padding-right:4px}
+  .hide-md{display:none}
+}
+@media (max-width:560px){
+  .topbar-in{padding:0 16px;gap:8px}
+  .logo span{display:none}
+  .switcher{margin-left:0;min-width:0}
+  .switcher .t span{display:none}
+  .switcher .t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+  .icon-btn.bell{display:none}
+  main{padding:22px 16px 60px}
+  .head{flex-direction:column;align-items:flex-start}
+  .head h1{font-size:28px}
+  .grid{gap:14px}
+  .c-bal,.c-flow,.c-cards,.c-up{padding:18px}
+  .bal-amt{font-size:44px}
+  .bal-meta{gap:18px;flex-wrap:wrap}
+  .flow-sum{gap:20px}
+  .card-h{flex-wrap:wrap}
+  .c-tx .card-h{padding:12px 16px 10px}
+  .hide-sm{display:none}
+  th:first-child,td:first-child{padding-left:16px}
+  th:last-child,td:last-child{padding-right:16px}
+  .notice{flex-wrap:wrap}
+  .notice .tx{flex-basis:calc(100% - 50px)}
+  .notice .btn{margin-left:44px}
+  .scrim{padding:12px;align-items:end}
+  .dialog{border-radius:20px}
+  .d-amt .big{font-size:44px}
+  .d-row{flex-wrap:wrap;gap:6px 10px;padding:12px 14px}
+  .d-row .k{width:100%}
+  .d-row .v span{white-space:normal}
+  .d-row .v{flex:1 1 100%}
+  .verified{margin-left:42px;margin-top:-2px}
+  .d-amt{padding:16px 24px 18px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body class="locked">
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="logo">
+      <div class="logo-mark"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 12V2l10 10V2" stroke="#efe9dc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <span>Northbank</span>
+    </div>
+    <button class="switcher" aria-label="Switch account">
+      <div class="av">AL</div>
+      <div class="t"><b>Arden &amp; Lowe Ltd</b><span>Business · 4 accounts</span></div>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 6.5 8 3.5l3 3M5 9.5l3 3 3-3" stroke="#848c88" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.75" stroke="#848c88" stroke-width="1.4"/><path d="m10.5 10.5 3 3" stroke="#848c88" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="search" placeholder="Search payments, payees, invoices" aria-label="Search">
+      <kbd>⌘K</kbd>
+    </label>
+    <div class="tb-right">
+      <button class="icon-btn bell" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4.5 12.5V8a4.5 4.5 0 0 1 9 0v4.5l1 1.5h-11l1-1.5ZM7.25 15.5a1.9 1.9 0 0 0 3.5 0" stroke="#4a5551" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg><i class="dot"></i></button>
+      <button class="profile" aria-label="Profile"><div class="ph">MO</div><span>Maya Okafor</span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <div class="head">
+    <div>
+      <h1>Good morning, Maya</h1>
+      <p>Wednesday 4 November · All accounts in GBP</p>
+    </div>
+    <div class="actions">
+      <button class="btn hide-sm"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 13V3m0 0L4 7m4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Request</button>
+      <button class="btn primary"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>New payment</button>
+    </div>
+  </div>
+
+  <div class="notice" id="notice">
+    <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#9a5b14" stroke-width="1.4"/><path d="M8 4.8V8l2 1.4" stroke="#9a5b14" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+    <div class="tx"><b>1 payment awaiting your approval</b> · £4,200.00 to Halden Studio, scheduled for today</div>
+    <button class="btn" data-open>Review</button>
+  </div>
+
+  <div class="grid">
+    <section class="card c-bal">
+      <div class="card-h"><span class="label">Total balance</span><span class="label num">4 accounts</span></div>
+      <div class="bal-amt">£284,612<small>.40</small></div>
+      <div><span class="delta"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 9.5v-7m0 0L3 5.5m3-3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="num">+£18,240.12</span> this month</span></div>
+      <div class="accts">
+        <div class="acct"><span class="n"><i class="sw" style="background:#1d4a3c"></i>Operating</span><span class="meta">•• 4821</span><span class="num">£142,380.55</span></div>
+        <div class="acct"><span class="n"><i class="sw" style="background:#6f9a87"></i>Reserve</span><span class="meta">•• 0937</span><span class="num">£96,000.00</span></div>
+        <div class="acct"><span class="n"><i class="sw" style="background:#b9a88a"></i>Tax pot</span><span class="meta">•• 2214</span><span class="num">£38,915.20</span></div>
+        <div class="acct"><span class="n"><i class="sw" style="background:#d9d2c3"></i>EUR wallet</span><span class="meta">•• 7702</span><span class="num">£7,316.65</span></div>
+      </div>
+      <div class="bal-meta">
+        <div><span class="label">Available today</span><span class="v">£280,412.40</span></div>
+        <div><span class="label">Pending out</span><span class="v">£4,200.00</span></div>
+        <div class="hide-sm"><span class="label">Runway</span><span class="v">14.2 mo</span></div>
+      </div>
+    </section>
+
+    <section class="card c-flow">
+      <div class="card-h">
+        <h2>Cash flow</h2>
+        <div class="seg" role="tablist"><button>30D</button><button class="on">6M</button><button>12M</button></div>
+      </div>
+      <div class="flow-sum">
+        <div><div class="label"><span class="legend"><span><i style="background:var(--in)"></i>Money in</span></span></div><div class="v">£412,880</div></div>
+        <div><div class="label"><span class="legend"><span><i style="background:var(--out)"></i>Money out</span></span></div><div class="v">£356,214</div></div>
+        <div class="hide-sm"><div class="label">Net</div><div class="v" style="color:var(--in)">+£56,666</div></div>
+      </div>
+      <div class="chart" id="chart"><div class="tip" id="tip"></div></div>
+    </section>
+
+    <section class="card c-cards">
+      <div class="card-h"><h2>Cards</h2><button class="btn" style="height:30px;font-size:12.5px;padding:0 10px">Manage</button></div>
+      <div class="pcard">
+        <div class="top"><span>Northbank Business</span><svg width="22" height="16" viewBox="0 0 22 16" fill="none"><path d="M8 2a8 8 0 0 1 0 12M12 2a8 8 0 0 1 0 12M16 2a8 8 0 0 1 0 12" stroke="#efe9dc" stroke-opacity=".7" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+        <div><div class="chip"></div></div>
+        <div class="pan">•••• •••• •••• 4821</div>
+        <div class="bot"><div><span>Cardholder</span><b>MAYA OKAFOR</b></div><div style="text-align:right"><span>Expires</span><b class="num">09/29</b></div></div>
+      </div>
+      <div class="spend">
+        <div class="row-sm"><span>Monthly limit</span><span class="num">£6,140 of £15,000</span></div>
+        <div class="bar"><i style="width:41%"></i></div>
+      </div>
+      <div class="minis">
+        <div class="mini"><div class="mc" style="background:linear-gradient(135deg,#d6cbb3,#a99876)"></div><div class="t"><b>Team · Design</b><span class="num">•• 3390 · £1,204 this month</span></div><span class="tag">Virtual</span></div>
+        <div class="mini"><div class="mc" style="background:linear-gradient(135deg,#c9d1d8,#8f9ba6)"></div><div class="t"><b>Travel</b><span class="num">•• 6612 · £0 this month</span></div><span class="tag frozen">Frozen</span></div>
+      </div>
+    </section>
+
+    <section class="card c-tx">
+      <div class="card-h">
+        <h2>Recent transactions</h2>
+        <div class="filters"><button class="chipf on">All</button><button class="chipf">In</button><button class="chipf">Out</button><button class="chipf hide-sm">Pending</button></div>
+      </div>
+      <table>
+        <thead><tr><th>Payee</th><th class="hide-md">Account</th><th class="hide-sm">Date</th><th class="hide-sm">Status</th><th>Amount</th></tr></thead>
+        <tbody>
+          <tr class="pending-row">
+            <td><div class="who"><div class="lg" style="background:#efe6d6;color:#6b5530">HS</div><div><b>Halden Studio</b><span>Invoice HS-2291 · Brand refresh</span></div></div></td>
+            <td class="hide-md muted">Operating ••4821</td>
+            <td class="hide-sm muted">Today</td>
+            <td class="hide-sm"><button class="review" data-open>Needs approval</button></td>
+            <td class="amt">−£4,200.00</td>
+          </tr>
+          <tr>
+            <td><div class="who"><div class="lg" style="background:#e4ede8;color:#2c6a56">KM</div><div><b>Kestrel Media</b><span>Invoice paid · INV-0418</span></div></div></td>
+            <td class="hide-md muted">Operating ••4821</td>
+            <td class="hide-sm muted">3 Nov</td>
+            <td class="hide-sm"><span class="status"><i></i>Completed</span></td>
+            <td class="amt pos">+£12,800.00</td>
+          </tr>
+          <tr>
+            <td><div class="who"><div class="lg" style="background:#ecebf1;color:#4b4a6b">AW</div><div><b>Amazon Web Services</b><span>Card ••3390 · Cloud</span></div></div></td>
+            <td class="hide-md muted">Operating ••4821</td>
+            <td class="hide-sm muted">3 Nov</td>
+            <td class="hide-sm"><span class="status"><i></i>Completed</span></td>
+            <td class="amt">−£1,184.62</td>
+          </tr>
+          <tr>
+            <td><div class="who"><div class="lg" style="background:#f1ece4;color:#7a6440">HM</div><div><b>HMRC</b><span>VAT Q3 · Direct debit</span></div></div></td>
+            <td class="hide-md muted">Tax pot ••2214</td>
+            <td class="hide-sm muted">2 Nov</td>
+            <td class="hide-sm"><span class="status"><i></i>Completed</span></td>
+            <td class="amt">−£9,416.00</td>
+          </tr>
+          <tr>
+            <td><div class="who"><div class="lg" style="background:#e4ede8;color:#2c6a56">OT</div><div><b>Orla &amp; Tamsin LLP</b><span>Retainer · November</span></div></div></td>
+            <td class="hide-md muted">Operating ••4821</td>
+            <td class="hide-sm muted">1 Nov</td>
+            <td class="hide-sm"><span class="status"><i></i>Completed</span></td>
+            <td class="amt pos">+£7,500.00</td>
+          </tr>
+          <tr>
+            <td><div class="who"><div class="lg" style="background:#eef0f2;color:#4a5866">PY</div><div><b>Payroll · October</b><span>14 employees</span></div></div></td>
+            <td class="hide-md muted">Operating ••4821</td>
+            <td class="hide-sm muted">31 Oct</td>
+            <td class="hide-sm"><span class="status"><i></i>Completed</span></td>
+            <td class="amt">−£48,920.33</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card c-up">
+      <div class="card-h"><h2>Upcoming</h2><span class="label">Next 14 days</span></div>
+      <div class="up">
+        <div class="up-i"><div class="date"><b>04</b><span>Nov</span></div><div class="t"><b>Halden Studio</b><span>Awaiting approval</span></div><span class="num">£4,200.00</span></div>
+        <div class="up-i"><div class="date"><b>08</b><span>Nov</span></div><div class="t"><b>Fernhill Workspace</b><span>Rent · Standing order</span></div><span class="num">£6,750.00</span></div>
+        <div class="up-i"><div class="date"><b>12</b><span>Nov</span></div><div class="t"><b>Linear, Figma, Notion</b><span>Subscriptions · Card</span></div><span class="num">£612.40</span></div>
+        <div class="up-i"><div class="date"><b>15</b><span>Nov</span></div><div class="t"><b>Kestrel Media</b><span>Expected in · INV-0422</span></div><span class="num" style="color:var(--in)">+£9,600.00</span></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="scrim open" id="scrim" aria-hidden="false">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dtitle" id="dialog">
+    <div class="d-main">
+      <div class="d-head">
+        <div>
+          <span class="eyebrow"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8V8l2 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Awaiting your approval</span>
+          <h3 id="dtitle">Approve payment</h3>
+        </div>
+        <button class="close" aria-label="Close" data-close><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="m4 4 8 8M12 4l-8 8" stroke="#4a5551" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="d-amt">
+        <div class="big">£4,200<small>.00</small></div>
+        <div class="sub">Requested by Jonah Reyes · Scheduled for today, 4 Nov</div>
+      </div>
+      <div class="d-body">
+        <div class="d-row"><span class="k">Payee</span><div class="v"><div class="lg" style="background:#efe6d6;color:#6b5530;width:32px;height:32px">HS</div><div style="min-width:0"><b>Halden Studio Ltd</b><span>40-12-77 · 31926054</span></div></div><span class="verified"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="m4.5 8.2 2.2 2.2 4.8-4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Name matched</span></div>
+        <div class="d-row"><span class="k">From</span><div class="v"><i class="sw" style="width:10px;height:10px;border-radius:3px;background:#1d4a3c;flex:none"></i><div><b>Operating</b><span>•• 4821 · £142,380.55 available</span></div></div></div>
+        <div class="d-row"><span class="k">Reference</span><div class="v"><div><b>HS-2291 Brand refresh</b><span>Faster Payments · arrives in minutes</span></div></div></div>
+      </div>
+      <div class="d-note"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.8 2.8 4v3.6c0 3.2 2.2 5.6 5.2 6.6 3-1 5.2-3.4 5.2-6.6V4L8 1.8Z" stroke="#2c6a56" stroke-width="1.4" stroke-linejoin="round"/></svg><span>You've paid Halden Studio 3 times before. Approving will ask for confirmation on your Northbank mobile app.</span></div>
+      <div class="d-foot">
+        <button class="btn decline" data-decline>Decline</button>
+        <button class="btn primary" data-approve>Approve payment</button>
+      </div>
+    </div>
+    <div class="d-done">
+      <div class="ok"><svg width="22" height="22" viewBox="0 0 16 16" fill="none"><path d="m4 8.3 2.6 2.6L12 5.5" stroke="#2c6a56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h3 id="donet">Payment approved</h3>
+      <p id="donep">£4,200.00 to Halden Studio is on its way.</p>
+      <button class="btn" data-close style="margin:0 auto">Back to dashboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---- Chart ----
+  const months=["Jun","Jul","Aug","Sep","Oct","Nov"];
+  const inn=[58.2,64.9,61.4,72.8,79.3,76.3];
+  const out=[52.6,57.1,63.0,59.4,66.8,57.3];
+  const host=document.getElementById('chart'), tip=document.getElementById('tip');
+  const NS="http://www.w3.org/2000/svg";
+  function draw(){
+    host.querySelectorAll('svg').forEach(s=>s.remove());
+    const W=host.clientWidth,H=host.clientHeight,pl=34,pr=4,pt=8,pb=26;
+    const max=90, iw=W-pl-pr, ih=H-pt-pb;
+    const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    let h='';
+    [0,30,60,90].forEach(v=>{const y=pt+ih-(v/max)*ih;h+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="rgba(22,32,29,.07)" ${v?'stroke-dasharray="2 4"':''}/><text x="${pl-10}" y="${y+4}" text-anchor="end" font-size="11" fill="#848c88" font-family="Geist Mono,monospace">${v?v+'k':'0'}</text>`});
+    const gw=iw/months.length, bw=Math.min(22,gw*.22), gap=4;
+    months.forEach((m,i)=>{
+      const cx=pl+gw*i+gw/2;
+      const hi=(inn[i]/max)*ih, ho=(out[i]/max)*ih;
+      const cur=i===months.length-1;
+      h+=`<g class="grp" data-i="${i}"><rect x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}" fill="transparent"/>`;
+      h+=`<rect x="${cx-bw-gap/2}" y="${pt+ih-hi}" width="${bw}" height="${hi}" rx="4" fill="#2c6a56" ${cur?'fill-opacity=".55"':''}/>`;
+      h+=`<rect x="${cx+gap/2}" y="${pt+ih-ho}" width="${bw}" height="${ho}" rx="4" fill="#b9a88a" ${cur?'fill-opacity=".55"':''}/></g>`;
+      h+=`<text x="${cx}" y="${H-6}" text-anchor="middle" font-size="11.5" fill="${cur?'#16201d':'#848c88'}" font-family="Geist,sans-serif">${m}${cur?' · MTD':''}</text>`;
+    });
+    // net line
+    let d='';months.forEach((m,i)=>{const cx=pl+gw*i+gw/2;const y=pt+ih-((inn[i]-out[i]+30)/max)*ih;d+=(i?'L':'M')+cx+' '+y});
+    svg.innerHTML=h;
+    host.insertBefore(svg,tip);
+    svg.querySelectorAll('.grp').forEach(g=>{
+      g.addEventListener('mouseenter',()=>{const i=+g.dataset.i;const cx=pl+gw*i+gw/2;
+        tip.innerHTML=`<b>${months[i]}</b>&nbsp;&nbsp;<span class="num">In £${inn[i].toFixed(1)}k · Out £${out[i].toFixed(1)}k</span>`;
+        tip.style.left=Math.max(90,Math.min(W-90,cx))+'px';tip.style.top=(pt+ih-(Math.max(inn[i],out[i])/max)*ih)+'px';tip.style.opacity=1;
+        svg.querySelectorAll('.grp').forEach(o=>o.style.opacity=o===g?1:.45);});
+      g.addEventListener('mouseleave',()=>{tip.style.opacity=0;svg.querySelectorAll('.grp').forEach(o=>o.style.opacity=1)});
+    });
+  }
+  draw();addEventListener('resize',draw);
+  document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+  document.querySelectorAll('.chipf').forEach(b=>b.onclick=()=>{document.querySelectorAll('.chipf').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+
+  // ---- Dialog ----
+  const scrim=document.getElementById('scrim'), dlg=document.getElementById('dialog'), main=document.getElementById('main');
+  let lastFocus=null;
+  function open(){lastFocus=document.activeElement;dlg.classList.remove('done');scrim.classList.add('open');scrim.setAttribute('aria-hidden','false');document.body.classList.add('locked');main.inert=true;document.querySelector('.topbar').inert=true;setTimeout(()=>dlg.querySelector('[data-approve]').focus(),50)}
+  function close(){scrim.classList.remove('open');scrim.setAttribute('aria-hidden','true');document.body.classList.remove('locked');main.inert=false;document.querySelector('.topbar').inert=false;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+  function resolve(approved){
+    dlg.classList.add('done');
+    document.getElementById('donet').textContent=approved?'Payment approved':'Payment declined';
+    document.getElementById('donep').textContent=approved?'£4,200.00 to Halden Studio is on its way.':'Jonah Reyes has been notified. Nothing was sent.';
+    const ok=dlg.querySelector('.ok');ok.style.background=approved?'':'#f6e7e3';
+    ok.innerHTML=approved?'<svg width="22" height="22" viewBox="0 0 16 16" fill="none"><path d="m4 8.3 2.6 2.6L12 5.5" stroke="#2c6a56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'<svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="m4.5 4.5 7 7M11.5 4.5l-7 7" stroke="#8e3a2c" stroke-width="1.7" stroke-linecap="round"/></svg>';
+    const row=document.querySelector('.pending-row');row.classList.remove('pending-row');
+    row.querySelector('td:nth-child(4)').innerHTML=approved?'<span class="status"><i></i>Sent</span>':'<span class="status" style="color:var(--neg)"><i style="background:var(--neg)"></i>Declined</span>';
+    if(!approved)row.querySelector('.amt').style.textDecoration='line-through';
+    document.getElementById('notice').style.display='none';
+    document.querySelectorAll('[data-open]').forEach(b=>b.disabled=true);
+    dlg.querySelector('.d-done [data-close]').focus();
+  }
+  document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',open));
+  dlg.addEventListener('click',e=>{if(e.target.closest('[data-close]'))close();if(e.target.closest('[data-approve]'))resolve(true);if(e.target.closest('[data-decline]'))resolve(false)});
+  scrim.addEventListener('click',e=>{if(e.target===scrim)close()});
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&scrim.classList.contains('open'))close()});
+  main.inert=true;document.querySelector('.topbar').inert=true;
+})();
+</script>
+</body>
+</html>

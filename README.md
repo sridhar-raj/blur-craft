@@ -52,8 +52,9 @@ research and re-tested until the skill version won:
 - [kube.io: Liquid Glass in the browser](https://kube.io/blog/liquid-glass-css-svg)
 - [Emil Kowalski: design engineering skills](https://github.com/emilkowalski/skills)
 
-The two Stillwater pages in `examples/` are the actual A/B outputs. Open them in Chrome to see the
-motion and the refraction.
+**Live examples:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/) shows three
+briefs (a meditation hero, a music app, a banking dashboard), each built with and without the skill, side by
+side and interactive. Open in Chrome to see the refraction.
 
 ## Quick start without an agent
 

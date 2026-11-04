@@ -43,8 +43,15 @@ luminous thing on the page.
   the frosting shows a gradient of the scene across its width. A card that sits fully inside a uniform
   area reads as a grey box.
 - **Take the light's colour and direction into the rim.** Set `--glass-light` to the scene's light
-  (`"255 200 160"` for a sunset) and point `--glass-rim-angle` at it (150deg = light top-left, 40deg =
-  bottom-left, 210deg = top-right). Raise `--glass-rim-hot` to 0.8–0.9 when the light is strong.
+  (`"255 200 160"` for a sunset) and aim `--glass-rim-angle` at it. The rim's bright end sits on the side
+  the light comes from:
+
+  | Light comes from | top-left | top | top-right | right | bottom-right | bottom | bottom-left | left |
+  |---|---|---|---|---|---|---|---|---|
+  | `--glass-rim-angle` | 135deg | 180deg | 225deg | 270deg | 315deg | 0deg | 45deg | 90deg |
+
+  A light *under* the glass (a dock over a glow) takes the angle of the edge it's nearest to, plus about
+  15deg toward the centre. Raise `--glass-rim-hot` to 0.8–0.9 when the light is strong.
 - **Give the glass room to be big.** Glass reads as a material when it's large enough to show the
   scene changing under it. A small chip of glass reads as a grey pill. The glass panel is usually the
   hero object of its screen; size it like one.
@@ -122,7 +129,11 @@ panel:
 
 ## 4. Look at it, then fix it
 
-Screenshot the page at the brightest moment of the backdrop and check each glass surface:
+Screenshot the page at the brightest moment of the backdrop and check each glass surface. First, prove
+the glass frosts at all: temporarily put bold, high-contrast text (red, 30px) right behind every glass
+surface and look at a 2× crop. Any letter that reads sharp is a hole in the material (a backdrop root, an
+out-of-date Liquid Glass map, a missing prefix). A normal screenshot hides this; the probe takes a minute.
+Then:
 
 1. **Does colour visibly shift across the glass?** If it reads as one flat colour, move the glass over
    the edge of a light, or move the light.

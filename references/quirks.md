@@ -52,6 +52,21 @@ What this means in practice:
 - `prefers-reduced-transparency` works in Chromium 118+, not yet in Safari or Firefox. It's still worth
   writing, because the opaque fallback costs nothing.
 
+## Liquid Glass shows sharp patches
+
+If part of a Liquid Glass element shows the content behind it sharp, the displacement map is smaller
+than the element. Parts outside the filter region get no filter at all. Causes: mounted before fonts
+loaded or before layout settled, or sized with `getBoundingClientRect()` under a scale transform. Remount
+on ResizeObserver and `document.fonts.ready`, and size from `offsetWidth`/`offsetHeight` (the asset does
+both). Keep `url()` before `blur()` in the filter: blur first frosts the backdrop before it's bent, which
+hides the refraction.
+
+## Hover glass on many items
+
+A `backdrop-filter` on a hidden hover button inside every card (43 album covers, say) is 43 invisible
+elements each paying for a blur. Put the `backdrop-filter` in the `:hover`/`:focus-visible` rule only,
+not on the resting state.
+
 ## Clipped glows
 
 `filter: blur(R)` spreads about 2–3×R beyond the element's box. A parent with `overflow: hidden` cuts
@@ -83,7 +98,8 @@ On a recent MacBook in Chrome at 1600×900:
 
 | Blur | Rough cost |
 |---|---|
-| Static `filter: blur(60px)` on a still image, own layer | Paid once; free afterwards |
+| Static `filter: blur(60px)` on a still image, nothing glassy above it | Paid once; free afterwards |
+| The same image under a fixed or sticky `backdrop-filter` (dock, bar) | Re-rasterised every frame: 60 → 22fps measured. Bake it (recipe 8) |
 | Glass 18px, 400×300, over a static background | Negligible |
 | Glass 18px, 400×300, over a live WebGL canvas | Small, every frame |
 | Glass 18px, full width, over a live WebGL canvas | Noticeable; the hero blur budget |

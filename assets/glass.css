@@ -23,7 +23,7 @@
   --glass-dim: rgb(10 10 18 / 0.28);        /* dimming under the fill; Apple uses ~35% over bright content */
   --glass-light: 255 255 255;               /* r g b of the scene's light */
   --glass-radius: 28px;
-  --glass-rim-angle: 150deg;                /* point the bright side of the rim at the light: 150deg = top-left, 40deg = bottom-left, 210deg = top-right */
+  --glass-rim-angle: 150deg;                /* bright end of the rim faces the light: 135deg top-left, 180 top, 225 top-right, 270 right, 315 bottom-right, 0 bottom, 45 bottom-left, 90 left */
   --glass-rim-hot: 0.6;                     /* rim alpha on the lit side; 0.8-0.9 when the light is strong */
   --mx: 30%;                                 /* pointer position for the sheen, set from JS */
   --my: 0%;

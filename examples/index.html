@@ -1,28 +1,86 @@
-<!doctype html><meta charset="utf-8"><title>blur-craft examples</title><meta name=viewport content='width=device-width,initial-scale=1'>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blur-craft examples</title>
 <style>
-body{margin:0;background:#0b0b10;color:#eceaf3;font:14px/1.5 -apple-system,sans-serif;padding:20px}
-h1{font-size:20px;margin:0 0 4px} p.sub{color:#9a98ab;margin:0 0 18px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
-.col h2{font-size:15px;margin:0 0 8px} .col h2 span{color:#9a98ab;font-weight:400}
-iframe{width:100%;aspect-ratio:16/9;border:1px solid #2a2835;border-radius:10px;background:#000}
-ul{margin:10px 0 0;padding-left:18px;color:#c9c7d6} li{margin:3px 0}
-.open{color:#b79cff}
+  :root { --bg: #0b0b10; --panel: #13131a; --line: #26252f; --fg: #eceaf3; --muted: #9a98ab; --accent: #c9b2ff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 32px max(16px, 3vw) 64px; display: grid; gap: 48px; }
+  header h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); max-width: 70ch; }
+  a { color: var(--accent); }
+  section { display: grid; gap: 14px; }
+  section h2 { font-size: 20px; margin: 0; }
+  .brief { color: var(--muted); margin: 0; max-width: 90ch; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .col { display: grid; gap: 8px; align-content: start; min-width: 0; }
+  .col h3 { font-size: 14px; margin: 0; display: flex; justify-content: space-between; gap: 8px; }
+  .col h3 span { color: var(--muted); font-weight: 400; }
+  .frame { aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; }
+  .frame iframe { width: 1600px; height: 900px; border: 0; transform-origin: 0 0; }
+  ul { margin: 0; padding-left: 18px; color: #cfcde0; } li { margin: 3px 0; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 0; }
+  @media (max-width: 900px) { .pair { grid-template-columns: 1fr; } }
 </style>
-<h1>Same brief, with and without the blur-craft skill</h1>
-<p class="sub"><a class=open href="https://github.com/sridhar-raj/blur-craft">github.com/sridhar-raj/blur-craft</a> · Open in Chrome to see the Liquid Glass refraction. Brief: a Stillwater meditation hero with a frosted glass player card over a slowly moving background. Both are live; hover and press play.</p>
-<div class="grid">
- <div class="col"><h2>Without the skill <span>· <a class="open" href="stillwater-without-skill.html" target="_blank">open full size</a></span></h2>
-  <iframe src="stillwater-without-skill.html"></iframe>
-  <ul><li>Glass blur 28px with a flat tint: reads as a grey card, little colour comes through</li>
-  <li>Card covers 15% of the screen, mostly over flat dark sky, so the frosting has little to show</li>
-  <li>Plain 1px white border; no lit rim or refraction</li>
-  <li>Fallbacks for no-blur and reduced transparency (good)</li>
-  <li>58 fps headless</li></ul></div>
- <div class="col"><h2>With the updated skill <span>· <a class="open" href="stillwater-with-skill.html" target="_blank">open full size</a></span></h2>
-  <iframe src="stillwater-with-skill.html"></iframe>
-  <ul><li>The sun is placed under the card on purpose, so the sunset gradient (violet to peach) shows through the glass</li>
-  <li>Five-layer material: 32px blur at 180% saturation, gradient fill, a peach rim aimed at the sun, specular sheen</li>
-  <li>Liquid Glass refraction: the horizon and ripples bend through the card's lower edge (Chrome)</li>
-  <li>Vibrant white text, a waveform progress bar, a 2px blur crossfade on play/pause and the breath cue</li>
-  <li>Reduced-transparency fallback is a lit solid panel, not a broken one; audit 0 fail, 0 warn</li></ul></div>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>blur-craft: with and without the skill</h1>
+    <p>Each pair is the same brief given to the same model, once without the skill and once with it. The pages are live: hover, press play, click. Open them in Chrome to see the Liquid Glass refraction. <a href="https://github.com/sridhar-raj/blur-craft">github.com/sridhar-raj/blur-craft</a></p>
+  </header>
+
+  <section>
+    <h2>1. Stillwater: meditation app hero</h2>
+    <p class="brief">"A landing hero for a meditation app: calm and premium, a frosted glass player card over a slowly moving background."</p>
+    <div class="pair">
+      <div class="col"><h3>Without the skill <a href="stillwater-without-skill.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="stillwater-without-skill.html" loading="lazy" title="Stillwater without the skill"></iframe></div>
+        <ul><li>28px blur over a flat tint: the card reads as a grey slab</li><li>Plain 1px white border, no lit edge</li></ul></div>
+      <div class="col"><h3>With the skill <a href="stillwater-with-skill.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="stillwater-with-skill.html" loading="lazy" title="Stillwater with the skill"></iframe></div>
+        <ul><li>The sun is placed under the card, so the sunset (violet to peach) shows through the glass</li><li>Rim lit on the sun's side; the horizon bends through the lower edge (Liquid Glass)</li><li>2px blur crossfade on play/pause and the breath cue</li></ul></div>
+    </div>
+    <p class="verdict">The skill wins on the glass: it's the most luminous object on the page instead of a grey box.</p>
+  </section>
+
+  <section>
+    <h2>2. Tidal Room: music app with a now-playing dock</h2>
+    <p class="brief">"The home screen of a music streaming app: a wall of album covers and a floating now-playing dock. Premium and immersive."</p>
+    <div class="pair">
+      <div class="col"><h3>Without the skill <a href="music-without.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="music-without.html" loading="lazy" title="Music app without the skill"></iframe></div>
+        <ul><li>A dark, heavily dimmed dock: safe but flat</li><li>Elegant serif greeting</li></ul></div>
+      <div class="col"><h3>With the skill <a href="music-with.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="music-with.html" loading="lazy" title="Music app with the skill"></iframe></div>
+        <ul><li>The dock carries the covers' amber, magenta and teal through the glass, with an amber rim aimed at the light</li><li>The page tints itself from the playing cover; click any cover to change it</li><li>The ambient blur is baked once, so it holds 60fps (it was 22fps when blurred live)</li></ul></div>
+    </div>
+    <p class="verdict">The skill's dock is clearly richer glass. The version without it has the more refined greeting type: the skill only governs the glass.</p>
+  </section>
+
+  <section>
+    <h2>3. Northbank: banking dashboard with an approval dialog</h2>
+    <p class="brief">"A business banking dashboard: sticky top bar, balance, chart, transactions, and an 'Approve payment' dialog for £4,200 open over it. Premium, calm, trustworthy."</p>
+    <div class="pair">
+      <div class="col"><h3>Without the skill <a href="bank-without.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="bank-without.html" loading="lazy" title="Bank without the skill"></iframe></div>
+        <ul><li>Light theme, a solid white dialog over a softly blurred page</li><li>Glass only on the sticky bar</li></ul></div>
+      <div class="col"><h3>With the skill (earlier version) <a href="bank-with.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="bank-with.html" loading="lazy" title="Bank with the skill"></iframe></div>
+        <ul><li>A dark glass dialog with a brass-lit rim over a focus veil</li><li>An extended-backdrop sticky bar with a glassy edge</li><li>Focus starts on the dialog, not on "Approve"</li></ul></div>
+    </div>
+    <p class="verdict">A draw, and the lesson the skill took from it: for money, a light, nearly solid dialog reads as more trustworthy than dark glass. The skill now matches the brief's register (immersive, calm or trusted) and has a <code>glass--solid</code> material for payments and deletes.</p>
+  </section>
 </div>
+<script>
+  // Scale each 1600x900 page down to its frame.
+  const fit = () => document.querySelectorAll(".frame").forEach((f) => {
+    f.querySelector("iframe").style.transform = `scale(${f.clientWidth / 1600})`;
+  });
+  addEventListener("resize", fit); fit();
+</script>
+</body>
+</html>

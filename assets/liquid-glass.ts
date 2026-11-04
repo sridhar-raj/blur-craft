@@ -7,6 +7,11 @@
 //
 // Keep it to one element per screen (a player, a dock, a hero button): the map is rebuilt on every
 // size change, and SVG backdrop filters are heavier than plain blur.
+//
+// Mount after layout settles and again when it changes: a ResizeObserver plus document.fonts.ready.
+// If part of the glass shows the content behind it sharp, the map is out of date with the element's size.
+// Keep the order url() then blur(): blur first frosts the backdrop before it's bent, which hides the
+// refraction.
 
 export type LiquidOptions = {
   bezel?: number;      // width of the curved rim in px (16-28 reads as glass)
@@ -74,8 +79,10 @@ export function mountLiquidGlass(el: HTMLElement, opts: LiquidOptions = {}): str
   if (!supportsLiquidGlass()) return null;
   if (matchMedia("(prefers-reduced-transparency: reduce)").matches) return null;
   const { bezel = 22, strength = 38, blur = 14, saturate = 170 } = opts;
-  const rect = el.getBoundingClientRect();
-  const w = Math.round(rect.width), h = Math.round(rect.height);
+  // Layout size, not getBoundingClientRect(): a scale transform on the element or an ancestor would shrink
+  // the map, and any part of the element outside the filter region renders with no filter at all
+  // (it shows the content behind it sharp).
+  const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
   const r = opts.radius ?? (parseFloat(getComputedStyle(el).borderTopLeftRadius) || 24);
   if (!w || !h) return null;
 

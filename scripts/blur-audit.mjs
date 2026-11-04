@@ -102,7 +102,7 @@ function staticAudit(target) {
           add("INFO", at, `${sel}: light ${r}px backdrop blur. Over busy or moving content detail shows through as noise; NN/g and Apple use heavier blur (24-44px) for panels with text.`);
         if (panel && !/saturate/.test(bd[1]))
           add("INFO", at, `${sel}: glass without saturate(). Blur greys colour out; saturate(160-180%) keeps the scene vivid through the glass.`);
-        if (panel && !/gradient/.test(body) && !/@supports|prefers-reduced/.test(selector))
+        if (panel && !/gradient/.test(body) && !/@supports|prefers-reduced|:hover|:focus|:active/.test(selector))
           add("INFO", at, `${sel}: single flat tint on glass. A gradient fill and a lit gradient rim (assets/glass.css) are what make it read as glass, not plastic.`);
         if (/(^|[^-])mask-image\s*:/.test(body) && !/-webkit-mask-image\s*:/.test(body) && unpref)
           add("WARN", at, `${sel}: mask-image on a backdrop layer without -webkit-mask-image (Safari).`);
@@ -141,8 +141,8 @@ function staticAudit(target) {
       // Framer Motion blur that animates (initial/animate/variants) but is never cleared.
       // A reveal ends at blur(0px)/blur(0); a static style blur never does.
       const animated = [...src.matchAll(/filter\s*:\s*[`"']blur\(/g)];
-      if (animated.length && /blur\(\s*0(px)?\s*\)/.test(src) &&!/transitionEnd\s*:\s*\{[^}]*filter\s*:\s*["']none["']/.test(src))
-        add("WARN", `${rel}:${lineOf(src, animated[0].index)}`, `animates filter: blur() ${animated.length}x but never sets transitionEnd: { filter: "none" }. A leftover blur(0px) keeps a filter layer alive and makes the element a backdrop root.`);
+      if (animated.length && /blur\(\s*0(px)?\s*\)/.test(src) &&!/transitionEnd\s*:\s*\{[^}]*filter\s*:\s*["']none["']|\.filter\s*=\s*["'](none)?["']|setProperty\(\s*["']filter["']\s*,\s*["']none["']|filter\s*:\s*["']none["']/.test(src))
+        add("WARN", `${rel}:${lineOf(src, animated[0].index)}`, `animates filter: blur() ${animated.length}x but never clears it (transitionEnd: { filter: "none" } in Framer Motion, el.style.filter = "none" in plain JS). A leftover blur(0px) keeps a filter layer alive and makes the element a backdrop root.`);
       for (const m of src.matchAll(/initial=\{\{[^}]*opacity\s*:\s*0[^}]*\}\}/g)) {
         const after = src.slice(m.index, m.index + 1500);
         const close = after.indexOf("</motion.");
