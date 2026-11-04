@@ -127,6 +127,26 @@
     .hero-copy { right: 56px; }
   }
   @media (prefers-reduced-motion: reduce) { .live i { animation: none; } .swap, .gs-toast { transition: none; } }
+
+  /* ---------- BEFORE mode: the same page with typical tutorial glass (flat 15% white, 16px blur, white
+     border, white text), the approach most guides and generic skills give. Switch with the toggle. ---------- */
+  html.before .glass, html.before .gs-bar__backdrop {
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1) !important; outline: none;
+  }
+  html.before .gs-bar__backdrop { -webkit-mask-image: none; mask-image: none; height: 100%; animation: none !important; opacity: 1 !important; }
+  html.before .glass::before, html.before .glass::after, html.before .glass > canvas { display: none !important; }
+  html.before .glass :is(.glass-label, .glass-secondary) { text-shadow: none; }
+  html.before .glass .glass-label { color: #fff; }
+  html.before .glass .glass-secondary { color: rgba(255, 255, 255, 0.8); }
+  html.before .fade-edge { display: none; }
+
+  .compare { position: fixed; left: 50%; translate: -50% 0; top: 70px; z-index: 80; display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: #fff; color: #120e18; box-shadow: 0 8px 30px rgb(0 0 0 / 0.35); font-size: 14px; }
+  .compare button { padding: 8px 14px; border-radius: 999px; font-weight: 600; }
+  .compare button[aria-pressed="true"] { background: #120e18; color: #fff; }
+  .compare output { padding: 0 10px 0 6px; font-variant-numeric: tabular-nums; color: #5a5468; white-space: nowrap; }
+  @media (max-width: 760px) { .compare { top: auto; bottom: 96px; } .compare output { display: none; } }
 </style>
 </head>
 <body>
@@ -174,6 +194,11 @@
     <li><b>Settings</b>Tinted glass (iOS 26.1's Clear/Tinted switch) and the measured device tier. <code>data-glass</code>, <code>glass-tier.js</code></li>
   </ul>
 </main>
+
+<div class="compare" role="group" aria-label="Compare">
+  <button id="mBefore" aria-pressed="false">Before</button><button id="mAfter" aria-pressed="true">After · blur-craft</button>
+  <output id="score">worst contrast: 5.53:1 · all pass</output>
+</div>
 
 <div class="fade-edge" id="fade" aria-hidden="true"></div>
 
@@ -381,6 +406,19 @@ function openRecord(show = STATIONS[current][0], time = "now") {
 $("openRecord").addEventListener("click", () => openRecord(STATIONS[current][0], "now"));
 $("cancelRec").addEventListener("click", () => closeModal());
 $("confirmRec").addEventListener("click", () => { const s = $("record").dataset.show; closeModal(); toast(`Recording scheduled: ${s}`); });
+
+// ---------- Before / After ----------
+const SCORES = { before: "1.91:1 · 4 lines fail", after: "5.53:1 · all pass" };   // measured with glass-contrast.mjs (worst of three states, 1600x900)
+function setMode(m) {
+  root.classList.toggle("before", m === "before");
+  $("mBefore").setAttribute("aria-pressed", String(m === "before"));
+  $("mAfter").setAttribute("aria-pressed", String(m === "after"));
+  $("score").textContent = `worst contrast: ${SCORES[m]}`;
+  const u = new URL(location); u.searchParams.set("mode", m); history.replaceState(null, "", u);
+}
+$("mBefore").addEventListener("click", () => setMode("before"));
+$("mAfter").addEventListener("click", () => setMode("after"));
+setMode(new URLSearchParams(location.search).get("mode") === "before" ? "before" : "after");
 
 // ---------- Settings: tinted level + device tier ----------
 function closeSettings() { $("settings").hidden = true; $("openSettings").setAttribute("aria-expanded", "false"); }

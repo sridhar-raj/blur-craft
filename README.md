@@ -10,6 +10,16 @@ surfaces, and scripts that check the result.
 
 ![Harbor Radio, the example built with blur-craft](examples/harbor-radio.png)
 
+**Before / after:** the live example has a switch at the top. *Before* swaps the glass for the typical
+tutorial recipe (flat 15% white, 16px blur, white border); *After* is blur-craft. Same page, same words:
+
+![Before: typical glass, text washes out. After: blur-craft, readable and lit](examples/before-after.png)
+
+| Mode | Worst contrast (desktop) | Lines failing | Phone |
+|---|---|---|---|
+| [Before (typical glass)](https://sridhar-raj.github.io/blur-craft/?mode=before) | 1.91:1 | 4 | 4.38:1, 1 fails |
+| [After (blur-craft)](https://sridhar-raj.github.io/blur-craft/?mode=after) | 5.53:1 | 0 | 5.47:1, 0 fail |
+
 **[Open the live example](https://sridhar-raj.github.io/blur-craft/)**: Harbor Radio, one working product
 with every glass use case in its real place: a nav that turns to glass on scroll, an on-air card over the
 sun with live listener counts, a Liquid Glass player dock, progressive blur under it, a ⌘K search palette,
