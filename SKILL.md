@@ -112,9 +112,12 @@ Linear, Raycast, Radix, Material and Fluent, Apple's full WWDC25 rule list, and 
 
 Code in `references/recipes.md`:
 
-- **Liquid Glass refraction** (`liquid-glass.ts`/`.js`): the rim bends what's behind it like a lens, with
-  optional chromatic aberration (0.6–1). Chromium only (Safari's SVG backdrop filters are still in review,
-  WebKit 245510), so the frosted material must look finished on its own. Refraction and frosting trade
+- **Liquid Glass refraction:** the rim bends what's behind it like a lens, with optional chromatic
+  aberration (0.6–1). Two versions: `liquid-glass.ts`/`.js` refracts *any* page content but only in
+  Chromium (Safari paints nothing for SVG backdrop filters, WebKit 245510); `liquid-glass-webgl.js`
+  refracts a backdrop the page draws itself (a `<canvas>`, `<img>` or `<video>`, such as a hero wallpaper)
+  in **every** browser, verified rendering in Chromium and WebKit. Elsewhere the frosted material must
+  look finished on its own. Refraction and frosting trade
   off: the bend shows through clear glass (`blur` 0–6); frosted (12–20) frosts edge to edge and the bend
   becomes a soft colour shift. Clear for a word or an icon, frosted for sentences, text a bezel-width
   inside the edge. Never on a dialog over a veil: there's nothing sharp left to bend.
@@ -229,10 +232,12 @@ Run all of these before calling glass done:
 - `assets/glass.css`: the material: layers, thickness scale, tinted level, light tone, text, fallbacks.
 - `assets/surfaces.css`: sticky bar, dock, menu, veil + dialog, toast, sheet.
 - `assets/demo.html`: live playground of every surface with controls (also the calibration page).
-- `assets/browser-check.html`: ten side-by-side blur cases to check any browser by eye (Sonoma, Firefox…).
+- `assets/browser-check.html`: the Tabula hero from the OriginKit posts with ten glass surfaces, each
+  written a different way, and a table of what each browser should show. Open it in the browser to check.
 - `assets/Glass.tsx`, `Glass.vue`, `Glass.svelte`: components for React (Framer Motion), Vue 3 and Svelte 5
   (`thickness`, `tone`, `light`, `liquid`, `tinted`, `neutral`, and `sheen` for interactive glass only).
-- `assets/liquid-glass.ts` / `.js`: Liquid Glass refraction with chromatic aberration.
+- `assets/liquid-glass.ts` / `.js`: Liquid Glass refraction of any content (Chromium).
+- `assets/liquid-glass-webgl.js`: Liquid Glass in every browser, over a canvas, image or video backdrop.
 - `assets/glass.tailwind.css`: Sonoma-safe Tailwind v4 utilities (`glass-blur-*`, `glass-neutral-blur-*`, `glass-none`).
 - `assets/adaptive-tone.js`: light/dark flip for small glass from the luminance behind it.
 - `assets/glass-tier.js`: full / lite / flat glass by device capability and power state.

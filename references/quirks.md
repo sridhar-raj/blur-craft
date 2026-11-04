@@ -88,7 +88,8 @@ no-preference)")` is false because the query is unsupported, which matches the r
 | `requestIdleCallback` (tier probe timing) | 47 | 55 | none: use `setTimeout` |
 | canvas `ctx.filter` (baked art backdrop) | 52 | 49 | flag only: skipped, upscaling still blurs |
 | `PressureObserver` (tier downgrades) | 125 | none | none |
-| SVG filter in `backdrop-filter` (Liquid Glass) | yes | ignored | paints nothing (245510) |
+| SVG filter in `backdrop-filter` (liquid-glass.ts) | yes | ignored | paints nothing (245510) |
+| WebGL lens over a canvas/img/video (liquid-glass-webgl.js) | yes | yes | yes (verified rendering in WebKit) |
 
 Firefox: the closest open rendering bug is 1782876 (backdrop-filter not rendering when an *ancestor* has
 transform, opacity, clip-path or a mask), which is the backdrop-root rule below. Firefox couldn't be

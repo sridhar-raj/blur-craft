@@ -17,8 +17,9 @@ a recording dialog, toasts and settings with a tinted-glass switch and a measure
 passes the skill's own contrast check (every line, three states, desktop and phone).
 
 Also: **[the playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface
-with thickness, tint, tone and rim controls) and **[the browser check](https://sridhar-raj.github.io/blur-craft/assets/browser-check.html)**
-(open it in any browser, e.g. Safari on macOS Sonoma, to see which blur cases work there).
+with thickness, tint, tone and rim controls) and **[the browser check](https://sridhar-raj.github.io/blur-craft/assets/browser-check.html)**: the
+Tabula hero from the OriginKit posts with ten glass surfaces, each written a different way. Open it in any
+browser (Safari on macOS Sonoma especially) and compare with its table to see which techniques blur there.
 
 ## Install
 
@@ -54,7 +55,8 @@ depth, blur reveals, or a request to make something feel premium or "Apple-like"
 | `assets/surfaces.css` | Sticky nav (extended backdrop, glass-on-scroll in pure CSS), dock, menu, veil + dialog, toast, sheet |
 | `assets/Glass.tsx`, `Glass.vue`, `Glass.svelte` | Components for React (Framer Motion), Vue 3 and Svelte 5: thickness, tone, tint, an opt-in pointer sheen for interactive glass only, and Liquid Glass |
 | `assets/glass.tailwind.css` | Tailwind v4 utilities that compile to literal filters (`glass-blur-24`, …); Tailwind's own `backdrop-blur-*` breaks on Sonoma Safari |
-| `assets/liquid-glass.ts` / `.js` | Liquid Glass refraction (Chromium) with chromatic aberration; `watchLiquidGlass()` keeps it in step with size and cleans up |
+| `assets/liquid-glass.ts` / `.js` | Liquid Glass refraction of any page content (Chromium) with chromatic aberration; `watchLiquidGlass()` keeps it in step with size and cleans up |
+| `assets/liquid-glass-webgl.js` | Liquid Glass in **every** browser (Chrome, Safari, Firefox) over a canvas, image or video backdrop, via WebGL |
 | `assets/glass-tier.js` | Full / lite / flat glass by device (memory, Save-Data, frame-rate probe, Compute Pressure) |
 | `assets/adaptive-tone.js` | Light/dark flip for small glass from the luminance behind it |
 | `assets/demo.html`, `assets/browser-check.html` | The playground and the cross-browser check |
