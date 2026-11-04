@@ -1,0 +1,123 @@
+/* Glass material: the five-layer stack premium glass is built from.
+ *
+ *   1. backdrop  heavy blur + high saturation + slight brightness lift (the frosting)
+ *   2. fill      a gradient, lighter at the top-left where light hits, not a flat tint
+ *   3. edge      a 1px gradient rim, bright where light hits, fading on the far side
+ *   4. specular  an inner top highlight, plus an optional sheen that follows the pointer
+ *   5. depth     a soft drop shadow and a faint inner glow, so the slab has thickness
+ *
+ * Usage: <div class="glass glass--regular"> … </div>. Pick the thickness by how much text it holds
+ * (Apple HIG: thicker = more opaque = better for text; thinner = more context). Rename the `glass`
+ * prefix to the section's prefix when copying into a section.
+ *
+ * Set --glass-light to the colour of the light source behind the glass (the glow, the sun, the art),
+ * so the rim and sheen pick up the scene's colour instead of plain white.
+ */
+
+.glass {
+  --glass-blur: 30px;
+  --glass-sat: 180%;
+  --glass-bright: 1.05;
+  --glass-fill-top: rgb(255 255 255 / 0.16);
+  --glass-fill-bottom: rgb(255 255 255 / 0.04);
+  --glass-dim: rgb(10 10 18 / 0.28);        /* dimming under the fill; Apple uses ~35% over bright content */
+  --glass-light: 255 255 255;               /* r g b of the scene's light */
+  --glass-radius: 28px;
+  --glass-rim-angle: 150deg;                /* point the bright side of the rim at the light: 150deg = top-left, 40deg = bottom-left, 210deg = top-right */
+  --glass-rim-hot: 0.6;                     /* rim alpha on the lit side; 0.8-0.9 when the light is strong */
+  --mx: 30%;                                 /* pointer position for the sheen, set from JS */
+  --my: 0%;
+
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--glass-radius);
+  background:
+    linear-gradient(160deg, var(--glass-fill-top), var(--glass-fill-bottom) 60%),
+    var(--glass-dim);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
+  box-shadow:
+    inset 0 1px 0 rgb(var(--glass-light) / 0.35),          /* top specular line */
+    inset 0 -1px 0 rgb(255 255 255 / 0.04),
+    inset 0 0 32px rgb(var(--glass-light) / 0.06),         /* inner glow: thickness */
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 30px 60px -20px rgb(0 0 0 / 0.55);                    /* lift */
+}
+
+/* 3. Edge: a gradient rim drawn on a ring (mask-composite keeps only the border). */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--glass-rim-angle),
+    rgb(var(--glass-light) / var(--glass-rim-hot)),
+    rgb(var(--glass-light) / 0.12) 35%,
+    rgb(255 255 255 / 0.04) 60%,
+    rgb(var(--glass-light) / 0.22)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* 4. Sheen: a soft specular bloom, positioned by --mx/--my (static top-left if no JS). */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 80% at var(--mx) var(--my),
+    rgb(var(--glass-light) / 0.14),
+    transparent 55%
+  );
+  transition: background-position 0.2s;
+}
+.glass > * { position: relative; z-index: 2; }
+
+/* Thickness scale. Blur goes up with thickness; busy or moving backdrops want the thicker end. */
+.glass--clear   { --glass-blur: 16px; --glass-dim: rgb(10 10 18 / 0.10); --glass-fill-top: rgb(255 255 255 / 0.10); }
+.glass--thin    { --glass-blur: 24px; --glass-dim: rgb(10 10 18 / 0.20); }
+.glass--regular { --glass-blur: 32px; --glass-dim: rgb(10 10 18 / 0.30); }
+.glass--thick   { --glass-blur: 44px; --glass-dim: rgb(10 10 18 / 0.50); --glass-sat: 160%; }
+
+/* Nearly solid: trust-critical dialogs (payments, deletes, signatures). Glass family, nothing competes. */
+.glass--solid   { --glass-blur: 20px; --glass-dim: rgb(18 18 26 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.06); --glass-fill-bottom: rgb(255 255 255 / 0.02); }
+.glass--solid.glass--light { --glass-dim: rgb(255 255 255 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.6); --glass-fill-bottom: rgb(255 255 255 / 0.4); }
+
+/* Light glass (over light scenes). */
+.glass--light {
+  --glass-fill-top: rgb(255 255 255 / 0.55);
+  --glass-fill-bottom: rgb(255 255 255 / 0.25);
+  --glass-dim: rgb(255 255 255 / 0.15);
+  --glass-bright: 1.1;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    inset 0 0 24px rgb(255 255 255 / 0.25),
+    0 1px 2px rgb(20 20 40 / 0.08),
+    0 30px 60px -24px rgb(20 20 60 / 0.25);
+}
+
+/* Text on glass: near-solid primary, translucent white secondary (vibrancy), never a mid grey. */
+.glass .glass-label     { color: rgb(255 255 255 / 0.96); }
+.glass .glass-secondary { color: rgb(255 255 255 / 0.68); }
+.glass .glass-tertiary  { color: rgb(255 255 255 / 0.45); }
+.glass--light .glass-label     { color: rgb(10 12 20 / 0.92); }
+.glass--light .glass-secondary { color: rgb(10 12 20 / 0.6); }
+
+/* No backdrop-filter: go nearly opaque, keep the rim and highlights. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: linear-gradient(160deg, rgb(48 48 62 / 0.96), rgb(22 22 30 / 0.97)); }
+  .glass--light { background: rgb(250 250 252 / 0.97); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { -webkit-backdrop-filter: none !important; backdrop-filter: none !important;  /* !important beats liquid glass's inline filter */ background: rgb(22 22 30 / 0.97); }
+  .glass--light { background: rgb(250 250 252 / 0.98); }
+}

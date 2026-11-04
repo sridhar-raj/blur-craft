@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stillwater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f3efe8;
+    --ink-soft:rgba(243,239,232,.72);
+    --ink-faint:rgba(243,239,232,.5);
+    --bg:#141a24;
+    --dusk-1:#2b3550;
+    --dusk-2:#7d6a8f;
+    --dusk-3:#d79c7f;
+    --water:#1d2a3a;
+    --glass:rgba(28,34,48,.38);
+    --glass-edge:rgba(255,255,255,.16);
+    --glass-hi:rgba(255,255,255,.28);
+    --accent:#f2c6a5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* ---------- Background: a dusk sky over still water ---------- */
+  .scene{position:fixed;inset:0;overflow:hidden;z-index:0;
+    background:linear-gradient(180deg,#1b2236 0%,#33395a 34%,#6e5f80 52%,#2a3446 53%,#18212e 100%);
+  }
+  /* Soft light pools are radial gradients (already soft), moved only with transform.
+     No filter: blur on the moving layers, so the only live blur is the card. */
+  .glow{position:absolute;border-radius:50%;will-change:transform;}
+  .glow.sun{width:62vmax;height:62vmax;left:44%;top:6%;
+    background:radial-gradient(circle,rgba(242,180,140,.55) 0%,rgba(215,140,128,.22) 32%,rgba(125,106,143,0) 68%);
+    animation:drift-a 38s ease-in-out infinite alternate;}
+  .glow.violet{width:70vmax;height:70vmax;left:-18%;top:-26%;
+    background:radial-gradient(circle,rgba(120,110,170,.5) 0%,rgba(80,80,140,.18) 40%,transparent 70%);
+    animation:drift-b 46s ease-in-out infinite alternate;}
+  .glow.teal{width:60vmax;height:60vmax;right:-20%;bottom:-38%;
+    background:radial-gradient(circle,rgba(70,120,140,.45) 0%,rgba(40,80,110,.15) 45%,transparent 70%);
+    animation:drift-c 52s ease-in-out infinite alternate;}
+  /* the sun's reflection on the water, a few slow shimmering bands */
+  .reflect{position:absolute;left:58%;top:53%;width:22vw;height:40vh;transform:translateX(-50%);
+    background:repeating-linear-gradient(180deg,rgba(242,190,150,.32) 0 2px,transparent 2px 11px);
+    -webkit-mask:radial-gradient(ellipse 50% 70% at 50% 0%,#000 0%,transparent 75%);
+            mask:radial-gradient(ellipse 50% 70% at 50% 0%,#000 0%,transparent 75%);
+    animation:shimmer 9s ease-in-out infinite alternate;opacity:.8}
+  .horizon{position:absolute;left:0;right:0;top:52.6%;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,220,190,.35) 50%,transparent)}
+  /* distant hills, flat shapes */
+  .hills{position:absolute;left:0;right:0;top:calc(52.6% - 9vh);height:9vh;width:100%}
+  .grain{position:absolute;inset:-50%;opacity:.07;mix-blend-mode:overlay;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  /* a vignette pulls the eye inward and darkens behind the headline for contrast */
+  .vignette{position:absolute;inset:0;
+    background:
+      linear-gradient(90deg,rgba(14,18,28,.62) 0%,rgba(14,18,28,.25) 42%,transparent 65%),
+      radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(10,12,20,.55) 100%);}
+
+  @keyframes drift-a{to{transform:translate(-6vw,4vh) scale(1.08)}}
+  @keyframes drift-b{to{transform:translate(8vw,6vh) scale(.94)}}
+  @keyframes drift-c{to{transform:translate(-10vw,-5vh) scale(1.1)}}
+  @keyframes shimmer{from{transform:translateX(-50%) scaleX(1);opacity:.6}to{transform:translateX(-48%) scaleX(1.12);opacity:.9}}
+
+  /* ---------- Layout ---------- */
+  .page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;
+    padding:36px clamp(16px,5vw,88px) 48px;}
+  nav{display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px;font-family:Fraunces,serif;font-size:22px;letter-spacing:-.01em}
+  .brand svg{width:26px;height:26px}
+  .navlinks{display:flex;gap:32px;font-size:14px;color:var(--ink-soft)}
+  .navlinks a{color:inherit;text-decoration:none;transition:color .3s}
+  .navlinks a:hover{color:var(--ink)}
+
+  .hero{flex:1;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:center;gap:clamp(32px,6vw,120px);
+    max-width:1440px;width:100%;margin:0 auto;padding-top:24px}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:28px;
+    display:flex;align-items:center;gap:12px}
+  .eyebrow::before{content:"";width:28px;height:1px;background:currentColor;opacity:.6}
+  h1{font-family:Fraunces,serif;font-weight:300;font-size:clamp(44px,6.4vw,104px);line-height:.98;letter-spacing:-.025em;
+    font-variation-settings:"opsz" 144;max-width:11ch;text-shadow:0 2px 30px rgba(10,14,24,.35)}
+  h1 em{font-style:italic;color:var(--accent)}
+  .lede{margin-top:28px;font-size:clamp(16px,1.25vw,19px);line-height:1.55;color:var(--ink-soft);max-width:40ch}
+  .cta-row{margin-top:44px;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+  .btn{appearance:none;border:0;cursor:pointer;font:500 15px/1 Inter,sans-serif;
+    padding:18px 30px;border-radius:999px;background:var(--ink);color:#1a2030;
+    display:inline-flex;align-items:center;gap:12px;
+    box-shadow:0 10px 40px -10px rgba(242,198,165,.55);
+    transition:transform .5s cubic-bezier(.2,.8,.2,1),box-shadow .5s}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 18px 50px -12px rgba(242,198,165,.7)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+  .btn svg{width:16px;height:16px;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+  .btn:hover svg{transform:translateX(3px)}
+  .meta{font-size:14px;color:var(--ink-faint)}
+
+  /* ---------- Glass player card ---------- */
+  .card{
+    position:relative;justify-self:end;width:100%;max-width:420px;
+    padding:28px;border-radius:28px;
+    background:var(--glass);
+    /* one blur, on the one surface that needs to read as glass */
+    -webkit-backdrop-filter:blur(28px) saturate(150%);
+            backdrop-filter:blur(28px) saturate(150%);
+    border:1px solid var(--glass-edge);
+    box-shadow:
+      inset 0 1px 0 var(--glass-hi),
+      inset 0 0 0 1px rgba(255,255,255,.03),
+      0 40px 80px -30px rgba(6,10,20,.6),
+      0 2px 6px rgba(6,10,20,.2);
+    isolation:isolate;overflow:hidden;
+  }
+  /* soft specular sheen across the top edge */
+  .card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+    background:linear-gradient(160deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 38%);}
+  /* fine grain so the glass is not a flat plastic tint */
+  .card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;opacity:.12;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .card{background:rgba(30,36,52,.9)}
+  }
+  @media (prefers-reduced-transparency:reduce){
+    .card{background:rgba(30,36,52,.94);-webkit-backdrop-filter:none;backdrop-filter:none}
+  }
+
+  .card-top{display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .live{display:flex;align-items:center;gap:8px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(242,198,165,.6)}
+  .card.playing .dot{animation:pulse 2.6s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(242,198,165,.55)}100%{box-shadow:0 0 0 10px rgba(242,198,165,0)}}
+
+  .orb-wrap{display:grid;place-items:center;margin:30px 0 26px}
+  .orb{width:168px;height:168px;border-radius:50%;position:relative;
+    background:radial-gradient(circle at 38% 32%,#f6d8c0 0%,#d9a08a 34%,#7d6a8f 72%,#3a3f62 100%);
+    box-shadow:0 20px 60px -10px rgba(217,160,138,.5),inset 0 -10px 30px rgba(40,40,80,.35);
+    transform:scale(.94);transition:transform 1.2s cubic-bezier(.4,0,.2,1)}
+  .orb::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
+  .card.playing .orb{animation:breathe 10s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:scale(.9)}45%,55%{transform:scale(1.03)}}
+  .breath-cue{margin-top:22px;font-size:13px;color:var(--ink-faint);height:16px;letter-spacing:.02em;transition:opacity .6s}
+
+  .title{font-family:Fraunces,serif;font-size:26px;font-weight:400;letter-spacing:-.01em}
+  .sub{margin-top:6px;font-size:14px;color:var(--ink-soft)}
+
+  .progress{margin-top:24px}
+  .track{position:relative;height:4px;border-radius:4px;background:rgba(255,255,255,.14);cursor:pointer}
+  .track:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
+  .fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:inherit;background:linear-gradient(90deg,#c9a7d6,var(--accent))}
+  .knob{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--ink);transform:translate(-50%,-50%);left:0;
+    box-shadow:0 0 0 4px rgba(255,255,255,.12)}
+  .times{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+
+  .controls{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:28px}
+  .icon-btn{appearance:none;border:0;background:none;color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;
+    width:40px;height:40px;border-radius:50%;transition:color .3s,background .3s}
+  .icon-btn:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+  .icon-btn svg{width:20px;height:20px}
+  .play{width:64px;height:64px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;
+    background:var(--ink);color:#1a2030;box-shadow:0 10px 30px -8px rgba(0,0,0,.4);transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+  .play:hover{transform:scale(1.05)}
+  .play:focus-visible,.icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .play svg{width:22px;height:22px}
+  .play .i-pause{display:none}
+  .card.playing .play .i-play{display:none}
+  .card.playing .play .i-pause{display:block}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:900px){
+    .navlinks{display:none}
+    .hero{grid-template-columns:1fr;padding-top:40px;gap:48px}
+    .card{justify-self:stretch;max-width:none}
+    .vignette{background:linear-gradient(180deg,rgba(14,18,28,.5) 0%,rgba(14,18,28,.2) 50%,rgba(14,18,28,.5) 100%)}
+  }
+  @media (max-width:480px){
+    .page{padding-top:24px}
+    .card{padding:22px;border-radius:24px}
+    .orb{width:136px;height:136px}
+    .btn{width:100%;justify-content:center}
+    .cta-row{gap:16px}
+    .reflect{width:50vw}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .glow,.reflect,.card.playing .orb,.card.playing .dot{animation:none !important}
+    .btn,.btn svg,.play{transition:none}
+  }
+</style>
+</head>
+<body>
+  <div class="scene" aria-hidden="true">
+    <div class="glow violet"></div>
+    <div class="glow sun"></div>
+    <div class="glow teal"></div>
+    <svg class="hills" viewBox="0 0 1600 100" preserveAspectRatio="none">
+      <path d="M0 100 L0 62 C120 48 220 40 340 52 C460 64 540 30 680 34 C820 38 900 70 1040 66 C1180 62 1260 42 1400 46 C1500 49 1560 58 1600 60 L1600 100Z" fill="#2c3149" opacity=".85"/>
+      <path d="M0 100 L0 80 C160 70 300 74 460 82 C620 90 760 72 920 76 C1100 80 1260 88 1420 82 C1520 78 1570 80 1600 82 L1600 100Z" fill="#232a3d"/>
+    </svg>
+    <div class="horizon"></div>
+    <div class="reflect"></div>
+    <div class="vignette"></div>
+    <div class="grain"></div>
+  </div>
+
+  <div class="page">
+    <nav>
+      <div class="brand">
+        <svg viewBox="0 0 26 26" fill="none" aria-hidden="true"><circle cx="13" cy="10" r="6" fill="#f2c6a5"/><path d="M3 17h20M6 20.5h14M9.5 24h7" stroke="#f3efe8" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Stillwater
+      </div>
+      <div class="navlinks"><a href="#">Sessions</a><a href="#">Sleep</a><a href="#">Teachers</a><a href="#">Sign in</a></div>
+    </nav>
+
+    <main class="hero">
+      <section>
+        <p class="eyebrow">Guided meditation</p>
+        <h1>Let the day <em>settle</em> before you do.</h1>
+        <p class="lede">Short, unhurried sessions that meet you where you are, morning or night.</p>
+        <div class="cta-row">
+          <button class="btn" type="button">Start a session
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="meta">Free for 14 days</span>
+        </div>
+      </section>
+
+      <aside class="card" id="player" aria-label="Now playing">
+        <div class="card-top">
+          <span class="live"><span class="dot"></span>Now playing</span>
+          <span>Session 3 of 7</span>
+        </div>
+        <div class="orb-wrap">
+          <div class="orb"></div>
+          <div class="breath-cue" id="cue" aria-live="polite">Press play when you're ready</div>
+        </div>
+        <h2 class="title">Evening wind-down</h2>
+        <p class="sub">With Maya Torres &middot; 12 min</p>
+        <div class="progress">
+          <div class="track" id="track" role="slider" tabindex="0" aria-label="Session progress" aria-valuemin="0" aria-valuemax="720" aria-valuenow="0">
+            <div class="fill" id="fill"></div>
+            <div class="knob" id="knob"></div>
+          </div>
+          <div class="times"><span id="elapsed">0:00</span><span id="remain">-12:00</span></div>
+        </div>
+        <div class="controls">
+          <button class="icon-btn" id="back" type="button" aria-label="Back 15 seconds">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><text x="12" y="15.2" font-size="6.5" text-anchor="middle" fill="currentColor" font-family="Inter">15</text></svg>
+          </button>
+          <button class="play" id="play" type="button" aria-label="Play">
+            <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>
+            <svg class="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.6" height="14" rx="1" fill="currentColor"/><rect x="13.9" y="5" width="3.6" height="14" rx="1" fill="currentColor"/></svg>
+          </button>
+          <button class="icon-btn" id="fwd" type="button" aria-label="Forward 15 seconds">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><text x="12" y="15.2" font-size="6.5" text-anchor="middle" fill="currentColor" font-family="Inter">15</text></svg>
+          </button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+<script>
+(function(){
+  var TOTAL = 12 * 60, t = 0, playing = false, last = 0, raf = 0;
+  var card = document.getElementById('player'), play = document.getElementById('play');
+  var fill = document.getElementById('fill'), knob = document.getElementById('knob'), track = document.getElementById('track');
+  var el = document.getElementById('elapsed'), rem = document.getElementById('remain'), cue = document.getElementById('cue');
+  function fmt(s){ s = Math.max(0, Math.round(s)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+  function render(){
+    var p = t / TOTAL * 100;
+    fill.style.width = p + '%'; knob.style.left = p + '%';
+    el.textContent = fmt(t); rem.textContent = '-' + fmt(TOTAL - t);
+    track.setAttribute('aria-valuenow', Math.round(t));
+    track.setAttribute('aria-valuetext', fmt(t) + ' of 12:00');
+    if (playing) cue.textContent = (Math.floor(t / 5) % 2 === 0) ? 'Breathe in' : 'Breathe out';
+  }
+  function tick(now){
+    if (!playing) return;
+    t = Math.min(TOTAL, t + (now - last) / 1000); last = now;
+    render();
+    if (t >= TOTAL) { setPlaying(false); cue.textContent = 'Session complete'; return; }
+    raf = requestAnimationFrame(tick);
+  }
+  function setPlaying(v){
+    playing = v; card.classList.toggle('playing', v);
+    play.setAttribute('aria-label', v ? 'Pause' : 'Play');
+    cancelAnimationFrame(raf);
+    if (v) { if (t >= TOTAL) t = 0; last = performance.now(); raf = requestAnimationFrame(tick); }
+    else if (t > 0 && t < TOTAL) cue.textContent = 'Paused';
+    render();
+  }
+  function seek(s){ t = Math.max(0, Math.min(TOTAL, s)); render(); }
+  play.addEventListener('click', function(){ setPlaying(!playing); });
+  document.getElementById('back').addEventListener('click', function(){ seek(t - 15); });
+  document.getElementById('fwd').addEventListener('click', function(){ seek(t + 15); });
+  track.addEventListener('click', function(e){ var r = track.getBoundingClientRect(); seek((e.clientX - r.left) / r.width * TOTAL); });
+  track.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight') { seek(t + 15); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { seek(t - 15); e.preventDefault(); }
+  });
+  document.querySelector('.btn').addEventListener('click', function(){ if (!playing) setPlaying(true); });
+  seek(4 * 60 + 12); // start mid-session so the card reads as "in progress"
+  cue.textContent = 'Press play to continue';
+})();
+</script>
+</body>
+</html>
