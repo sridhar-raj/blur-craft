@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas Stays</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1d1712;
+  --ink-2:#4a4037;
+  --ink-3:#6b5f54;
+  --paper:#fbf7f1;
+  --paper-2:#f3ece2;
+  --line:rgba(29,23,18,.12);
+  --accent:#b4532a;
+  --accent-ink:#fff;
+  --gold:#e9a54a;
+  --night:#17131c;
+  --serif:"Fraunces", Georgia, serif;
+  --sans:"Manrope", system-ui, -apple-system, Segoe UI, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit;color:inherit}
+
+/* ---------- NAV ---------- */
+.nav{position:fixed;inset:0 0 auto 0;z-index:50;height:76px;display:flex;align-items:center;
+  padding:0 56px;color:#fff;transition:background .35s ease, color .35s ease, box-shadow .35s ease, height .35s ease}
+.nav::before{ /* readability scrim while transparent over the sky */
+  content:"";position:absolute;inset:0 0 -40px 0;z-index:-1;pointer-events:none;
+  background:linear-gradient(to bottom, rgba(18,14,26,.55), rgba(18,14,26,0));transition:opacity .35s}
+.nav.scrolled{height:64px;color:var(--ink);background:rgba(251,247,241,.78);
+  -webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);
+  box-shadow:0 1px 0 var(--line), 0 10px 30px -18px rgba(40,25,10,.35)}
+.nav.scrolled::before{opacity:0}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .nav.scrolled{background:rgba(251,247,241,.97)}
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.01em}
+.brand svg{width:26px;height:26px}
+.nav-links{display:flex;gap:34px;margin-left:64px;font-size:14.5px;font-weight:500}
+.nav-links a{opacity:.92;position:relative;padding:6px 0}
+.nav-links a:hover{opacity:1}
+.nav-links a.active::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.5px;background:currentColor}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:22px;font-size:14.5px;font-weight:500}
+.btn-pill{height:40px;padding:0 18px;border-radius:999px;display:inline-flex;align-items:center;font-weight:600;
+  background:#fff;color:var(--ink);border:0;cursor:pointer;transition:transform .2s}
+.nav.scrolled .btn-pill{background:var(--ink);color:#fff}
+.btn-pill:hover{transform:translateY(-1px)}
+.menu-btn{display:none;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:transparent;cursor:pointer;align-items:center;justify-content:center}
+.nav.scrolled .menu-btn{border-color:var(--line)}
+
+/* ---------- HERO ---------- */
+.hero{position:relative;height:100vh;min-height:760px;max-height:1100px;overflow:hidden;color:#fff;isolation:isolate}
+.scene{position:absolute;inset:0;width:100%;height:100%;z-index:-2;display:block}
+.hero::after{ /* left + bottom scrims: keep type legible without hiding the town */
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:
+    linear-gradient(100deg, rgba(20,14,28,.62) 0%, rgba(20,14,28,.32) 34%, rgba(20,14,28,0) 58%),
+    linear-gradient(to top, rgba(18,12,10,.55) 0%, rgba(18,12,10,0) 32%)}
+.hero-inner{position:relative;height:100%;max-width:1600px;margin:0 auto;padding:0 56px}
+.copy{position:absolute;left:56px;top:136px;max-width:620px}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.35)}
+.eyebrow i{width:28px;height:1.5px;background:var(--gold);display:block}
+h1{font-family:var(--serif);font-weight:400;font-size:84px;line-height:.98;letter-spacing:-.025em;margin:22px 0 22px;
+  text-shadow:0 2px 30px rgba(10,6,20,.35)}
+h1 em{font-style:italic;font-weight:400;color:#ffd9a3}
+.lede{font-size:18px;line-height:1.55;max-width:470px;color:#fff;text-shadow:0 1px 14px rgba(0,0,0,.45)}
+
+/* search */
+.search{position:absolute;left:56px;bottom:64px;width:min(900px, calc(100% - 112px - 420px));min-width:760px;
+  display:grid;grid-template-columns:1.35fr 1.1fr .9fr auto;align-items:center;
+  padding:10px;border-radius:22px;color:var(--ink);
+  background:rgba(252,249,244,.9);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 0 0 1px rgba(255,255,255,.35), 0 30px 60px -24px rgba(30,15,5,.55)}
+.field{display:flex;flex-direction:column;gap:3px;padding:12px 22px;border-radius:14px;cursor:pointer;position:relative;transition:background .2s}
+.field + .field::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:1px;background:var(--line)}
+.field:hover{background:rgba(29,23,18,.05)}
+.field label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.field input{border:0;background:transparent;outline:none;font-size:16px;font-weight:600;color:var(--ink);width:100%;padding:0}
+.field input::placeholder{color:var(--ink-3);font-weight:500}
+.field .val{font-size:16px;font-weight:600;color:var(--ink);white-space:nowrap}
+.go{height:60px;padding:0 28px;border:0;border-radius:15px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;
+  display:inline-flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 10px 22px -10px rgba(180,83,42,.9);transition:transform .2s, background .2s}
+.go:hover{background:#9f4520;transform:translateY(-1px)}
+.go svg{width:18px;height:18px}
+
+/* featured card */
+.feature{position:absolute;right:56px;bottom:64px;width:360px;border-radius:24px;overflow:hidden;color:var(--ink);
+  background:rgba(252,249,244,.9);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 0 0 1px rgba(255,255,255,.35), 0 30px 60px -24px rgba(30,15,5,.6)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .search,.feature{background:rgba(252,249,244,.98)}
+}
+.feature .ph{position:relative;height:168px;margin:8px 8px 0;border-radius:18px;overflow:hidden}
+.feature .ph svg{display:block;width:100%;height:100%}
+.tag{position:absolute;left:12px;top:12px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;letter-spacing:.02em}
+.heart{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;background:#fff;border:0;display:grid;place-items:center;cursor:pointer}
+.heart svg{width:16px;height:16px}
+.feature .body{padding:16px 20px 20px}
+.row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.feature h3{font-family:var(--serif);font-weight:500;font-size:24px;letter-spacing:-.01em}
+.rating{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:700;white-space:nowrap}
+.rating svg{width:14px;height:14px;fill:var(--accent)}
+.rating span{color:var(--ink-2);font-weight:500}
+.loc{font-size:14.5px;color:var(--ink-2);margin-top:4px}
+.feature .foot{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.price{font-size:15px;color:var(--ink-2)}
+.price b{font-size:22px;color:var(--ink);font-weight:700;letter-spacing:-.01em}
+.link{font-size:14.5px;font-weight:700;color:var(--accent);display:inline-flex;align-items:center;gap:6px}
+.link svg{width:16px;height:16px}
+
+/* ---------- STAYS ---------- */
+.stays{max-width:1600px;margin:0 auto;padding:96px 56px 110px}
+.stays-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:40px}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.stays h2{font-family:var(--serif);font-weight:400;font-size:52px;line-height:1.04;letter-spacing:-.02em;margin-top:12px;max-width:640px}
+.stays-head p{max-width:380px;color:var(--ink-2);font-size:16.5px;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.card{background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 0 0 1px var(--line), 0 24px 40px -32px rgba(60,35,10,.45);transition:transform .35s ease, box-shadow .35s}
+.card:hover{transform:translateY(-4px);box-shadow:0 0 0 1px var(--line), 0 34px 50px -30px rgba(60,35,10,.5)}
+.card .ph{position:relative;aspect-ratio:16/11;overflow:hidden}
+.card .ph svg{display:block;width:100%;height:100%;transition:transform .8s ease}
+.card:hover .ph svg{transform:scale(1.04)}
+.card .body{padding:20px 22px 22px}
+.card h3{font-family:var(--serif);font-weight:500;font-size:24px;letter-spacing:-.01em}
+.card .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-size:13px;font-weight:600;color:var(--ink-2);background:var(--paper-2);padding:6px 10px;border-radius:999px}
+.card .foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px}
+.ghost{height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.ghost:hover{border-color:var(--ink)}
+
+footer{border-top:1px solid var(--line);padding:28px 56px;display:flex;justify-content:space-between;color:var(--ink-2);font-size:14px;max-width:1600px;margin:0 auto}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width:1280px){
+  h1{font-size:68px}
+  .search{min-width:0;width:calc(100% - 112px - 400px)}
+  .search{grid-template-columns:1fr 1fr;row-gap:2px}
+  .search .field:nth-child(3)::before{display:none}
+  .go{grid-column:span 2;justify-content:center;margin-top:4px}
+}
+@media (max-width:980px){
+  .nav{padding:0 20px}
+  .nav-links,.nav-right .hide-sm{display:none}
+  .menu-btn{display:inline-flex}
+  .hero{height:auto;max-height:none;min-height:0}
+  .hero-inner{padding:108px 20px 28px;display:flex;flex-direction:column;gap:22px}
+  .copy,.search,.feature{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:100%;min-width:0;max-width:none}
+  .copy{margin-bottom:150px}
+  .hero::after{background:
+    linear-gradient(to bottom, rgba(20,14,28,.6) 0%, rgba(20,14,28,.25) 38%, rgba(20,14,28,0) 52%),
+    linear-gradient(to top, rgba(18,12,10,.6) 0%, rgba(18,12,10,0) 45%)}
+  .stays{padding:64px 20px 72px}
+  .stays-head{flex-direction:column;align-items:start}
+  .grid{grid-template-columns:1fr;gap:20px}
+  footer{padding:24px 20px;flex-direction:column;gap:8px}
+}
+@media (max-width:560px){
+  h1{font-size:46px}
+  .lede{font-size:16.5px}
+  .search{grid-template-columns:1fr;padding:8px}
+  .field{padding:12px 16px}
+  .field + .field::before{left:16px;right:16px;top:0;bottom:auto;width:auto;height:1px}
+  .search .field:nth-child(3)::before{display:block}
+  .go{grid-column:auto;height:56px}
+  .feature{width:100%}
+  .stays h2{font-size:38px}
+  .nav-right{gap:10px}
+  .btn-pill{height:38px;padding:0 14px;font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="16" cy="16" r="13"/><path d="M3 16h26M16 3c4 4 6 8.5 6 13s-2 9-6 13c-4-4-6-8.5-6-13s2-9 6-13z"/></svg>
+    Atlas Stays
+  </a>
+  <nav class="nav-links">
+    <a class="active" href="#">Stays</a><a href="#">Journeys</a><a href="#">Collections</a><a href="#">Journal</a>
+  </nav>
+  <div class="nav-right">
+    <a class="hide-sm" href="#">List your property</a>
+    <a class="hide-sm" href="#">Sign in</a>
+    <button class="btn-pill">Join Atlas</button>
+    <button class="menu-btn" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16M4 16h16"/></svg></button>
+  </div>
+</header>
+
+<section class="hero">
+  <svg class="scene" id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+  <div class="hero-inner">
+    <div class="copy">
+      <div class="eyebrow"><i></i>Small hotels, chosen by hand</div>
+      <h1>Stay somewhere <em>worth</em> the journey.</h1>
+      <p class="lede">412 independent hotels along Europe’s quieter coasts, each one visited by our editors before it joins the collection.</p>
+    </div>
+
+    <form class="search" onsubmit="return false">
+      <div class="field"><label for="dest">Destination</label><input id="dest" placeholder="Where to?" value="Comporta, Portugal"></div>
+      <div class="field"><label>Dates</label><span class="val">12 – 16 May</span></div>
+      <div class="field"><label>Guests</label><span class="val">2 adults</span></div>
+      <button class="go" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search</button>
+    </form>
+
+    <article class="feature">
+      <div class="ph">
+        <svg id="ph-feature" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"></svg>
+        <span class="tag">Featured stay</span>
+        <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" fill="none" stroke="#1d1712" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+      </div>
+      <div class="body">
+        <div class="row"><h3>Casa Albeira</h3><span class="rating"><svg viewBox="0 0 24 24"><path d="m12 2.8 2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z"/></svg>4.9 <span>(212)</span></span></div>
+        <p class="loc">Comporta, Portugal · 9 rooms by the rice fields</p>
+        <div class="foot">
+          <span class="price"><b>€240</b> / night</span>
+          <a class="link" href="#">View stay <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="stays">
+  <div class="stays-head">
+    <div>
+      <div class="kicker">New this season</div>
+      <h2>Three more places we can’t stop thinking about</h2>
+    </div>
+    <p>Fewer than twenty rooms each, run by the people who own them. Free cancellation up to 7 days before arrival.</p>
+  </div>
+  <div class="grid">
+    <article class="card">
+      <div class="ph"><svg id="ph-1" viewBox="0 0 400 275" preserveAspectRatio="xMidYMid slice"></svg></div>
+      <div class="body">
+        <div class="row"><h3>Monte Branco</h3><span class="rating"><svg viewBox="0 0 24 24"><path d="m12 2.8 2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z"/></svg>4.8</span></div>
+        <p class="loc">Alentejo, Portugal</p>
+        <div class="meta"><span class="chip">Pool</span><span class="chip">12 rooms</span><span class="chip">Farm kitchen</span></div>
+        <div class="foot"><span class="price"><b>€195</b> / night</span><button class="ghost">View stay</button></div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="ph"><svg id="ph-2" viewBox="0 0 400 275" preserveAspectRatio="xMidYMid slice"></svg></div>
+      <div class="body">
+        <div class="row"><h3>Quinta das Videiras</h3><span class="rating"><svg viewBox="0 0 24 24"><path d="m12 2.8 2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z"/></svg>4.9</span></div>
+        <p class="loc">Douro Valley, Portugal</p>
+        <div class="meta"><span class="chip">Vineyard</span><span class="chip">8 rooms</span><span class="chip">Wine cellar</span></div>
+        <div class="foot"><span class="price"><b>€310</b> / night</span><button class="ghost">View stay</button></div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="ph"><svg id="ph-3" viewBox="0 0 400 275" preserveAspectRatio="xMidYMid slice"></svg></div>
+      <div class="body">
+        <div class="row"><h3>Casa do Penedo</h3><span class="rating"><svg viewBox="0 0 24 24"><path d="m12 2.8 2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z"/></svg>4.7</span></div>
+        <p class="loc">Madeira, Portugal</p>
+        <div class="meta"><span class="chip">Sea view</span><span class="chip">6 rooms</span><span class="chip">Cliff path</span></div>
+        <div class="foot"><span class="price"><b>€280</b> / night</span><button class="ghost">View stay</button></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<footer><span>© 2026 Atlas Stays</span><span>Prices include taxes · Lisbon · London · Milan</span></footer>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  let seed=7;
+  const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+  const R=(a,b)=>a+rnd()*(b-a);
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+
+  /* ================= HERO TOWN ================= */
+  const W=1600,H=900,HZ=540, SUNX=1120, SUNY=470;
+  const out=[];
+  out.push(`<defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2447"/><stop offset=".28" stop-color="#5b3e62"/>
+      <stop offset=".5" stop-color="#b75f55"/><stop offset=".66" stop-color="#ee9a56"/>
+      <stop offset=".8" stop-color="#ffd08a"/><stop offset="1" stop-color="#ffe2b0"/>
+    </linearGradient>
+    <radialGradient id="sunglow" cx="${SUNX}" cy="${SUNY}" r="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff4d6" stop-opacity=".95"/><stop offset=".12" stop-color="#ffd38a" stop-opacity=".7"/>
+      <stop offset=".4" stop-color="#f59a52" stop-opacity=".25"/><stop offset="1" stop-color="#f59a52" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9a776"/><stop offset=".12" stop-color="#b9786e"/>
+      <stop offset=".45" stop-color="#5c4a66"/><stop offset="1" stop-color="#2a2540"/>
+    </linearGradient>
+    <linearGradient id="path" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff1cf" stop-opacity=".9"/><stop offset="1" stop-color="#ffcf8a" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4a3a3c"/><stop offset="1" stop-color="#7c5a48"/>
+    </linearGradient>
+    <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffcf98" stop-opacity="0"/><stop offset="1" stop-color="#ffcf98" stop-opacity=".35"/>
+    </linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>`);
+  out.push(`<rect width="${W}" height="${HZ}" fill="url(#sky)"/>`);
+  out.push(`<rect width="${W}" height="${H}" fill="url(#sunglow)"/>`);
+  // stars at top
+  for(let i=0;i<40;i++) out.push(`<circle cx="${R(0,W)}" cy="${R(0,150)}" r="${R(.5,1.2)}" fill="#fff" opacity="${R(.15,.5)}"/>`);
+  // clouds: long streaks lit from below
+  const cloud=(x,y,w,c,o)=>{let s=`<g opacity="${o}">`;for(let i=0;i<6;i++){const cw=w*R(.35,.8);s+=`<ellipse cx="${x+R(-w/3,w/3)}" cy="${y+R(-6,6)}" rx="${cw/2}" ry="${R(3,8)}" fill="${c}"/>`}return s+`</g>`};
+  out.push(cloud(1250,250,380,"#ffb27a",.55),cloud(900,320,300,"#ffc58f",.5),cloud(1450,360,260,"#ffd6a0",.55),cloud(700,200,260,"#c77a78",.45),cloud(300,120,420,"#7a5374",.5));
+  out.push(`<circle cx="${SUNX}" cy="${SUNY}" r="38" fill="#fff6dc"/><circle cx="${SUNX}" cy="${SUNY}" r="56" fill="#ffe7b0" opacity=".35"/>`);
+  // distant headlands right
+  out.push(`<path d="M1180 ${HZ} L1240 ${HZ-14} 1300 ${HZ-20} 1380 ${HZ-36} 1460 ${HZ-30} 1540 ${HZ-46} 1600 ${HZ-42} 1600 ${HZ} Z" fill="#b97566" opacity=".75"/>`);
+  out.push(`<path d="M1320 ${HZ} L1400 ${HZ-12} 1500 ${HZ-18} 1600 ${HZ-26} 1600 ${HZ} Z" fill="#9d6060" opacity=".8"/>`);
+  // sea
+  out.push(`<rect y="${HZ}" width="${W}" height="${H-HZ}" fill="url(#sea)"/>`);
+  out.push(`<path d="M${SUNX-30} ${HZ} L${SUNX+30} ${HZ} L${SUNX+260} ${H} L${SUNX-260} ${H} Z" fill="url(#path)" opacity=".55"/>`);
+  // glints
+  for(let i=0;i<520;i++){
+    const t=Math.pow(rnd(),1.6), y=HZ+3+t*(H-HZ);
+    const spread=30+t*520, x=SUNX+R(-1,1)*spread*Math.pow(rnd(),.7);
+    const near=1-Math.min(1,Math.abs(x-SUNX)/(spread+1));
+    const w=R(4,18)*(0.4+t*1.6);
+    out.push(`<rect x="${x-w/2}" y="${y}" width="${w}" height="${.8+t*1.6}" rx="1" fill="${near>.5?'#fff3d4':'#f7b98a'}" opacity="${(.25+near*.7)*(1-t*.5)}"/>`);
+  }
+  // swell lines across
+  for(let i=0;i<70;i++){const t=rnd(),y=HZ+8+t*t*(H-HZ);const x=R(0,W),w=R(30,140)*(.4+t);out.push(`<rect x="${x}" y="${y}" width="${w}" height="${.8+t}" fill="#2a1f35" opacity="${.12+t*.18}"/>`)}
+
+  // hill profile for the town (left / centre)
+  const hillY=x=>{
+    const a=Math.exp(-Math.pow((x-480)/460,2));
+    const b=Math.exp(-Math.pow((x-820)/240,2));
+    return 712-200*a-60*b;
+  };
+  // back ridge
+  let d=`M0 ${H} L0 ${hillY(0)-70}`;
+  for(let x=0;x<=1120;x+=20) d+=` L${x} ${hillY(x)-60+Math.sin(x/37)*6}`;
+  d+=` L1180 ${HZ+6} L1180 ${H} Z`;
+  out.push(`<path d="${d}" fill="#5a3f4a"/>`);
+  out.push(`<path d="${d}" fill="url(#haze)"/>`);
+  // umbrella pines on back ridge
+  for(let x=30;x<1100;x+=R(38,90)){
+    const y=hillY(x)-56+Math.sin(x/37)*6; const k=R(.6,1.1);
+    out.push(`<path d="M${x} ${y+6} l${1.5*k} ${-17*k}" stroke="#36262f" stroke-width="${2*k}"/><ellipse cx="${x-5*k}" cy="${y-17*k}" rx="${13*k}" ry="${5.5*k}" fill="#3a2a34"/><ellipse cx="${x+8*k}" cy="${y-19*k}" rx="${14*k}" ry="${6*k}" fill="#3a2a34"/><ellipse cx="${x+9*k}" cy="${y-22*k}" rx="${9*k}" ry="${3*k}" fill="#7a5244" opacity=".5"/>`);
+  }
+  // main hill
+  d=`M0 ${H} L0 ${hillY(0)}`;
+  for(let x=0;x<=1160;x+=16) d+=` L${x} ${hillY(x)}`;
+  d+=` L1200 ${HZ+30} L1200 ${H} Z`;
+  out.push(`<path d="${d}" fill="url(#hill)"/>`);
+
+  // houses, back to front
+  const walls=["#f7ead6","#f3dcc0","#fbefe0","#efc89c","#f1d2b2","#e7b48a","#f6e2c8","#f4d7c9","#e9c7a3"];
+  const roofs=["#b5502e","#a8472a","#c0613a","#9c4028","#b85a36"];
+  const houses=[];
+  for(let row=0;row<15;row++){
+    const step=R(30,46);
+    for(let x=-10;x<1150;x+=step*R(.7,1.15)){
+      const base=hillY(x);
+      const yTop=base+12+row*20;
+      if(yTop>HZ+70 && x>900) continue;
+      if(yTop>820) continue;
+      houses.push({x:x+R(-6,6),y:yTop+R(-4,4),w:R(26,52),h:R(22,40),row});
+    }
+  }
+  houses.sort((a,b)=>a.y-b.y);
+  const sunDir=1; // sun to the right: right faces lit, left faces shaded
+  for(const h of houses){
+    const wall=pick(walls), roof=pick(roofs), sd=h.w*R(.25,.45);
+    const g=[];
+    const X=h.x,Y=h.y,w=h.w,hh=h.h;
+    // side (shaded) face on the left
+    g.push(`<path d="M${X-sd} ${Y+4} L${X} ${Y} L${X} ${Y+hh} L${X-sd} ${Y+hh+3} Z" fill="${wall}" />`);
+    g.push(`<path d="M${X-sd} ${Y+4} L${X} ${Y} L${X} ${Y+hh} L${X-sd} ${Y+hh+3} Z" fill="#5a3048" opacity=".42"/>`);
+    // front (lit)
+    g.push(`<rect x="${X}" y="${Y}" width="${w}" height="${hh}" fill="${wall}"/>`);
+    g.push(`<rect x="${X}" y="${Y}" width="${w}" height="${hh}" fill="#ffb36b" opacity=".18"/>`);
+    // roof
+    if(rnd()<.72){
+      const rh=R(7,13);
+      g.push(`<path d="M${X-2} ${Y} L${X+w*.5} ${Y-rh} L${X+w+2} ${Y} Z" fill="${roof}"/>`);
+      g.push(`<path d="M${X-sd-1} ${Y+4} L${X-sd*.5+w*.5*0} ${Y-rh+2} L${X+w*.5} ${Y-rh} L${X-2} ${Y} Z" fill="${roof}" />`);
+      g.push(`<path d="M${X-sd-1} ${Y+4} L${X-sd*.5} ${Y-rh+2} L${X+w*.5} ${Y-rh} L${X-2} ${Y} Z" fill="#3a1a20" opacity=".35"/>`);
+      g.push(`<path d="M${X-2} ${Y} L${X+w+2} ${Y}" stroke="#3a1a20" stroke-opacity=".3" stroke-width="1.5"/>`);
+    }else{
+      g.push(`<rect x="${X-1}" y="${Y-3}" width="${w+2}" height="3" fill="${wall}"/><rect x="${X-1}" y="${Y}" width="${w+2}" height="2" fill="#5a3048" opacity=".25"/>`);
+    }
+    // windows & door
+    const cols=Math.max(1,Math.floor(w/13)), rows=hh>30?2:1;
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      if(rnd()<.18) continue;
+      const wx=X+5+c*((w-10)/cols)+((w-10)/cols-5)/2, wy=Y+6+r*14;
+      const lit=rnd()<.16;
+      g.push(`<rect x="${wx}" y="${wy}" width="4.5" height="7" rx=".8" fill="${lit?'#ffcf6e':'#3b2a33'}" opacity="${lit?1:.78}"/>`);
+      if(!lit && rnd()<.4) g.push(`<rect x="${wx-1.5}" y="${wy}" width="1.5" height="7" fill="${pick(['#3f6f73','#4f6b8a','#2f5d55'])}"/>`);
+    }
+    if(rnd()<.5) g.push(`<rect x="${X+w*R(.2,.7)}" y="${Y+hh-9}" width="5" height="9" fill="#3b2a33" opacity=".8"/>`);
+    // contact shadow
+    g.push(`<rect x="${X-sd}" y="${Y+hh}" width="${w+sd}" height="3" fill="#2a1a22" opacity=".35"/>`);
+    out.push(g.join(""));
+    // occasional cypress / bougainvillea
+    if(rnd()<.12){const cx=X+w+R(2,8),cy=Y+hh;const th=R(26,44);out.push(`<path d="M${cx} ${cy} C${cx-6} ${cy-th*.4} ${cx-3} ${cy-th*.9} ${cx} ${cy-th} C${cx+3} ${cy-th*.9} ${cx+6} ${cy-th*.4} ${cx} ${cy}Z" fill="#2f3a2a"/><path d="M${cx} ${cy} C${cx+4} ${cy-th*.4} ${cx+3} ${cy-th*.9} ${cx} ${cy-th}" stroke="#7b6a3a" stroke-opacity=".5" fill="none"/>`)}
+    if(rnd()<.08) out.push(`<circle cx="${X+R(0,w)}" cy="${Y+hh-4}" r="${R(4,7)}" fill="#c43c6a" opacity=".85"/>`);
+  }
+  // church on the crest
+  (function(){
+    const cx=760, by=hillY(760)+18;
+    out.push(`<g>
+      <rect x="${cx-40}" y="${by-58}" width="80" height="58" fill="#fbf0e0"/><rect x="${cx-40}" y="${by-58}" width="80" height="58" fill="#ffb36b" opacity=".2"/>
+      <path d="M${cx-46} ${by-58} L${cx} ${by-82} L${cx+46} ${by-58}Z" fill="#a8472a"/>
+      <rect x="${cx+22}" y="${by-128}" width="30" height="128" fill="#fbf0e0"/><rect x="${cx+22}" y="${by-128}" width="10" height="128" fill="#5a3048" opacity=".3"/>
+      <rect x="${cx+30}" y="${by-112}" width="12" height="18" rx="6" fill="#3b2a33"/>
+      <path d="M${cx+18} ${by-128} h38 l-4 -6 h-30z" fill="#e6c9a5"/>
+      <path d="M${cx+22} ${by-134} q15 -30 30 0z" fill="#d8a46a"/>
+      <path d="M${cx+37} ${by-162} v-14 M${cx+32} ${by-171} h10" stroke="#3b2a33" stroke-width="2"/>
+      <circle cx="${cx}" cy="${by-62}" r="7" fill="#3b2a33"/>
+      <rect x="${cx-8}" y="${by-22}" width="16" height="22" rx="8" fill="#3b2a33"/>
+    </g>`);
+  })();
+  // harbour wall + quay
+  out.push(`<path d="M0 760 L640 742 L980 700 L1200 690 L1210 705 L990 718 L650 760 L0 780Z" fill="#7a5a4a"/>`);
+  out.push(`<path d="M0 760 L640 742 L980 700 L1200 690 L1200 694 L980 704 L640 746 L0 764Z" fill="#f2c592" opacity=".7"/>`);
+  out.push(`<rect x="0" y="780" width="${W}" height="${H-780}" fill="#2b2238" opacity=".0"/>`);
+  // water in front of quay
+  out.push(`<path d="M0 780 L650 760 L990 718 L1210 705 L1600 705 L1600 900 L0 900Z" fill="url(#sea)" opacity=".92"/>`);
+  for(let i=0;i<160;i++){const x=R(0,1300),y=R(790,900),w=R(8,40);out.push(`<rect x="${x}" y="${y}" width="${w}" height="1.2" fill="#ffd9a8" opacity="${R(.08,.3)}"/>`)}
+  // boats
+  const boat=(x,y,s,hull,mast)=>{
+    let b=`<g transform="translate(${x} ${y}) scale(${s})">`;
+    b+=`<path d="M-30 0 L30 0 L22 10 L-24 10Z" fill="${hull}"/><path d="M-30 0 L30 0 L29 2 L-29 2Z" fill="#fff" opacity=".6"/>`;
+    b+=`<rect x="-10" y="-8" width="16" height="8" fill="#f5e6cf"/>`;
+    if(mast){b+=`<path d="M4 -8 V-70" stroke="#3b2a33" stroke-width="1.5"/><path d="M5 -66 L5 -14 L28 -14Z" fill="#fbeedb" opacity=".95"/>`}
+    b+=`<g opacity=".35" transform="scale(1 -0.6) translate(0 -34)"><path d="M-30 0 L30 0 L22 10 L-24 10Z" fill="${hull}"/></g>`;
+    return b+`</g>`;
+  };
+  out.push(boat(220,800,1,"#2f5d6b",true),boat(420,812,.9,"#b5502e",false),boat(560,790,.75,"#e9e1d2",true),boat(760,770,.7,"#3f6f73",false),boat(1360,640,.45,"#f5ece0",true),boat(1490,600,.32,"#f5ece0",true));
+  // birds
+  for(let i=0;i<7;i++){const x=R(820,1050),y=R(250,360),s=R(4,8);out.push(`<path d="M${x-s} ${y} q${s/2} ${-s/2} ${s} 0 q${s/2} ${-s/2} ${s} 0" stroke="#3a2238" stroke-width="1.4" fill="none"/>`)}
+  // lamp posts along quay
+  for(let x=60;x<960;x+=95){const y=758-x*.028-(x>640?(x-640)*.12:0);out.push(`<path d="M${x} ${y} v-22" stroke="#2a1f2a" stroke-width="1.6"/><circle cx="${x}" cy="${y-24}" r="2.6" fill="#ffd27a"/><circle cx="${x}" cy="${y-24}" r="9" fill="#ffd27a" opacity=".25"/>`)}
+  // warm wash over everything
+  out.push(`<rect width="${W}" height="${H}" fill="#ff9a4a" opacity=".06"/>`);
+  document.getElementById("scene").innerHTML=out.join("");
+
+  /* ================= THUMBNAIL SCENES ================= */
+  function thumb(id, kind){
+    const el=document.getElementById(id); const vb=el.viewBox.baseVal; const w=vb.width,h=vb.height; seed=id.length*97+kind.length*13;
+    let s="";
+    const g=(k,stops)=>`<linearGradient id="${id}-${k}" x1="0" y1="0" x2="0" y2="1">${stops.map((c,i)=>`<stop offset="${i/(stops.length-1)}" stop-color="${c}"/>`).join("")}</linearGradient>`;
+    if(kind==="comporta"){ // rice fields, thatched house, stork pole, dusk
+      s+=`<defs>${g("s",["#f6b77a","#ffd9a4","#ffeccc"])}${g("f",["#a9b25e","#6f7d3c"])}</defs>`;
+      s+=`<rect width="${w}" height="${h}" fill="url(#${id}-s)"/><circle cx="${w*.72}" cy="${h*.5}" r="18" fill="#fff4dc"/>`;
+      s+=`<path d="M0 ${h*.58} Q${w*.3} ${h*.54} ${w*.6} ${h*.57} T${w} ${h*.56} V${h} H0Z" fill="#8a7a58" opacity=".6"/>`;
+      s+=`<rect y="${h*.6}" width="${w}" height="${h*.4}" fill="url(#${id}-f)"/>`;
+      for(let i=0;i<9;i++){const y=h*.62+i*i*1.3+i*2;s+=`<rect y="${y}" width="${w}" height="1.2" fill="#ffe7a8" opacity="${.25+i*.03}"/>`}
+      // house with thatch
+      s+=`<rect x="${w*.22}" y="${h*.46}" width="120" height="44" fill="#fbf2e3"/><path d="M${w*.22-8} ${h*.47} L${w*.22+60} ${h*.3} L${w*.22+128} ${h*.47}Z" fill="#8a6a3e"/><path d="M${w*.22-8} ${h*.47} L${w*.22+60} ${h*.3} L${w*.22+128} ${h*.47}" stroke="#5f4526" fill="none" stroke-width="2"/>`;
+      s+=`<rect x="${w*.22+18}" y="${h*.53}" width="14" height="22" fill="#3b4a55"/><rect x="${w*.22+52}" y="${h*.52}" width="16" height="12" fill="#3b4a55"/><rect x="${w*.22+86}" y="${h*.52}" width="16" height="12" fill="#ffcf6e"/>`;
+      s+=`<path d="M${w*.6} ${h*.62} V${h*.22}" stroke="#4a3a2c" stroke-width="3"/><ellipse cx="${w*.6}" cy="${h*.21}" rx="14" ry="5" fill="#5a4630"/><path d="M${w*.6-4} ${h*.19} q4 -14 10 -10" stroke="#f5f0e6" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+      for(let i=0;i<5;i++){const x=w*.08+i*14;s+=`<path d="M${x} ${h*.6} C${x-4} ${h*.48} ${x} ${h*.42} ${x+2} ${h*.4} C${x+4} ${h*.42} ${x+8} ${h*.48} ${x+4} ${h*.6}Z" fill="#3e4a2c"/>`}
+    }
+    if(kind==="alentejo"){ // rolling plains, white monte, cork oaks
+      s+=`<defs>${g("s",["#9cc2d8","#d9e3df","#f6e2bf"])}${g("f",["#e4c27e","#c99a52"])}</defs>`;
+      s+=`<rect width="${w}" height="${h}" fill="url(#${id}-s)"/>`;
+      s+=`<path d="M0 ${h*.55} Q${w*.25} ${h*.47} ${w*.5} ${h*.53} T${w} ${h*.5} V${h} H0Z" fill="#c7b07a"/>`;
+      s+=`<path d="M0 ${h*.66} Q${w*.35} ${h*.56} ${w*.7} ${h*.64} T${w} ${h*.62} V${h} H0Z" fill="url(#${id}-f)"/>`;
+      // monte
+      const mx=w*.46,my=h*.56;
+      s+=`<rect x="${mx}" y="${my}" width="110" height="34" fill="#fbfaf6"/><rect x="${mx-34}" y="${my+8}" width="34" height="26" fill="#eceae4"/><rect x="${mx}" y="${my+30}" width="110" height="4" fill="#2f63a8"/><rect x="${mx-34}" y="${my+30}" width="34" height="4" fill="#2f63a8"/>`;
+      s+=`<path d="M${mx-2} ${my} L${mx+55} ${my-14} L${mx+112} ${my}Z" fill="#b5502e"/><rect x="${mx+86}" y="${my-24}" width="10" height="18" fill="#fbfaf6"/>`;
+      s+=`<rect x="${mx+16}" y="${my+12}" width="9" height="12" fill="#3b4a55"/><rect x="${mx+48}" y="${my+12}" width="9" height="18" fill="#3b4a55"/><rect x="${mx+80}" y="${my+12}" width="9" height="12" fill="#3b4a55"/>`;
+      // pool
+      s+=`<path d="M${mx-10} ${h*.82} h120 l14 12 h-150z" fill="#4fb0c6"/><path d="M${mx+10} ${h*.84} h60" stroke="#c9f0f5" stroke-width="2"/>`;
+      // cork oaks
+      [[w*.14,h*.66,1],[w*.86,h*.62,.8],[w*.28,h*.58,.5]].forEach(([x,y,k])=>{s+=`<path d="M${x} ${y} v${-28*k}" stroke="#4a2f22" stroke-width="${5*k}"/><ellipse cx="${x}" cy="${y-34*k}" rx="${38*k}" ry="${16*k}" fill="#4d5a2c"/><ellipse cx="${x+8*k}" cy="${y-40*k}" rx="${24*k}" ry="${10*k}" fill="#64733a"/>`});
+    }
+    if(kind==="douro"){ // terraced vineyard valley, river
+      s+=`<defs>${g("s",["#f2c79a","#f8e1c4","#efe6d6"])}</defs>`;
+      s+=`<rect width="${w}" height="${h}" fill="url(#${id}-s)"/>`;
+      s+=`<path d="M0 ${h*.42} Q${w*.3} ${h*.28} ${w*.55} ${h*.38} T${w} ${h*.34} V${h} H0Z" fill="#b99a7c" opacity=".7"/>`;
+      const hills=[["#7f8a44",.5],["#6a7838",.62],["#566630",.76]];
+      hills.forEach(([c,y],i)=>{
+        const yy=h*y; s+=`<path d="M0 ${yy} Q${w*(.25+i*.1)} ${yy-40} ${w*.6} ${yy-10} T${w} ${yy-20} V${h} H0Z" fill="${c}"/>`;
+        for(let k=0;k<7;k++){const ly=yy+k*7+2;s+=`<path d="M0 ${ly} Q${w*(.25+i*.1)} ${ly-40+k*2} ${w*.6} ${ly-10} T${w} ${ly-20}" stroke="#2f3a1a" stroke-opacity=".35" fill="none" stroke-width="1.3"/>`}
+      });
+      s+=`<path d="M0 ${h*.92} Q${w*.4} ${h*.84} ${w} ${h*.9} V${h} H0Z" fill="#5d7f86"/><path d="M${w*.2} ${h*.92} h80 M${w*.6} ${h*.9} h50" stroke="#e8eee6" stroke-opacity=".6"/>`;
+      const qx=w*.62,qy=h*.47;
+      s+=`<rect x="${qx}" y="${qy}" width="80" height="28" fill="#fbf2e3"/><path d="M${qx-4} ${qy} L${qx+40} ${qy-14} L${qx+84} ${qy}Z" fill="#b5502e"/><rect x="${qx+10}" y="${qy+9}" width="8" height="10" fill="#3b4a55"/><rect x="${qx+36}" y="${qy+9}" width="8" height="19" fill="#3b4a55"/><rect x="${qx+62}" y="${qy+9}" width="8" height="10" fill="#ffcf6e"/>`;
+      for(let i=0;i<4;i++){const x=qx-20-i*12;s+=`<path d="M${x} ${qy+28} C${x-4} ${qy+12} ${x} ${qy} ${x+2} ${qy-4} C${x+4} ${qy} ${x+8} ${qy+12} ${x+4} ${qy+28}Z" fill="#2f3a24"/>`}
+    }
+    if(kind==="madeira"){ // cliff over deep sea, house on ledge
+      s+=`<defs>${g("s",["#7fb2d0","#bcd8e2","#f1e6d2"])}${g("o",["#2f7c9a","#1d4b66"])}</defs>`;
+      s+=`<rect width="${w}" height="${h}" fill="url(#${id}-s)"/>`;
+      s+=`<ellipse cx="${w*.3}" cy="${h*.22}" rx="60" ry="10" fill="#fff" opacity=".7"/><ellipse cx="${w*.36}" cy="${h*.2}" rx="34" ry="9" fill="#fff" opacity=".8"/>`;
+      s+=`<rect y="${h*.52}" width="${w}" height="${h*.48}" fill="url(#${id}-o)"/>`;
+      for(let i=0;i<40;i++){s+=`<rect x="${R(0,w*.6)}" y="${R(h*.55,h)}" width="${R(6,22)}" height="1.2" fill="#d8eef5" opacity="${R(.2,.5)}"/>`}
+      s+=`<path d="M${w*.52} ${h} L${w*.56} ${h*.62} L${w*.6} ${h*.5} L${w*.66} ${h*.38} L${w*.78} ${h*.3} L${w} ${h*.26} V${h}Z" fill="#4a3a34"/>`;
+      s+=`<path d="M${w*.6} ${h*.5} L${w*.66} ${h*.38} L${w*.78} ${h*.3} L${w} ${h*.26} V${h*.34} L${w*.8} ${h*.38} L${w*.68} ${h*.46}Z" fill="#5f7a34"/>`;
+      s+=`<path d="M${w*.52} ${h} L${w*.56} ${h*.62} L${w*.6} ${h*.5}" stroke="#e8d4bc" stroke-opacity=".4" fill="none" stroke-width="2"/>`;
+      const hx=w*.74,hy=h*.25;
+      s+=`<rect x="${hx}" y="${hy}" width="70" height="30" fill="#fbf7ef"/><path d="M${hx-4} ${hy} L${hx+35} ${hy-13} L${hx+74} ${hy}Z" fill="#b5502e"/><rect x="${hx+10}" y="${hy+9}" width="9" height="12" fill="#2f5d55"/><rect x="${hx+30}" y="${hy+9}" width="9" height="21" fill="#3b2a33"/><rect x="${hx+50}" y="${hy+9}" width="9" height="12" fill="#2f5d55"/>`;
+      s+=`<path d="M${w*.56} ${h*.98} q10 -6 20 0 q10 -6 20 0" stroke="#fff" stroke-opacity=".7" fill="none" stroke-width="2"/>`;
+    }
+    el.innerHTML=s;
+  }
+  thumb("ph-feature","comporta"); thumb("ph-1","alentejo"); thumb("ph-2","douro"); thumb("ph-3","madeira");
+
+  /* ================= NAV STATE ================= */
+  const nav=document.getElementById("nav");
+  const onScroll=()=>nav.classList.toggle("scrolled", window.scrollY>40);
+  onScroll(); window.addEventListener("scroll", onScroll, {passive:true});
+})();
+</script>
+</body>
+</html>

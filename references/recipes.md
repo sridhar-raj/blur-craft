@@ -104,8 +104,10 @@ Or without React: `mountLiquidGlass(el, { bezel: 26, strength: 40, blur: 2 })` f
 - Refraction only shows over detail: lines, type, photos, a grid, a live component. Over a smooth gradient
   it's invisible, so use plain glass there.
 - Liquid glass *replaces* the material's backdrop blur with its own filter, so `blur` is the whole
-  frosting: 0–3 for clear liquid glass (the bending is the point, little text), 12–20 for frosted liquid
-  glass with text on it.
+  frosting, applied inside the SVG filter before the bend: 0–6 for clear Liquid Glass (the bend is
+  visible; a word or an icon on it), 12–20 for frosted (frosts edge to edge; the bend softens into a
+  colour shift at the rim).
+- Keep text a bezel-width inside the edge, or use a narrower `bezel` (12–16) on surfaces with text.
 - Refraction shows where the rim crosses detail. Place the glass so its edge overlaps a horizon, lines,
   type or a component, not only smooth sky.
 - `strength` 30–50. Above ~60 the content tears at the rim.

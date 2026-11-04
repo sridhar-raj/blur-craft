@@ -95,6 +95,11 @@ and source, read for this skill), so start here rather than inventing numbers:
 | Floating panel or dock over art | Raycast action panel `blur(48px)`; Apple Liquid Glass (clear) | `regular` or `clear` + Liquid Glass |
 | Dialog scrim (focus veil) | Material 3: scrim at 32%. Fluent Smoke: 30% black. Raycast: 60% black + `blur(2px)` | veil 30–35% + `blur(4–6px)` |
 | Hover chip on an image | Linear `blur(8px)` over `#ffffff29` | `clear`, backdrop only on `:hover` |
+| Text-bearing panel over a detailed photo (search bar, booking card) | Measured on a test page: a busy town scene needed dim .68–.70 to pass 4.5:1 | `thick` with `--glass-dim` .65–.75, secondary text at .84+ alpha |
+
+Over a detailed photo, vivid glass and readable text pull against each other: the dim that makes the
+text pass also mutes the colour. Spend the vividness on the rim, the sheen and the light that spills
+around the glass, and let the fill be as dark as legibility needs.
 
 **Two levels, like iOS 26.1.** After Liquid Glass shipped, readers struggled with text over photos
 (NN/g, October 2025) and Apple added a Clear/Tinted switch: Tinted "increases opacity and adds more
@@ -137,7 +142,11 @@ panel:
   lens, as in Apple's Liquid Glass. It works in Chromium and falls back to frosted glass elsewhere. Use it
   on one hero control (a player, a dock, a big button), over a detailed backdrop where the bending
   shows: lines, type, a photo. Never on a dialog above a focus veil: the veil has already blurred away
-  the detail the refraction would bend, so it costs a filter and shows nothing. `aberration: 0.6–1`
+  the detail the refraction would bend, so it costs a filter and shows nothing. **Refraction and
+  frosting trade off:** the bend is only visible through clear glass (`blur` 0–6). Frosted Liquid Glass
+  (`blur` 12–20) frosts edge to edge but the bend becomes a soft colour shift at the rim. So: clear
+  Liquid Glass for controls with a word or an icon (a dock, a play button, a tab bar), frosted material
+  for surfaces with sentences. Keep text a bezel-width inside the edge either way. `aberration: 0.6–1`
   adds the prism fringe at the rim (red bends least, blue most) that sells it as optics. Safari and
   Firefox don't run SVG backdrop filters (WebKit bug 245510, in review), so they get the frosted
   material, which is why the material has to look finished on its own.
@@ -157,7 +166,8 @@ panel:
 
 Screenshot the page at the brightest moment of the backdrop and check each glass surface. First, prove
 the glass frosts at all: temporarily put bold, high-contrast text (red, 30px) right behind every glass
-surface and look at a 2× crop. Any letter that reads sharp is a hole in the material (a backdrop root, an
+surface, capture at `deviceScaleFactor: 1` and enlarge the crop. (Headless Chromium at scale factor 2
+leaves the lower part of large backdrop-filtered elements unblurred, which looks like a hole but isn't.) Any letter that reads sharp is a hole in the material (a backdrop root, an
 out-of-date Liquid Glass map, a missing prefix). A normal screenshot hides this; the probe takes a minute.
 Then:
 
@@ -169,7 +179,10 @@ Then:
    background outshines it, make the glass bigger or the backdrop calmer elsewhere.
 4. **Is every word crisp and readable?** Measure the worst case, as WCAG's failure F83 does for text on
    images: find the brightest patch the backdrop can put behind light text (darkest for dark text),
-   composite the glass over it, and check 4.5:1 for body text, 3:1 for large text. If it fails, go a
+   composite the glass over it, and check 4.5:1 for body text, 3:1 for large text. Sample under each
+   line's own box (a `Range` around the words), not the element's box, or a wide headline box counts
+   background the words never touch. Check twice: with the blur, and with the tint alone (`backdrop-filter:
+   none`), which is what iOS Low Power Mode and blur-less browsers show. The tint alone must still pass. If it fails, go a
    thickness up or turn on `--glass-contrast`. Never put text-bearing glass over other text (the worst
    Liquid Glass failures were search bars over email previews). Controls on glass keep 44px targets.
 5. **Does it still look right in the fallback?** Emulate reduced transparency (Playwright's context option

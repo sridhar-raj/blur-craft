@@ -10,14 +10,16 @@
 //
 // Mount after layout settles and again when it changes: a ResizeObserver plus document.fonts.ready.
 // If part of the glass shows the content behind it sharp, the map is out of date with the element's size.
-// Keep the order url() then blur(): blur first frosts the backdrop before it's bent, which hides the
-// refraction.
+// The frosting lives INSIDE the SVG filter, before the bend (feGaussianBlur → feDisplacementMap). Tested in
+// Chromium: a CSS `url() blur()` chain leaves the whole bezel ring unblurred (text under the rim reads
+// sharp), and `blur() url()` frosts everything but flattens the refraction. Blurring first inside the
+// filter frosts the rim too and keeps the bend visible.
 
 export type LiquidOptions = {
   bezel?: number;      // width of the curved rim in px (16-28 reads as glass)
   strength?: number;   // max displacement in px (20-50; above 60 the content tears)
-  blur?: number;       // frosting on top of the refraction. It REPLACES the material's blur: 0-3 = clear
-                       // liquid glass, 12-20 = frosted (lower reads as noise over busy content)
+  blur?: number;       // frosting (px, applied inside the filter before the bend). It REPLACES the material's
+                       // blur: 0-3 = clear liquid glass, 12-20 = frosted for surfaces with text
   saturate?: number;   // percent
   aberration?: number; // 0-2: colour fringing at the rim (red bends least, blue most), as real lenses do.
                        // 0 = off (default). 0.6-1 reads as optical; above 1.5 looks like a glitch effect.
@@ -105,11 +107,12 @@ export function mountLiquidGlass(el: HTMLElement, opts: LiquidOptions = {}): str
             color-interpolation-filters="sRGB">
       <feImage href="${displacementMap(w, h, Math.min(r, w / 2, h / 2), bezel)}" x="0" y="0"
                width="${w}" height="${h}" result="map" preserveAspectRatio="none"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" edgeMode="duplicate" result="frost"/>
       ${aberration > 0 ? (() => {
         // Chromatic aberration (after rdev/liquid-glass-react): displace each channel by a slightly
         // different amount and recombine. The map is neutral away from the rim, so fringes appear only there.
         const ch = (name: string, k: number, m: string) => `
-      <feDisplacementMap in="SourceGraphic" in2="map" scale="${strength * (1 + k * aberration)}"
+      <feDisplacementMap in="frost" in2="map" scale="${strength * (1 + k * aberration)}"
                          xChannelSelector="R" yChannelSelector="G" result="d${name}"/>
       <feColorMatrix in="d${name}" type="matrix" values="${m}" result="${name}"/>`;
         return ch("r", 0, "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0")
@@ -118,13 +121,13 @@ export function mountLiquidGlass(el: HTMLElement, opts: LiquidOptions = {}): str
       <feBlend in="r" in2="g" mode="screen" result="rg"/>
       <feBlend in="rg" in2="b" mode="screen"/>`;
       })() : `
-      <feDisplacementMap in="SourceGraphic" in2="map" scale="${strength}"
+      <feDisplacementMap in="frost" in2="map" scale="${strength}"
                          xChannelSelector="R" yChannelSelector="G"/>`}
     </filter>`;
   document.body.appendChild(svg);
 
-  // Spec order: each function takes the previous one's output, so url() refracts the sharp backdrop first.
-  const value = `url(#${id}) blur(${blur}px) saturate(${saturate}%)${clamp ? " contrast(0.8) brightness(0.92)" : ""}`;
+  // No CSS blur(): the frosting is inside the filter (see the note at the top).
+  const value = `url(#${id}) saturate(${saturate}%)${clamp ? " contrast(0.8) brightness(0.92)" : ""}`;
   el.style.setProperty("backdrop-filter", value);
   el.style.setProperty("-webkit-backdrop-filter", value);
   return id;

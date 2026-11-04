@@ -54,12 +54,26 @@ What this means in practice:
 
 ## Liquid Glass shows sharp patches
 
-If part of a Liquid Glass element shows the content behind it sharp, the displacement map is smaller
-than the element. Parts outside the filter region get no filter at all. Causes: mounted before fonts
+If the **rim** of a Liquid Glass element shows the content behind it sharp, the blur is in the CSS chain
+(`url() blur()`). Chromium doesn't blur the displaced bezel. The asset now blurs inside the SVG filter,
+before the bend, which frosts edge to edge.
+
+If some *other* part shows the content sharp, the displacement map is smaller than the element. Parts outside the filter region get no filter at all. Causes: mounted before fonts
 loaded or before layout settled, or sized with `getBoundingClientRect()` under a scale transform. Remount
 on ResizeObserver and `document.fonts.ready`, and size from `offsetWidth`/`offsetHeight` (the asset does
-both). Keep `url()` before `blur()` in the filter: blur first frosts the backdrop before it's bent, which
-hides the refraction.
+both). 
+
+## Screenshots at deviceScaleFactor 2
+
+Headless Chromium at `deviceScaleFactor: 2` can leave the lower part of a large backdrop-filtered element
+unblurred in the screenshot, even on a bare test page. Capture frost probes at scale factor 1 and enlarge
+the crop instead.
+
+## Component rules vs the tinted level
+
+A component rule that sets `--glass-dim` (same specificity as `.glass`, but later) would override the
+tinted level inside `@media (prefers-contrast: more)`. The asset's tinted rules use a doubled class
+(`.glass.glass`) so they still win. Keep that when renaming the prefix.
 
 ## Hover glass on many items
 

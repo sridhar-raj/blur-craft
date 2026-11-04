@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas Stays</title>
+<meta name="description" content="Atlas Stays: hand-picked boutique hotels and guesthouses on the coasts of Portugal, Spain and Italy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+/* ===================================================================================== glass material
+   blur-craft assets/glass.css, prefix renamed glass -> ag. Unchanged apart from the prefix. */
+/* Glass material: the five-layer stack premium ag is built from.
+ *
+ *   1. backdrop  heavy blur + high saturation + slight brightness lift (the frosting)
+ *   2. fill      a gradient, lighter at the top-left where light hits, not a flat tint
+ *   3. edge      a 1px gradient rim, bright where light hits, fading on the far side
+ *   4. specular  an inner top highlight, plus an optional sheen that follows the pointer
+ *   5. depth     a soft drop shadow and a faint inner glow, so the slab has thickness
+ *
+ * Usage: <div class="ag ag--regular"> … </div>. Pick the thickness by how much text it holds
+ * (Apple HIG: thicker = more opaque = better for text; thinner = more context). Rename the `ag`
+ * prefix to the section's prefix when copying into a section.
+ *
+ * Set --ag-light to the colour of the light source behind the ag (the glow, the sun, the art),
+ * so the rim and sheen pick up the scene's colour instead of plain white.
+ *
+ * Two levels, as Apple shipped in iOS 26.1 after the Liquid Glass legibility backlash: the default
+ * (clear-ish) and TINTED (much more opaque). Tinted turns on for `prefers-contrast: more`, for
+ * `prefers-reduced-transparency: reduce`, with class `ag--tinted`, or site-wide with
+ * <html data-glass="tinted"> (offer it as a user setting). Safari does not support
+ * prefers-reduced-transparency, so prefers-contrast is the signal that reaches iPhone and Mac users.
+ */
+
+.ag {
+  --ag-blur: 30px;
+  --ag-sat: 180%;
+  --ag-bright: 1.05;
+  --ag-contrast: 1;                      /* < 1 limits the backdrop's brightness range: Fluent's luminosity layer,
+                                               in the CSS form that works in browsers (a mix-blend child does not) */
+  --ag-fill-top: rgb(255 255 255 / 0.16);
+  --ag-fill-bottom: rgb(255 255 255 / 0.04);
+  --ag-dim: rgb(10 10 18 / 0.28);        /* dimming under the fill; Apple uses ~35% over bright content */
+  --ag-light: 255 255 255;               /* r g b of the scene's light */
+  --ag-radius: 28px;
+  --ag-rim-angle: 150deg;                /* bright end of the rim faces the light: 135deg top-left, 180 top, 225 top-right, 270 right, 315 bottom-right, 0 bottom, 45 bottom-left, 90 left */
+  --ag-rim-hot: 0.6;                     /* rim alpha on the lit side; 0.8-0.9 when the light is strong */
+  --ag-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.05'/></svg>");
+  --mx: 30%;                                 /* pointer position for the sheen, set from JS */
+  --my: 0%;
+
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--ag-radius);
+  background:
+    var(--ag-noise),                                         /* 2.5% grain, as Fluent's acrylic (2%) */
+    linear-gradient(160deg, var(--ag-fill-top), var(--ag-fill-bottom) 60%),
+    var(--ag-dim);
+  -webkit-backdrop-filter: blur(var(--ag-blur)) saturate(var(--ag-sat)) brightness(var(--ag-bright)) contrast(var(--ag-contrast));
+  backdrop-filter: blur(var(--ag-blur)) saturate(var(--ag-sat)) brightness(var(--ag-bright)) contrast(var(--ag-contrast));
+  box-shadow:
+    inset 0 1px 0 rgb(var(--ag-light) / 0.35),          /* top specular line */
+    inset 0 -1px 0 rgb(255 255 255 / 0.04),
+    inset 0 0 32px rgb(var(--ag-light) / 0.06),         /* inner glow: thickness */
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 30px 60px -20px rgb(0 0 0 / 0.55);                    /* lift */
+}
+
+/* 3. Edge: a gradient rim drawn on a ring (mask-composite keeps only the border). */
+.ag::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--ag-rim-angle),
+    rgb(var(--ag-light) / var(--ag-rim-hot)),
+    rgb(var(--ag-light) / 0.12) 35%,
+    rgb(255 255 255 / 0.04) 60%,
+    rgb(var(--ag-light) / 0.22)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* 4. Sheen: a soft specular bloom, positioned by --mx/--my (static top-left if no JS). */
+.ag::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 80% at var(--mx) var(--my),
+    rgb(var(--ag-light) / 0.14),
+    transparent 55%
+  );
+  transition: background-position 0.2s;
+}
+.ag > * { position: relative; z-index: 2; }
+
+/* Thickness scale. Blur goes up with thickness; busy or moving backdrops want the thicker end. */
+.ag--clear   { --ag-blur: 16px; --ag-dim: rgb(10 10 18 / 0.10); --ag-fill-top: rgb(255 255 255 / 0.10); }
+.ag--thin    { --ag-blur: 24px; --ag-dim: rgb(10 10 18 / 0.20); }
+.ag--regular { --ag-blur: 32px; --ag-dim: rgb(10 10 18 / 0.30); --ag-contrast: 0.9; }
+.ag--thick   { --ag-blur: 44px; --ag-dim: rgb(10 10 18 / 0.50); --ag-sat: 160%; --ag-contrast: 0.8; }
+
+/* Nearly solid: trust-critical dialogs (payments, deletes, signatures). Glass family, nothing competes. */
+.ag--solid   { --ag-blur: 20px; --ag-dim: rgb(18 18 26 / 0.92); --ag-fill-top: rgb(255 255 255 / 0.06); --ag-fill-bottom: rgb(255 255 255 / 0.02); }
+.ag--solid.ag--light { --ag-dim: rgb(255 255 255 / 0.92); --ag-fill-top: rgb(255 255 255 / 0.6); --ag-fill-bottom: rgb(255 255 255 / 0.4); }
+
+/* Light ag (over light scenes). */
+.ag--light {
+  --ag-fill-top: rgb(255 255 255 / 0.55);
+  --ag-fill-bottom: rgb(255 255 255 / 0.25);
+  --ag-dim: rgb(255 255 255 / 0.15);
+  --ag-bright: 1.1;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    inset 0 0 24px rgb(255 255 255 / 0.25),
+    0 1px 2px rgb(20 20 40 / 0.08),
+    0 30px 60px -24px rgb(20 20 60 / 0.25);
+}
+
+/* Text on ag: near-solid primary, translucent white secondary (vibrancy), never a mid grey. */
+.ag .ag-label     { color: rgb(255 255 255 / 0.96); }
+.ag .ag-secondary { color: rgb(255 255 255 / 0.68); }
+.ag .ag-tertiary  { color: rgb(255 255 255 / 0.45); }
+.ag--light .ag-label     { color: rgb(10 12 20 / 0.92); }
+.ag--light .ag-secondary { color: rgb(10 12 20 / 0.6); }
+
+/* Tinted level: legibility first. Same material, far more opaque, brightness range clamped. */
+.ag--tinted,
+:root[data-glass="tinted"] .ag {
+  --ag-dim: rgb(14 14 20 / 0.78);
+  --ag-contrast: 0.7;
+}
+.ag--tinted.ag--light,
+:root[data-glass="tinted"] .ag--light { --ag-dim: rgb(250 250 252 / 0.86); --ag-fill-top: rgb(255 255 255 / 0.6); }
+@media (prefers-contrast: more) {
+  .ag { --ag-dim: rgb(14 14 20 / 0.82); --ag-contrast: 0.7; }
+  .ag--light { --ag-dim: rgb(250 250 252 / 0.9); }
+  .ag .ag-secondary, .ag .ag-tertiary { color: rgb(255 255 255 / 0.85); }
+  .ag--light .ag-secondary, .ag--light .ag-tertiary { color: rgb(10 12 20 / 0.8); }
+  .ag::before { --ag-rim-hot: 1; }
+}
+
+/* No backdrop-filter: go nearly opaque, keep the rim and highlights. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ag { background: linear-gradient(160deg, rgb(48 48 62 / 0.96), rgb(22 22 30 / 0.97)); }
+  .ag--light { background: rgb(250 250 252 / 0.97); }
+}
+/* Chromium only; Safari ignores this query (see prefers-contrast above). */
+@media (prefers-reduced-transparency: reduce) {
+  .ag { -webkit-backdrop-filter: none !important; backdrop-filter: none !important;  /* !important beats liquid ag's inline filter */ background: rgb(22 22 30 / 0.97); }
+  .ag--light { background: rgb(250 250 252 / 0.98); }
+}
+
+
+/* ===================================================================================== page */
+:root {
+  --paper: #f5efe6;
+  --paper-2: #ece3d6;
+  --ink: #1d1916;
+  --ink-2: #574d45;
+  --clay: #a8432b;          /* solid accent chip; white on it is 5.9:1 */
+  --clay-hover: #933a24;
+  --sun: 255 206 150;       /* the scene's light, r g b */
+  --nav-h: 72px;
+  --gutter: 80px;
+  --sans: "Hanken Grotesk", system-ui, sans-serif;
+  --serif: "Newsreader", Georgia, serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+button, input { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 8px; }
+.stays :focus-visible, .nav.is-light :focus-visible { outline-color: var(--ink); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- sticky nav (recipe 1c, extended backdrop) */
+.nav {
+  position: sticky; top: 0; z-index: 30;
+  height: var(--nav-h);
+  isolation: isolate;
+  display: flex; align-items: center; gap: 40px;
+  padding: 0 var(--gutter);
+  color: rgb(255 255 255 / 0.96);
+  --bar-tint: rgb(24 22 48 / 0.62);
+  transition: color .3s;
+}
+.nav__backdrop {
+  position: absolute; inset: 0; height: 200%;
+  z-index: -1; pointer-events: none;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  background: linear-gradient(to bottom, var(--bar-tint) 0%, rgb(24 22 48 / 0.18) 50%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+  mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+  transition: background .3s;
+}
+.nav__edge {
+  position: absolute; inset: 0; height: 100%; transform: translateY(100%);
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(12px) brightness(125%) saturate(140%);
+  backdrop-filter: blur(12px) brightness(125%) saturate(140%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 1px, transparent 1px);
+  mask-image: linear-gradient(to bottom, #000 0 1px, transparent 1px);
+}
+.nav.is-light { color: var(--ink); --bar-tint: rgb(245 239 230 / 0.92); }
+.nav.is-light .nav__backdrop { background: linear-gradient(to bottom, var(--bar-tint) 0%, rgb(245 239 230 / 0.72) 50%); }
+.nav.is-light .nav__edge { -webkit-backdrop-filter: blur(12px) brightness(88%); backdrop-filter: blur(12px) brightness(88%); }
+
+.brand { display: flex; align-items: center; gap: 10px; font: 500 23px/1 var(--serif); letter-spacing: -0.01em; }
+.brand svg { width: 26px; height: 26px; }
+.nav__links { display: flex; gap: 6px; margin-right: auto; }
+.nav__links a, .nav__ghost {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 999px;
+  font-weight: 500; font-size: 15px; transition: background .2s;
+}
+.nav__links a:hover, .nav__ghost:hover { background: rgb(255 255 255 / 0.12); }
+.nav.is-light .nav__links a:hover, .nav.is-light .nav__ghost:hover { background: rgb(29 25 22 / 0.07); }
+.nav__right { display: flex; align-items: center; gap: 8px; }
+.nav__cta {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 999px;
+  background: #fff; color: var(--ink); font-weight: 600; font-size: 15px; border: 0; cursor: pointer;
+  transition: transform .2s, background .2s;
+}
+.nav.is-light .nav__cta { background: var(--ink); color: #fff; }
+.nav__cta:hover { transform: translateY(-1px); }
+.nav__menu { display: none; }
+
+/* ---------------------------------------------------------------- hero */
+.hero {
+  position: relative;
+  margin-top: calc(var(--nav-h) * -1);
+  min-height: max(100svh, 760px);
+  overflow: hidden;
+  background: #2a2346;                 /* before the canvas paints */
+  color: #fff;
+}
+.hero__art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hero__grain {                          /* recipe 10, a sibling above the art: never wraps the glass */
+  position: absolute; inset: 0; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.hero__inner {
+  position: relative; z-index: 2;
+  min-height: inherit;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  grid-template-rows: 1fr auto;
+  gap: 40px 64px;
+  padding: calc(var(--nav-h) + 60px) var(--gutter) 80px;
+}
+.intro { grid-column: 1; grid-row: 1; align-self: start; max-width: 900px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px; margin: 0 0 30px;
+  font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: rgb(255 255 255 / 0.92);
+  text-shadow: 0 1px 12px rgb(30 18 40 / 0.5);
+}
+.eyebrow::before { content: ""; width: 28px; height: 1px; background: currentColor; }
+.intro h1 {
+  margin: 0;
+  font: 400 clamp(42px, 4.75vw, 76px)/1.02 var(--serif);
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+  text-shadow: 0 2px 30px rgb(30 18 40 / 0.35);
+}
+.intro h1 em { font-style: italic; }
+.intro h1 .w { display: inline-block; white-space: pre; }
+.intro p {
+  margin: 22px 0 0; max-width: 460px;
+  font-size: 18px; line-height: 1.55; color: rgb(255 255 255 / 0.94);
+  text-shadow: 0 1px 14px rgb(30 18 40 / 0.55);
+}
+
+/* ---------------------------------------------------------------- search: the hero glass (Liquid Glass) */
+.search {
+  grid-column: 1; grid-row: 2; align-self: end;
+  --ag-radius: 44px;
+  --ag-light: var(--sun);
+  --ag-rim-angle: 225deg;              /* the sun sits above-right of the bar */
+  --ag-rim-hot: 0.85;
+  --ag-dim: rgb(26 16 34 / 0.70);         /* thick, and darker still: words must read even when the blur drops (iOS Low Power Mode), over the town's brightest walls */
+  max-width: 1000px;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr .9fr auto;
+  align-items: center;
+  min-height: 92px;
+  padding: 14px 14px 14px 18px;
+}
+.field {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  min-height: 64px; padding: 6px 22px; border-radius: 32px;
+  text-align: left; background: transparent; border: 0; cursor: pointer;
+  transition: background .2s;
+}
+.field:hover, .field:focus-within { background: rgb(255 255 255 / 0.10); }
+.field + .field::before {
+  content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 1px; background: rgb(255 255 255 / 0.22);
+}
+.field__label { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.field__value, .field input {
+  font-size: 17px; font-weight: 500; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.field input { width: 100%; padding: 0; margin: 0; border: 0; outline: 0; background: transparent; }
+.field input::placeholder { color: rgb(255 255 255 / 0.8); }
+.search__go {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 64px; padding: 0 30px 0 26px; border-radius: 32px; border: 0; cursor: pointer;
+  background: var(--clay); color: #fff; font-weight: 600; font-size: 17px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 8px 24px -8px rgb(120 30 10 / 0.6);
+  transition: background .2s, transform .2s;
+}
+.search__go:hover { background: var(--clay-hover); }
+.search__go:active { transform: scale(.98); }
+.search__go svg { width: 20px; height: 20px; }
+
+/* ---------------------------------------------------------------- featured stay: supporting glass */
+.feature {
+  grid-column: 2; grid-row: 1 / 3; align-self: end;
+  --ag-radius: 28px;
+  --ag-light: var(--sun);
+  --ag-rim-angle: 75deg;               /* the sun is to the left of the card, a little below its top */
+  --ag-rim-hot: 0.9;
+  --ag-dim: rgb(24 14 30 / 0.68);         /* survives the sharp sea glitter with the blur off */
+  padding: 12px 12px 20px;
+  display: block;
+}
+.feature__media { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 10; background: #c98a5e; }
+.feature__media canvas { width: 100%; height: 100%; display: block; }
+.badge {
+  position: absolute; left: 12px; top: 12px;
+  padding: 7px 12px; border-radius: 999px;
+  background: rgb(255 252 247 / 0.96); color: var(--ink);
+  font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+}
+.feature__body { padding: 18px 10px 0; }
+.feature__top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.feature h2 { margin: 0; font: 400 28px/1.1 var(--serif); letter-spacing: -0.01em; }
+.rating { font-size: 16px; font-weight: 600; white-space: nowrap; }
+.rating span { font-weight: 500; }
+.feature__place { margin: 6px 0 0; font-size: 15px; }
+.feature__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.price { font-size: 15px; }
+.price b { font: 500 26px/1 var(--serif); letter-spacing: -0.01em; margin-right: 2px; }
+.feature__cta {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px;
+  background: #fff; color: var(--ink); font-weight: 600; font-size: 15px;
+  transition: transform .2s;
+}
+.feature__cta:hover { transform: translateX(2px); }
+
+/* Text on glass is vibrant: near-solid white, translucent white for the quieter lines (never a mid grey).
+   The quiet level is .84, not the asset's .68: measured against the brightest sea glitter (see report). */
+.ag .ag-label { color: rgb(255 255 255 / 0.97); }
+.ag .ag-secondary { color: rgb(255 255 255 / 0.84); }
+.search .field__label { color: rgb(255 255 255 / 0.95); }
+
+/* Reduced transparency: a solid warm panel, with a faint radial in the sun's colour so it isn't flat. */
+@media (prefers-reduced-transparency: reduce) {
+  .ag { background: radial-gradient(120% 90% at 0% 40%, rgb(var(--sun) / 0.16), transparent 60%), rgb(30 22 34 / 0.97); }
+  .nav__backdrop, .nav__edge { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .nav__backdrop { background: rgb(24 22 48 / 0.96); -webkit-mask-image: linear-gradient(#000 0 50%, transparent 50%); }
+  .nav.is-light .nav__backdrop { background: rgb(245 239 230 / 0.98); }
+}
+/* My surfaces set their own --ag-dim, which would outrank the asset's tinted rules: restate the tinted level. */
+:root[data-glass="tinted"] .ag.search, :root[data-glass="tinted"] .ag.feature { --ag-dim: rgb(14 14 20 / 0.78); --ag-contrast: 0.7; }
+@media (prefers-contrast: more) {
+  .ag.search, .ag.feature { --ag-dim: rgb(14 14 20 / 0.82); --ag-contrast: 0.7; }
+  .nav { --bar-tint: rgb(20 18 40 / 0.9); }
+  .nav__backdrop { background: linear-gradient(to bottom, var(--bar-tint) 0 50%, transparent 50%); }
+  .ag .ag-secondary { color: rgb(255 255 255 / 0.92); }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav__backdrop { background: rgb(24 22 48 / 0.95); }
+  .nav.is-light .nav__backdrop { background: rgb(245 239 230 / 0.98); }
+}
+
+/* ---------------------------------------------------------------- more stays (content layer: solid, no glass) */
+.stays { padding: 96px var(--gutter) 112px; max-width: 1600px; margin: 0 auto; }
+.stays__head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 40px; }
+.stays__head h2 { margin: 0; font: 400 48px/1.05 var(--serif); letter-spacing: -0.02em; }
+.stays__head p { margin: 10px 0 0; color: var(--ink-2); font-size: 17px; }
+.stays__all {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 999px;
+  border: 1px solid rgb(29 25 22 / 0.22); font-weight: 600; font-size: 15px; white-space: nowrap;
+  transition: background .2s;
+}
+.stays__all:hover { background: rgb(29 25 22 / 0.05); }
+.stays__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.stay { display: block; }
+.stay__media {
+  position: relative; aspect-ratio: 4 / 3; border-radius: 22px; overflow: hidden; background: var(--paper-2);
+  box-shadow: 0 1px 2px rgb(60 40 20 / 0.08), 0 24px 40px -28px rgb(60 40 20 / 0.45);
+}
+.stay__media canvas { width: 100%; height: 100%; display: block; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+.stay:hover .stay__media canvas { transform: scale(1.03); }
+.stay__save {
+  position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; border: 0; cursor: pointer;
+  background: rgb(255 252 247 / 0.94); color: var(--ink);
+  box-shadow: 0 4px 14px -6px rgb(40 20 10 / 0.5);
+}
+.stay__save svg { width: 20px; height: 20px; }
+.stay__save[aria-pressed="true"] svg path { fill: var(--clay); stroke: var(--clay); }
+.stay__row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.stay h3 { margin: 0; font: 400 25px/1.15 var(--serif); letter-spacing: -0.01em; }
+.stay__rating { font-weight: 600; font-size: 15px; white-space: nowrap; }
+.stay__place { margin: 4px 0 0; color: var(--ink-2); font-size: 15px; }
+.stay__price { margin: 10px 0 0; font-size: 15px; color: var(--ink-2); }
+.stay__price b { color: var(--ink); font-weight: 700; font-size: 17px; }
+
+.foot {
+  border-top: 1px solid rgb(29 25 22 / 0.12);
+  padding: 28px var(--gutter) 40px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  color: var(--ink-2); font-size: 14px; max-width: 1600px; margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------- narrow screens */
+@media (max-width: 1180px) {
+  :root { --gutter: 40px; }
+  .nav__links { display: none; }
+  .nav { justify-content: space-between; }
+  .hero__inner { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; padding-bottom: 48px; }
+  .search { grid-row: 2; max-width: none; }
+  .feature { grid-column: 1; grid-row: 3; max-width: 420px; }
+  .stays__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  :root { --gutter: 16px; --nav-h: 64px; }
+  .nav { gap: 12px; }
+  .nav__ghost { display: none; }
+  .nav__cta { padding: 0 16px; }
+  .hero__inner { padding-top: calc(var(--nav-h) + 40px); gap: 28px; }
+  .intro h1 { font-size: 44px; line-height: 1.04; }
+  .eyebrow { font-size: 12px; letter-spacing: .1em; gap: 8px; }
+  .eyebrow::before { width: 18px; }
+  .intro p { font-size: 17px; }
+  .search {
+    --ag-radius: 26px;
+    grid-template-columns: 1fr 1fr;
+    padding: 12px;
+    gap: 2px;
+  }
+  .field { padding: 8px 16px; min-height: 66px; border-radius: 18px; }
+  .field--dest { grid-column: 1 / -1; }
+  .field + .field::before { display: none; }
+  .field--dest::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: -1px; height: 1px; background: rgb(255 255 255 / 0.2); }
+  .field--guests::before { display: block !important; top: 14px; bottom: 14px; }
+  .search__go { grid-column: 1 / -1; margin-top: 6px; border-radius: 18px; min-height: 56px; }
+  .feature { max-width: none; }
+  .feature h2 { font-size: 26px; }
+  .stays { padding-top: 64px; padding-bottom: 72px; }
+  .stays__head { flex-direction: column; align-items: start; }
+  .stays__head h2 { font-size: 36px; }
+  .stays__grid { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="nav__backdrop" aria-hidden="true"></div>
+  <div class="nav__edge" aria-hidden="true"></div>
+  <a class="brand" href="#" aria-label="Atlas Stays home">
+    <svg viewBox="0 0 26 26" fill="none" aria-hidden="true"><circle cx="13" cy="13" r="11.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 16.5c3-2.2 6-2.2 9 0s6 2.2 9 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="9.5" r="3" fill="currentColor"/></svg>
+    Atlas Stays
+  </a>
+  <nav class="nav__links" aria-label="Main">
+    <a href="#">Destinations</a>
+    <a href="#">Stays</a>
+    <a href="#">Experiences</a>
+    <a href="#">Journal</a>
+  </nav>
+  <div class="nav__right">
+    <a class="nav__ghost" href="#">Sign in</a>
+    <a class="nav__cta" href="#">List your home</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="hero" aria-labelledby="hero-title">
+    <canvas class="hero__art" id="art" aria-hidden="true"></canvas>
+    <div class="hero__grain" aria-hidden="true"></div>
+
+    <div class="hero__inner">
+      <div class="intro">
+        <p class="eyebrow">Boutique stays by the sea</p>
+        <h1 id="hero-title" data-reveal>Wake up somewhere <em>worth</em> the&nbsp;journey.</h1>
+        <p>Small hotels and guesthouses by the sea, each one visited by our team before it's listed. Book direct, pay the price you see.</p>
+      </div>
+
+      <form class="search ag ag--thick" id="search" role="search" aria-label="Find a stay" onsubmit="event.preventDefault()">
+        <label class="field field--dest">
+          <span class="field__label ag-secondary">Destination</span>
+          <input type="text" name="where" placeholder="Where to?" value="Comporta, Portugal" class="ag-label" autocomplete="off">
+        </label>
+        <button type="button" class="field field--dates" aria-label="Dates: 12 to 16 May">
+          <span class="field__label ag-secondary">Dates</span>
+          <span class="field__value ag-label">12 – 16 May</span>
+        </button>
+        <button type="button" class="field field--guests" aria-label="Guests: 2 adults">
+          <span class="field__label ag-secondary">Guests</span>
+          <span class="field__value ag-label">2 adults</span>
+        </button>
+        <button type="submit" class="search__go">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="2"/><path d="m13 13 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Search
+        </button>
+      </form>
+
+      <article class="feature ag ag--regular" id="feature" aria-labelledby="feature-title">
+        <div class="feature__media">
+          <canvas data-thumb="albeira" aria-hidden="true"></canvas>
+          <span class="badge">Featured stay</span>
+        </div>
+        <div class="feature__body">
+          <div class="feature__top">
+            <h2 id="feature-title" class="ag-label">Casa Albeira</h2>
+            <span class="rating ag-label" aria-label="Rated 4.9 out of 5 from 128 reviews">4.9★ <span class="ag-secondary">(128)</span></span>
+          </div>
+          <p class="feature__place ag-secondary">Comporta, Portugal · 6 rooms among the pines</p>
+          <div class="feature__foot">
+            <p class="price ag-label" style="margin:0"><b>€240</b><span class="ag-secondary"> / night</span></p>
+            <a class="feature__cta" href="#">View stay
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="stays" id="stays" aria-labelledby="stays-title">
+    <div class="stays__head">
+      <div>
+        <h2 id="stays-title">More stays we love</h2>
+        <p>Three more from this month's shortlist, all under four hours from Lisbon.</p>
+      </div>
+      <a class="stays__all" href="#">See all 140 stays
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <div class="stays__grid">
+      <a class="stay" href="#">
+        <div class="stay__media">
+          <canvas data-thumb="douro" aria-hidden="true"></canvas>
+          <button class="stay__save" type="button" aria-pressed="false" aria-label="Save Quinta da Serra"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 16.5s-6.5-3.9-6.5-8.6A3.4 3.4 0 0 1 10 6a3.4 3.4 0 0 1 6.5 1.9c0 4.7-6.5 8.6-6.5 8.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+        </div>
+        <div class="stay__row"><h3>Quinta da Serra</h3><span class="stay__rating" aria-label="Rated 4.8 out of 5">4.8★</span></div>
+        <p class="stay__place">Douro Valley, Portugal · 9 rooms above the vines</p>
+        <p class="stay__price"><b>€310</b> / night</p>
+      </a>
+      <a class="stay" href="#">
+        <div class="stay__media">
+          <canvas data-thumb="farol" aria-hidden="true"></canvas>
+          <button class="stay__save" type="button" aria-pressed="false" aria-label="Save Casa do Farol"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 16.5s-6.5-3.9-6.5-8.6A3.4 3.4 0 0 1 10 6a3.4 3.4 0 0 1 6.5 1.9c0 4.7-6.5 8.6-6.5 8.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+        </div>
+        <div class="stay__row"><h3>Casa do Farol</h3><span class="stay__rating" aria-label="Rated 4.9 out of 5">4.9★</span></div>
+        <p class="stay__place">Sintra coast, Portugal · 5 rooms on the cliff</p>
+        <p class="stay__price"><b>€275</b> / night</p>
+      </a>
+      <a class="stay" href="#">
+        <div class="stay__media">
+          <canvas data-thumb="alentejo" aria-hidden="true"></canvas>
+          <button class="stay__save" type="button" aria-pressed="false" aria-label="Save Monte das Oliveiras"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 16.5s-6.5-3.9-6.5-8.6A3.4 3.4 0 0 1 10 6a3.4 3.4 0 0 1 6.5 1.9c0 4.7-6.5 8.6-6.5 8.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+        </div>
+        <div class="stay__row"><h3>Monte das Oliveiras</h3><span class="stay__rating" aria-label="Rated 4.7 out of 5">4.7★</span></div>
+        <p class="stay__place">Alentejo, Portugal · 7 rooms in an olive grove</p>
+        <p class="stay__price"><b>€195</b> / night</p>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>© 2026 Atlas Stays · Lisbon</span>
+  <span>Every stay visited in person · Free cancellation on most rooms</span>
+</footer>
+
+<script>
+/* ===================================================================================== helpers */
+function rng(seed) {                       // mulberry32: same town every load
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hex(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+function mix(a, b, t) {
+  const A = hex(a), B = hex(b);
+  return "rgb(" + A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(",") + ")";
+}
+function mixHex(a, b, t) {
+  const A = hex(a), B = hex(b);
+  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+function lerpPts(pts, x) {
+  if (x <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (x <= pts[i][0]) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      return y0 + (y1 - y0) * ((x - x0) / (x1 - x0));
+    }
+  }
+  return pts[pts.length - 1][1];
+}
+function gauss(r) { return (r() + r() + r() + r() - 2) / 2; }
+
+/* ===================================================================================== the hero scene
+   A coastal town at golden hour, drawn in a 1600x900 virtual frame and cover-fitted to the hero.
+   The sun is the light behind the glass: it sits just left of the featured card and above-right of the
+   search bar, so both glass surfaces half-cover its glow. */
+const V = { w: 1600, h: 900, horizon: 566, sunX: 1104, sunY: 528 };
+const LAND = [[0, 500], [120, 491], [240, 497], [360, 514], [480, 543], [600, 580], [720, 622], [820, 664], [900, 712], [960, 758], [1012, 796]];
+const BACKHILL = [[0, 452], [160, 438], [320, 448], [470, 474], [620, 515], [780, 572], [900, 640]];
+const WATERLINE = 796;
+
+function landRightAt(y) {
+  for (let x = 120; x <= 1012; x += 2) if (lerpPts(LAND, x) >= y) return x;
+  return 1012;
+}
+
+function paintScene(ctx, portrait = false) {
+  const r = rng(7);
+  const { w, h, horizon: hz, sunX, sunY } = V;
+
+  // ---- sky
+  const sky = ctx.createLinearGradient(0, 0, 0, hz);
+  sky.addColorStop(0, "#1c2147");
+  sky.addColorStop(0.2, "#353366");
+  sky.addColorStop(0.42, "#6e4775");
+  sky.addColorStop(0.62, "#b45f73");
+  sky.addColorStop(0.78, "#e8875f");
+  sky.addColorStop(0.91, "#fbb871");
+  sky.addColorStop(1, "#ffdc9e");
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hz + 2);
+
+  // sun glow: one broad warm wash, one hot core
+  let g = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 820);
+  g.addColorStop(0, "rgba(255,196,128,0.55)"); g.addColorStop(0.35, "rgba(255,150,100,0.22)"); g.addColorStop(1, "rgba(255,120,90,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, hz);
+  g = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 230);
+  g.addColorStop(0, "rgba(255,240,205,0.95)"); g.addColorStop(0.25, "rgba(255,222,160,0.6)"); g.addColorStop(1, "rgba(255,200,140,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, hz);
+
+  // clouds: long thin stratus, lit from below
+  ctx.save();
+  ctx.filter = "blur(2.5px)";
+  for (let i = 0; i < 16; i++) {
+    const cy = 120 + r() * 360, cx = r() * w, len = 160 + r() * 520, th = 4 + r() * 12;
+    const near = Math.max(0, 1 - Math.hypot(cx - sunX, (cy - sunY) * 2) / 900);
+    const body = cy < 260 ? [120, 92, 140] : [196, 112, 128];
+    const lit = [255, 200 + near * 40, 150 + near * 50];
+    for (let k = 0; k < 3; k++) {
+      const ox = (r() - 0.5) * len * 0.4, oy = (r() - 0.5) * th * 1.6, l = len * (0.5 + r() * 0.5);
+      const lg = ctx.createLinearGradient(cx + ox - l / 2, 0, cx + ox + l / 2, 0);
+      lg.addColorStop(0, "rgba(0,0,0,0)");
+      lg.addColorStop(0.5, `rgba(${body.join(",")},${0.45 + near * 0.2})`);
+      lg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = lg;
+      ctx.beginPath(); ctx.ellipse(cx + ox, cy + oy, l / 2, th / 2, 0, 0, Math.PI * 2); ctx.fill();
+      const lg2 = ctx.createLinearGradient(cx + ox - l / 2, 0, cx + ox + l / 2, 0);
+      lg2.addColorStop(0, "rgba(0,0,0,0)");
+      lg2.addColorStop(0.5, `rgba(${lit.map(Math.round).join(",")},${0.35 + near * 0.45})`);
+      lg2.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = lg2;
+      ctx.beginPath(); ctx.ellipse(cx + ox, cy + oy + th * 0.35, l * 0.42, th * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  // sun disc
+  g = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 34);
+  g.addColorStop(0, "#fffaf0"); g.addColorStop(0.8, "#fff1cf"); g.addColorStop(1, "rgba(255,236,190,0)");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sunX, sunY, 34, 0, Math.PI * 2); ctx.fill();
+
+  // birds
+  ctx.strokeStyle = "rgba(60,36,52,0.75)"; ctx.lineWidth = 1.4; ctx.lineCap = "round";
+  [[860, 330, 7], [884, 318, 5], [905, 340, 6], [930, 326, 4.5], [1290, 260, 6], [1312, 270, 4.5]].forEach(([x, y, s]) => {
+    ctx.beginPath(); ctx.moveTo(x - s, y - s * 0.3); ctx.quadraticCurveTo(x - s * 0.45, y - s * 0.75, x, y);
+    ctx.quadraticCurveTo(x + s * 0.45, y - s * 0.75, x + s, y - s * 0.3); ctx.stroke();
+  });
+
+  // far headlands on the horizon, hazed into the light
+  ctx.fillStyle = "rgba(150,88,112,0.55)";
+  ctx.beginPath(); ctx.moveTo(1240, hz + 1);
+  for (let x = 1240; x <= w; x += 20) ctx.lineTo(x, hz - 6 - Math.sin((x - 1240) / 90) * 4 - (x - 1240) * 0.03);
+  ctx.lineTo(w, hz + 1); ctx.closePath(); ctx.fill();
+
+  // ---- sea
+  const sea = ctx.createLinearGradient(0, hz, 0, h);
+  sea.addColorStop(0, "#f4b884"); sea.addColorStop(0.05, "#d99482"); sea.addColorStop(0.22, "#8c6687");
+  sea.addColorStop(0.55, "#454a6d"); sea.addColorStop(1, "#1e2742");
+  ctx.fillStyle = sea; ctx.fillRect(0, hz, w, h - hz);
+  // broad reflection column under the sun
+  g = ctx.createRadialGradient(sunX, hz + 40, 0, sunX, hz + 40, 360);
+  g.addColorStop(0, "rgba(255,206,140,0.6)"); g.addColorStop(1, "rgba(255,170,120,0)");
+  ctx.save(); ctx.translate(sunX, hz); ctx.scale(0.75, 1.15); ctx.translate(-sunX, -hz);
+  ctx.fillStyle = g; ctx.fillRect(sunX - 600, hz, 1200, 400); ctx.restore();
+  // swell lines
+  for (let i = 0; i < 900; i++) {
+    const y = hz + 3 + Math.pow(r(), 1.3) * (h - hz);
+    const d = (y - hz) / (h - hz);
+    const x = r() * w, l = 6 + d * 60 * r();
+    ctx.fillStyle = r() < 0.55 ? `rgba(24,26,56,${0.12 + d * 0.18})` : `rgba(255,190,170,${0.08 + (1 - d) * 0.1})`;
+    ctx.fillRect(x, y, l, 0.6 + d * 1.6);
+  }
+  // sun glitter
+  for (let i = 0; i < 1500; i++) {
+    const t = Math.pow(r(), 1.5), y = hz + 2 + t * (h - hz);
+    const spread = 14 + (y - hz) * 0.75;
+    const off = gauss(r) * spread, x = sunX + off;
+    const a = Math.max(0, 1 - Math.abs(off) / (spread * 1.6)) * (0.35 + r() * 0.65) * (1 - t * 0.45);
+    const l = 3 + (y - hz) * 0.05 + r() * 9;
+    ctx.fillStyle = `rgba(255,${226 + r() * 26 | 0},${170 + r() * 50 | 0},${a})`;
+    ctx.fillRect(x - l / 2, y, l, 0.8 + t * 2.2);
+  }
+  // crisp horizon
+  ctx.fillStyle = "rgba(255,226,180,0.7)"; ctx.fillRect(0, hz, w, 1.2);
+
+  // ---- right headland with a lighthouse
+  ctx.beginPath(); ctx.moveTo(1300, h);
+  [[1330, 800], [1362, 752], [1404, 718], [1450, 694], [1500, 674], [1552, 662], [1600, 654]].forEach(p => ctx.lineTo(...p));
+  ctx.lineTo(w, h); ctx.closePath();
+  g = ctx.createLinearGradient(1300, 0, 1600, 0);
+  g.addColorStop(0, "#9a5a4a"); g.addColorStop(0.25, "#5a3640"); g.addColorStop(1, "#2a1f32");
+  ctx.fillStyle = g; ctx.fill();
+  for (let i = 0; i < 70; i++) {                      // scrub on the rock
+    const x = 1330 + r() * 270, y = lerpPts([[1330, 800], [1404, 718], [1500, 674], [1600, 654]], x) + 4 + r() * 60;
+    ctx.fillStyle = r() < 0.5 ? "rgba(40,48,34,0.7)" : "rgba(120,98,58,0.5)";
+    ctx.beginPath(); ctx.ellipse(x, y, 3 + r() * 7, 2 + r() * 3, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  // lighthouse
+  const lx = 1560, lb = 664;
+  ctx.fillStyle = "#efe2d2"; ctx.beginPath(); ctx.moveTo(lx - 9, lb); ctx.lineTo(lx - 6, lb - 56); ctx.lineTo(lx + 6, lb - 56); ctx.lineTo(lx + 9, lb); ctx.fill();
+  ctx.fillStyle = "#a83a2c"; ctx.fillRect(lx - 8.2, lb - 22, 16.4, 8); ctx.fillRect(lx - 7, lb - 44, 14, 7);
+  ctx.fillStyle = "rgba(255,214,170,0.55)"; ctx.fillRect(lx - 9, lb - 56, 4, 56);
+  ctx.fillStyle = "#2d2430"; ctx.fillRect(lx - 8, lb - 60, 16, 4); ctx.fillRect(lx - 5, lb - 70, 10, 10);
+  ctx.fillStyle = "#ffe7a8"; ctx.fillRect(lx - 3.5, lb - 68, 7, 6);
+  g = ctx.createRadialGradient(lx, lb - 65, 0, lx, lb - 65, 40);
+  g.addColorStop(0, "rgba(255,226,160,0.55)"); g.addColorStop(1, "rgba(255,226,160,0)");
+  ctx.fillStyle = g; ctx.fillRect(lx - 40, lb - 105, 80, 80);
+  ctx.fillStyle = "#e9d8c4"; ctx.fillRect(lx - 24, lb - 12, 18, 12);
+  ctx.fillStyle = "#9e4632"; ctx.beginPath(); ctx.moveTo(lx - 26, lb - 12); ctx.lineTo(lx - 15, lb - 19); ctx.lineTo(lx - 4, lb - 12); ctx.fill();
+
+  // ---- back hill, then the town's hill
+  ctx.beginPath(); ctx.moveTo(0, WATERLINE);
+  BACKHILL.forEach(p => ctx.lineTo(...p)); ctx.lineTo(980, WATERLINE); ctx.closePath();
+  g = ctx.createLinearGradient(0, 430, 0, 700);
+  g.addColorStop(0, "#8a5a72"); g.addColorStop(1, "#4a3448");
+  ctx.fillStyle = g; ctx.fill();
+  for (let i = 0; i < 160; i++) {                      // hazy olive groves on the back hill
+    const x = r() * 880, top = lerpPts(BACKHILL, x);
+    const y = top + 4 + r() * 50;
+    ctx.fillStyle = `rgba(${70 + r() * 30 | 0},${62 + r() * 20 | 0},${70},0.55)`;
+    ctx.beginPath(); ctx.ellipse(x, y, 3 + r() * 5, 2 + r() * 2.5, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.beginPath(); ctx.moveTo(0, WATERLINE);
+  LAND.forEach(p => ctx.lineTo(...p)); ctx.lineTo(1012, WATERLINE); ctx.closePath();
+  g = ctx.createLinearGradient(0, 480, 0, WATERLINE);
+  g.addColorStop(0, "#a2674e"); g.addColorStop(0.5, "#7a4b45"); g.addColorStop(1, "#43303c");
+  ctx.fillStyle = g; ctx.fill();
+
+  paintTown(ctx, r);
+  paintHarbour(ctx, r);
+
+  // ---- atmosphere: warm haze over the far town, a quiet vignette, and a soft shade behind the headline
+  ctx.save();                                   // haze clipped to the land, so it leaves no band in the sky
+  ctx.beginPath(); ctx.moveTo(0, WATERLINE); LAND.forEach(p => ctx.lineTo(...p)); ctx.lineTo(1012, WATERLINE); ctx.closePath(); ctx.clip();
+  g = ctx.createLinearGradient(0, 480, 0, 660);
+  g.addColorStop(0, "rgba(255,170,130,0.24)"); g.addColorStop(1, "rgba(255,170,130,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 440, 1020, 220);
+  ctx.restore();
+  ctx.save();                                   // soft shade behind the headline, an ellipse along the copy
+  ctx.translate(380, 320); ctx.scale(1.5, 1.05);
+  g = ctx.createRadialGradient(0, 0, 30, 0, 0, 420);
+  g.addColorStop(0, "rgba(30,18,50,0.52)"); g.addColorStop(0.55, "rgba(30,18,50,0.36)"); g.addColorStop(1, "rgba(30,18,50,0)");
+  ctx.fillStyle = g; ctx.fillRect(-420, -420, 840, 840);
+  ctx.restore();
+  if (!portrait) {                              // under the nav (in portrait the sky extension does this)
+    g = ctx.createLinearGradient(0, 0, 0, 140);
+    g.addColorStop(0, "rgba(16,16,40,0.4)"); g.addColorStop(1, "rgba(16,16,40,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, 140);
+  }
+  g = ctx.createLinearGradient(0, 760, 0, h);
+  g.addColorStop(0, "rgba(14,14,30,0)"); g.addColorStop(1, "rgba(14,14,30,0.4)");
+  ctx.fillStyle = g; ctx.fillRect(0, 760, w, 140);
+}
+
+const WALLS = ["#f8ecdc", "#f6e4c8", "#f1cd94", "#eeae8c", "#f4dba6", "#ece2d6", "#f7e9d3", "#f2bf8e", "#e9d3c3", "#f8f0e4"];
+const ROOFS = ["#b6553a", "#a8472f", "#c0623f", "#9a412d"];
+
+function paintHouse(ctx, r, x, y, w, h, k, haze) {
+  const base = WALLS[(r() * WALLS.length) | 0];
+  const lit = mixHex(mixHex(base, "#ffcf98", 0.2), "#cf9488", haze);
+  const shade = mixHex(lit, "#5b3a5c", 0.42);
+  // facade + shaded side on the left (the sun is to the right)
+  ctx.fillStyle = lit; ctx.fillRect(x, y - h, w, h);
+  ctx.fillStyle = shade; ctx.fillRect(x, y - h, Math.max(1.5, w * 0.14), h);
+  ctx.fillStyle = "rgba(255,236,200,0.55)"; ctx.fillRect(x + w - 1, y - h, 1, h);
+  // roof
+  if (r() < 0.62) {
+    const rh = Math.max(3, h * (0.28 + r() * 0.14));
+    const roof = mixHex(ROOFS[(r() * ROOFS.length) | 0], "#c08a86", haze * 0.8);
+    ctx.fillStyle = roof;
+    ctx.beginPath(); ctx.moveTo(x - 1.5 * k, y - h); ctx.lineTo(x + w + 1.5 * k, y - h);
+    ctx.lineTo(x + w * 0.82, y - h - rh); ctx.lineTo(x + w * 0.18, y - h - rh); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "rgba(255,190,140,0.45)";   // lit ridge and right slope
+    ctx.beginPath(); ctx.moveTo(x + w * 0.5, y - h - rh); ctx.lineTo(x + w * 0.82, y - h - rh); ctx.lineTo(x + w + 1.5 * k, y - h); ctx.lineTo(x + w * 0.62, y - h); ctx.fill();
+    ctx.fillStyle = "rgba(60,20,20,0.35)";
+    ctx.fillRect(x - 1.5 * k, y - h, w + 3 * k, Math.max(0.8, k));
+    for (let i = 1; i < 4; i++) { ctx.fillStyle = "rgba(80,30,20,0.18)"; ctx.fillRect(x + w * 0.15, y - h - rh * i / 4, w * 0.7, 0.6); }
+  } else {
+    ctx.fillStyle = mixHex(lit, "#ffffff", 0.25); ctx.fillRect(x - 0.5, y - h - 1.6 * k, w + 1, 1.6 * k);
+    if (r() < 0.35) { ctx.fillStyle = lit; ctx.fillRect(x + w * 0.6, y - h - 5 * k, 3 * k, 5 * k); ctx.fillStyle = shade; ctx.fillRect(x + w * 0.6, y - h - 5 * k, 1 * k, 5 * k); }
+  }
+  // windows, some lit for the evening
+  const cols = Math.max(1, Math.floor(w / (9 * k))), rows = Math.max(1, Math.floor(h / (10 * k)));
+  const ww = 3.2 * k, wh = 4.6 * k;
+  for (let cy = 0; cy < rows; cy++) for (let cx = 0; cx < cols; cx++) {
+    if (r() < 0.25) continue;
+    const wx = x + (w / cols) * (cx + 0.5) - ww / 2, wy = y - h + (h / rows) * (cy + 0.5) - wh / 2;
+    const on = r() < 0.16;
+    if (on) {
+      const gl = ctx.createRadialGradient(wx + ww / 2, wy + wh / 2, 0, wx + ww / 2, wy + wh / 2, 7 * k);
+      gl.addColorStop(0, "rgba(255,200,110,0.5)"); gl.addColorStop(1, "rgba(255,200,110,0)");
+      ctx.fillStyle = gl; ctx.fillRect(wx - 7 * k, wy - 7 * k, ww + 14 * k, wh + 14 * k);
+    }
+    ctx.fillStyle = on ? "#ffd27e" : mixHex("#3a2a36", "#8a6070", haze);
+    ctx.fillRect(wx, wy, ww, wh);
+    if (!on && r() < 0.35) { ctx.fillStyle = r() < 0.5 ? "#4f7a6a" : "#4a6390"; ctx.fillRect(wx - 1.1 * k, wy, 1 * k, wh); ctx.fillRect(wx + ww + 0.1 * k, wy, 1 * k, wh); }
+  }
+  if (r() < 0.4 && h > 14 * k) { ctx.fillStyle = r() < 0.5 ? "#6b3a2a" : "#2e4b6b"; ctx.fillRect(x + w * 0.3, y - 7 * k, 3.6 * k, 7 * k); }
+  ctx.fillStyle = "rgba(40,20,36,0.35)"; ctx.fillRect(x, y - 1, w, 1.5);
+}
+
+function paintTree(ctx, r, x, y, k, haze) {
+  const dark = mixHex("#28321f", "#6a4a5c", haze), lit = mixHex("#7a7a34", "#b08070", haze);
+  if (r() < 0.55) {                               // cypress
+    const th = (22 + r() * 16) * k, tw = (4 + r() * 2.5) * k;
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(x, y - th / 2, tw, th / 2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = lit; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.ellipse(x + tw * 0.45, y - th / 2, tw * 0.4, th * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  } else {                                        // umbrella pine
+    const cw = (12 + r() * 10) * k, ch = (5 + r() * 3) * k, tH = (10 + r() * 8) * k;
+    ctx.strokeStyle = "#3b2a26"; ctx.lineWidth = 1.4 * k; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 1.5 * k, y - tH); ctx.stroke();
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(x + 1.5 * k, y - tH - ch * 0.4, cw, ch, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = lit; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.ellipse(x + 1.5 * k + cw * 0.3, y - tH - ch * 0.75, cw * 0.6, ch * 0.45, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+  }
+}
+
+function paintChurch(ctx, x, y) {
+  const lit = "#fbefdc", sh = "#c69a9c";
+  ctx.fillStyle = lit; ctx.fillRect(x, y - 34, 64, 34);                       // nave
+  ctx.fillStyle = sh; ctx.fillRect(x, y - 34, 9, 34);
+  ctx.fillStyle = "#b14f36"; ctx.beginPath(); ctx.moveTo(x - 2, y - 34); ctx.lineTo(x + 66, y - 34); ctx.lineTo(x + 56, y - 44); ctx.lineTo(x + 8, y - 44); ctx.fill();
+  [x - 8, x + 60].forEach((tx, i) => {                                         // twin bell towers
+    ctx.fillStyle = lit; ctx.fillRect(tx, y - 66, 16, 66);
+    ctx.fillStyle = sh; ctx.fillRect(tx, y - 66, 4, 66);
+    ctx.fillStyle = "#3a2836"; ctx.fillRect(tx + 5, y - 58, 6, 9);
+    ctx.fillStyle = "#e9a24f"; ctx.fillRect(tx + 7, y - 54, 2, 4);
+    ctx.fillStyle = i ? "#d8b49a" : "#c9a28e";
+    ctx.beginPath(); ctx.arc(tx + 8, y - 66, 8, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = "#3a2836"; ctx.fillRect(tx + 7.4, y - 80, 1.2, 7); ctx.fillRect(tx + 5.5, y - 78, 5, 1.2);
+  });
+  ctx.fillStyle = lit; ctx.beginPath(); ctx.moveTo(x + 14, y - 34); ctx.lineTo(x + 32, y - 50); ctx.lineTo(x + 50, y - 34); ctx.fill();   // gable
+  ctx.fillStyle = "#4a3040"; ctx.beginPath(); ctx.arc(x + 32, y - 40, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#5b3328"; ctx.fillRect(x + 27, y - 16, 10, 16);
+  ctx.fillStyle = "rgba(255,226,180,0.6)"; ctx.fillRect(x + 63, y - 34, 1.2, 34);
+}
+
+function paintTown(ctx, r) {
+  let churchDone = false;
+  for (let y = 512; y < WATERLINE - 4; ) {
+    const d = (y - 500) / (WATERLINE - 500);
+    const k = 0.5 + d * 0.72;
+    const haze = (1 - d) * 0.42;
+    const xEnd = landRightAt(y) - 8 * k;
+    let x = -24 + r() * 20;
+    while (x < xEnd) {
+      const w = (20 + r() * 34) * k, h = (14 + r() * 16) * k;
+      if (x + w > xEnd) break;
+      const roll = r();
+      if (y - h * 0.4 > lerpPts(LAND, x + w / 2)) {
+        if (roll < 0.11) paintTree(ctx, r, x + w / 2, y, k, haze);
+        else if (roll > 0.05 || true) paintHouse(ctx, r, x, y, w, h, k, haze);
+      }
+      x += w + (roll < 0.15 ? 5 * k : r() * 3 * k);
+    }
+    if (!churchDone && y > 528) { paintChurch(ctx, 300, 530); churchDone = true; }
+    y += 8 + d * 15;
+  }
+  // a stair street cutting down through the town
+  ctx.strokeStyle = "rgba(255,226,190,0.35)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(560, 575); ctx.bezierCurveTo(520, 640, 610, 700, 580, 790); ctx.stroke();
+}
+
+function paintHarbour(ctx, r) {
+  const q = WATERLINE;
+  // town light on the water
+  for (let i = 0; i < 260; i++) {
+    const x = r() * 1000, y = q + 8 + r() * 70, l = 4 + r() * 18;
+    ctx.fillStyle = r() < 0.5 ? `rgba(255,196,140,${0.12 + r() * 0.16})` : `rgba(20,20,46,${0.18 + r() * 0.2})`;
+    ctx.fillRect(x, y, l, 1.2);
+  }
+  // quay wall
+  ctx.fillStyle = "#d3a888"; ctx.fillRect(0, q - 4, 1030, 4);
+  ctx.fillStyle = "#6c4744"; ctx.fillRect(0, q, 1030, 10);
+  ctx.fillStyle = "rgba(255,220,180,0.4)"; ctx.fillRect(0, q - 4, 1030, 1);
+  for (let x = 20; x < 1030; x += 34) { ctx.fillStyle = "rgba(40,20,30,0.35)"; ctx.fillRect(x, q, 1, 10); }
+  // lamps along the quay
+  for (let x = 46; x < 1000; x += 96) {
+    ctx.fillStyle = "#2b2230"; ctx.fillRect(x, q - 22, 1.6, 18);
+    const gl = ctx.createRadialGradient(x + 0.8, q - 23, 0, x + 0.8, q - 23, 16);
+    gl.addColorStop(0, "rgba(255,214,140,0.8)"); gl.addColorStop(1, "rgba(255,214,140,0)");
+    ctx.fillStyle = gl; ctx.fillRect(x - 16, q - 39, 34, 32);
+    ctx.fillStyle = "#fff0c4"; ctx.fillRect(x - 1, q - 25, 3.6, 3.6);
+    ctx.fillStyle = "rgba(255,206,130,0.35)"; ctx.fillRect(x - 1, q + 12, 3, 26);
+  }
+  // fishing boats
+  const hulls = ["#2c5a88", "#c0412f", "#f1ece2", "#2f7a6b", "#e0ad3a", "#f1ece2", "#2c5a88"];
+  const boats = [[90, 828, 1], [210, 846, 1.15], [330, 822, 0.9], [470, 856, 1.3], [620, 832, 1], [760, 852, 1.2], [880, 826, 0.9], [1010, 846, 1.1], [1160, 870, 1.25]];
+  boats.forEach(([bx, by, s], i) => {
+    const c = hulls[i % hulls.length], L = 46 * s, H = 9 * s;
+    ctx.fillStyle = "rgba(14,14,34,0.35)"; ctx.fillRect(bx - L * 0.45, by + H, L * 0.9, 14 * s);       // reflection
+    ctx.fillStyle = mixHex(c, "#1e2742", 0.5); ctx.globalAlpha = 0.5; ctx.fillRect(bx - L * 0.4, by + H + 2, L * 0.8, 6 * s); ctx.globalAlpha = 1;
+    ctx.fillStyle = c;
+    ctx.beginPath(); ctx.moveTo(bx - L / 2, by); ctx.lineTo(bx + L / 2 + 4 * s, by - 2 * s); ctx.lineTo(bx + L * 0.38, by + H); ctx.lineTo(bx - L * 0.42, by + H); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = c === "#f1ece2" ? "#2c5a88" : "#f6efe2"; ctx.fillRect(bx - L * 0.46, by + 1.5 * s, L * 0.9, 1.4 * s);
+    ctx.fillStyle = "rgba(255,214,160,0.5)"; ctx.fillRect(bx - L / 2, by - 0.6, L + 4 * s, 1);
+    if (i % 2 === 0) { ctx.fillStyle = "#efe6d8"; ctx.fillRect(bx - 6 * s, by - 8 * s, 12 * s, 8 * s); ctx.fillStyle = "#3b4d6a"; ctx.fillRect(bx - 4 * s, by - 6 * s, 3 * s, 3 * s); }
+    else { ctx.strokeStyle = "#3b2c30"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(bx + 2, by); ctx.lineTo(bx + 2, by - 30 * s); ctx.stroke(); }
+  });
+}
+
+/* ===================================================================================== thumbnails
+   Small painted scenes for each stay (no external images). */
+function paintThumb(cv) {
+  const kind = cv.dataset.thumb;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = cv.clientWidth, H = cv.clientHeight;
+  if (!W || !H) return;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr * W / 400, 0, 0, dpr * H / 300, 0, 0);   // every thumb is painted in a 400x300 frame
+  const r = rng(kind.length * 97 + 3);
+  const lin = (y0, y1, stops) => { const g = ctx.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, c]) => g.addColorStop(o, c)); return g; };
+  const glow = (x, y, rad, c) => { const g = ctx.createRadialGradient(x, y, 0, x, y, rad); g.addColorStop(0, c); g.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2); };
+  const poly = (pts, fill) => { ctx.beginPath(); ctx.moveTo(...pts[0]); pts.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
+  const pine = (x, y, s, dark, lit) => {
+    ctx.strokeStyle = "#3a2a22"; ctx.lineWidth = 2.4 * s; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 6 * s, y - 30 * s, x + 2 * s, y - 52 * s); ctx.stroke();
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(x + 2 * s, y - 58 * s, 34 * s, 11 * s, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x - 14 * s, y - 52 * s, 16 * s, 7 * s, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = lit; ctx.beginPath(); ctx.ellipse(x + 12 * s, y - 63 * s, 20 * s, 5 * s, 0, 0, Math.PI * 2); ctx.fill();
+  };
+  const olive = (x, y, s, dark, lit) => {
+    ctx.strokeStyle = "#4a3a2c"; ctx.lineWidth = 2 * s; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 1 * s, y - 12 * s); ctx.stroke();
+    for (let i = 0; i < 6; i++) { ctx.fillStyle = i < 4 ? dark : lit; ctx.beginPath(); ctx.ellipse(x + (r() - 0.5) * 18 * s, y - 18 * s - r() * 8 * s, 9 * s, 6 * s, 0, 0, Math.PI * 2); ctx.fill(); }
+  };
+
+  if (kind === "albeira") {
+    // Comporta: a reed-roofed white house in the pines, rice fields, low gold sun
+    ctx.fillStyle = lin(0, 190, [[0, "#6f5a86"], [0.45, "#e48f6a"], [0.85, "#ffc884"], [1, "#ffe0a8"]]); ctx.fillRect(0, 0, 400, 190);
+    glow(300, 176, 160, "rgba(255,226,170,0.85)");
+    ctx.fillStyle = "#fff4d8"; ctx.beginPath(); ctx.arc(300, 176, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(120,80,96,0.55)"; ctx.fillRect(0, 178, 400, 12);
+    ctx.fillStyle = lin(188, 300, [[0, "#c6a456"], [0.5, "#8c8a3c"], [1, "#4c5a2c"]]); ctx.fillRect(0, 188, 400, 112);
+    for (let i = 0; i < 14; i++) { ctx.fillStyle = `rgba(255,214,140,${0.12 + r() * 0.12})`; ctx.fillRect(0, 194 + i * i * 0.55, 400, 1 + i * 0.12); }
+    pine(40, 210, 1.1, "#24301f", "rgba(160,150,70,0.6)"); pine(352, 214, 0.95, "#24301f", "rgba(170,150,70,0.6)"); pine(392, 196, 0.6, "#2c3524", "rgba(170,150,70,0.5)");
+    // house
+    ctx.fillStyle = "#f7ecdc"; ctx.fillRect(120, 186, 170, 52);
+    ctx.fillStyle = "#cfae9e"; ctx.fillRect(120, 186, 26, 52);
+    poly([[108, 188], [302, 188], [258, 140], [152, 140]], "#5b4630");
+    ctx.fillStyle = "rgba(255,200,130,0.35)"; poly([[205, 140], [258, 140], [302, 188], [230, 188]], "rgba(255,200,130,0.28)");
+    for (let i = 0; i < 26; i++) { ctx.strokeStyle = "rgba(40,28,18,0.35)"; ctx.lineWidth = 0.8; ctx.beginPath(); const t = i / 25; ctx.moveTo(152 + t * 106, 140); ctx.lineTo(108 + t * 194, 188); ctx.stroke(); }
+    [[160, 202], [196, 202], [232, 202]].forEach(([x, y], i) => { glow(x + 8, y + 10, 22, "rgba(255,196,110,0.45)"); ctx.fillStyle = i === 1 ? "#ffd58a" : "#ffcb78"; ctx.fillRect(x, y, 16, 22); ctx.fillStyle = "#6b4a33"; ctx.fillRect(x + 7.5, y, 1, 22); });
+    ctx.fillStyle = "#8a6142"; ctx.fillRect(100, 238, 210, 6);
+    ctx.fillStyle = lin(246, 270, [[0, "#7fd0d0"], [1, "#3f8f9c"]]); ctx.fillRect(170, 248, 150, 18);
+    ctx.fillStyle = "rgba(255,226,170,0.6)"; ctx.fillRect(250, 252, 50, 2);
+    ctx.fillStyle = "#ece0cc"; ctx.fillRect(166, 246, 158, 2);
+  } else if (kind === "douro") {
+    // Douro: terraced vineyards falling to the river, a stone quinta, afternoon light
+    ctx.fillStyle = lin(0, 140, [[0, "#9ec2d6"], [1, "#f2dcb6"]]); ctx.fillRect(0, 0, 400, 140);
+    poly([[0, 120], [90, 92], [180, 108], [270, 84], [400, 104], [400, 300], [0, 300]], "#8b7a8e");
+    poly([[0, 160], [120, 118], [230, 140], [330, 112], [400, 126], [400, 300], [0, 300]], "#7d8a4c");
+    for (let i = 0; i < 22; i++) {
+      ctx.strokeStyle = i % 2 ? "rgba(60,70,30,0.55)" : "rgba(220,200,120,0.4)"; ctx.lineWidth = 1.6;
+      ctx.beginPath(); const y = 140 + i * 6.5; ctx.moveTo(0, y + 22); ctx.bezierCurveTo(120, y - 14, 240, y + 14, 400, y - 10); ctx.stroke();
+    }
+    ctx.fillStyle = lin(250, 300, [[0, "#5f8ea0"], [1, "#2f5568"]]); poly([[0, 262], [400, 246], [400, 300], [0, 300]], ctx.fillStyle);
+    ctx.fillStyle = "rgba(255,240,210,0.5)"; ctx.fillRect(40, 268, 120, 1.4); ctx.fillRect(220, 258, 90, 1.2);
+    // quinta
+    ctx.fillStyle = "#e9dcc4"; ctx.fillRect(200, 120, 110, 42); ctx.fillStyle = "#c2ae94"; ctx.fillRect(200, 120, 18, 42);
+    poly([[194, 122], [316, 122], [300, 104], [210, 104]], "#b0553a");
+    for (let i = 0; i < 5; i++) { ctx.fillStyle = "#3f3a40"; ctx.fillRect(226 + i * 17, 132, 7, 11); ctx.fillStyle = "#566b4c"; ctx.fillRect(224 + i * 17, 132, 1.6, 11); }
+    ctx.fillStyle = "#e9dcc4"; ctx.fillRect(306, 108, 26, 54); poly([[302, 110], [336, 110], [319, 94]], "#a34c34");
+    [[176, 160], [344, 160], [360, 166]].forEach(([x, y]) => { ctx.fillStyle = "#2c3a22"; ctx.beginPath(); ctx.ellipse(x, y - 20, 5, 22, 0, 0, Math.PI * 2); ctx.fill(); });
+  } else if (kind === "farol") {
+    // Sintra coast: a white house on a green cliff, the Atlantic, blue hour coming in
+    ctx.fillStyle = lin(0, 170, [[0, "#3c4f7c"], [0.6, "#b4849a"], [1, "#f2b896"]]); ctx.fillRect(0, 0, 400, 170);
+    glow(80, 165, 120, "rgba(255,200,160,0.55)");
+    ctx.fillStyle = lin(168, 300, [[0, "#c79a98"], [0.15, "#5e6f94"], [1, "#22304f"]]); ctx.fillRect(0, 168, 400, 132);
+    for (let i = 0; i < 120; i++) { ctx.fillStyle = `rgba(255,220,210,${0.08 + r() * 0.15})`; ctx.fillRect(r() * 220, 172 + r() * 120, 4 + r() * 14, 1); }
+    poly([[170, 300], [190, 230], [215, 196], [260, 176], [330, 166], [400, 160], [400, 300]], "#5c4a44");
+    poly([[205, 206], [222, 190], [262, 172], [330, 162], [400, 156], [400, 172], [330, 178], [262, 188], [226, 204]], "#5f7a3c");
+    for (let i = 0; i < 18; i++) { ctx.fillStyle = "rgba(40,30,30,0.35)"; ctx.fillRect(200 + r() * 200, 200 + r() * 90, 1, 6 + r() * 16); }
+    for (let i = 0; i < 40; i++) { ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fillRect(160 + r() * 40 + i * 0.3, 280 + r() * 16, 3 + r() * 8, 1.2); }
+    ctx.fillStyle = "#f4ece2"; ctx.fillRect(270, 136, 80, 30); ctx.fillStyle = "#b9aeb6"; ctx.fillRect(270, 136, 14, 30);
+    ctx.fillStyle = "#f4ece2"; ctx.fillRect(296, 120, 40, 18);
+    [[292, 146], [312, 146], [332, 146], [306, 124]].forEach(([x, y]) => { glow(x + 4, y + 5, 14, "rgba(255,200,120,0.5)"); ctx.fillStyle = "#ffd488"; ctx.fillRect(x, y, 8, 10); });
+    ctx.fillStyle = "#efe6dc"; poly([[372, 160], [376, 104], [386, 104], [390, 160]], "#efe6dc");
+    ctx.fillStyle = "#b03a2e"; ctx.fillRect(374, 124, 15, 8); ctx.fillStyle = "#2e2a34"; ctx.fillRect(373, 96, 16, 8);
+    glow(381, 99, 30, "rgba(255,230,170,0.7)");
+  } else {
+    // Alentejo: wheat plains, olive trees, a whitewashed farmhouse with a blue band
+    ctx.fillStyle = lin(0, 170, [[0, "#78a8d0"], [1, "#e9e2cc"]]); ctx.fillRect(0, 0, 400, 170);
+    ctx.fillStyle = "rgba(255,255,255,0.7)"; [[90, 50, 46], [130, 44, 30], [290, 70, 40]].forEach(([x, y, s]) => { ctx.beginPath(); ctx.ellipse(x, y, s, s * 0.28, 0, 0, Math.PI * 2); ctx.fill(); });
+    poly([[0, 168], [130, 156], [260, 164], [400, 150], [400, 300], [0, 300]], "#a69560");
+    ctx.fillStyle = lin(170, 300, [[0, "#d9b25c"], [1, "#b98a36"]]); poly([[0, 182], [200, 172], [400, 178], [400, 300], [0, 300]], ctx.fillStyle);
+    for (let i = 0; i < 260; i++) { ctx.strokeStyle = `rgba(${r() < 0.5 ? "255,226,150" : "140,100,40"},0.35)`; ctx.lineWidth = 0.8; const x = r() * 400, y = 186 + r() * 114; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 1.5, y - 4 - (y - 180) * 0.05); ctx.stroke(); }
+    ctx.fillStyle = "#fbf7ef"; ctx.fillRect(150, 140, 120, 40); ctx.fillStyle = "#d6cfc6"; ctx.fillRect(150, 140, 20, 40);
+    ctx.fillStyle = "#2e5ea8"; ctx.fillRect(150, 172, 120, 8); ctx.fillRect(150, 140, 120, 3);
+    poly([[146, 142], [274, 142], [262, 128], [158, 128]], "#b8603e");
+    ctx.fillStyle = "#fbf7ef"; ctx.fillRect(244, 112, 12, 20);
+    [[186, 152], [216, 152], [242, 152]].forEach(([x, y]) => { ctx.fillStyle = "#3a3640"; ctx.fillRect(x, y, 9, 13); ctx.fillStyle = "#2e5ea8"; ctx.fillRect(x - 2, y - 2, 13, 2); });
+    olive(70, 196, 1.3, "#5b6a3a", "#9aa064"); olive(330, 194, 1.2, "#5b6a3a", "#9aa064"); olive(118, 184, 0.8, "#66733f", "#9aa064"); olive(370, 182, 0.7, "#66733f", "#9aa064"); olive(30, 180, 0.6, "#66733f", "#9aa064");
+  }
+}
+
+/* ===================================================================================== Liquid Glass
+   blur-craft assets/liquid-glass.ts, types removed. */
+function supportsLiquidGlass() {
+  if (typeof navigator === "undefined") return false;
+  const isChromium = /Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent) && !/Firefox\//.test(navigator.userAgent);
+  return isChromium && CSS.supports("backdrop-filter", "blur(1px)");
+}
+const lgSurface = (x) => Math.pow(1 - Math.pow(1 - x, 4), 1 / 4);
+function lgDisplacementMap(w, h, r, bezel) {
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  const img = ctx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const qx = Math.max(Math.abs(x + 0.5 - w / 2) - (w / 2 - r), 0);
+      const qy = Math.max(Math.abs(y + 0.5 - h / 2) - (h / 2 - r), 0);
+      const inCorner = qx > 0 && qy > 0;
+      let d, nx, ny;
+      if (inCorner) {
+        const len = Math.hypot(qx, qy);
+        d = r - len;
+        nx = (qx / len) * Math.sign(x + 0.5 - w / 2);
+        ny = (qy / len) * Math.sign(y + 0.5 - h / 2);
+      } else {
+        const dx = w / 2 - Math.abs(x + 0.5 - w / 2);
+        const dy = h / 2 - Math.abs(y + 0.5 - h / 2);
+        if (dx < dy) { d = dx; nx = Math.sign(x + 0.5 - w / 2); ny = 0; }
+        else { d = dy; nx = 0; ny = Math.sign(y + 0.5 - h / 2); }
+      }
+      let m = 0;
+      if (d >= 0 && d < bezel) {
+        const t = d / bezel;
+        const slope = (lgSurface(Math.min(1, t + 0.01)) - lgSurface(Math.max(0, t - 0.01))) / 0.02;
+        m = Math.min(1, slope / 4);
+      }
+      const i = (y * w + x) * 4;
+      img.data[i] = 128 - nx * m * 127;
+      img.data[i + 1] = 128 - ny * m * 127;
+      img.data[i + 2] = 128;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return c.toDataURL();
+}
+let lgCounter = 0;
+function mountLiquidGlass(el, opts = {}) {
+  if (!supportsLiquidGlass()) return null;
+  if (matchMedia("(prefers-reduced-transparency: reduce)").matches) return null;
+  const { bezel = 22, strength = 38, blur = 14, saturate = 170, aberration = 0, clamp = true } = opts;
+  const w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
+  const r = opts.radius ?? (parseFloat(getComputedStyle(el).borderTopLeftRadius) || 24);
+  if (!w || !h) return null;
+  const id = el.dataset.liquidId || `liquid-glass-${++lgCounter}`;
+  el.dataset.liquidId = id;
+  document.getElementById(`${id}-svg`)?.remove();
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.id = `${id}-svg`;
+  svg.setAttribute("width", "0"); svg.setAttribute("height", "0");
+  svg.setAttribute("aria-hidden", "true");
+  svg.style.position = "absolute";
+  const ch = (name, k, m) => `
+      <feDisplacementMap in="SourceGraphic" in2="map" scale="${strength * (1 + k * aberration)}"
+                         xChannelSelector="R" yChannelSelector="G" result="d${name}"/>
+      <feColorMatrix in="d${name}" type="matrix" values="${m}" result="${name}"/>`;
+  svg.innerHTML = `
+    <filter id="${id}" x="0" y="0" width="${w}" height="${h}" filterUnits="userSpaceOnUse"
+            color-interpolation-filters="sRGB">
+      <feImage href="${lgDisplacementMap(w, h, Math.min(r, w / 2, h / 2), bezel)}" x="0" y="0"
+               width="${w}" height="${h}" result="map" preserveAspectRatio="none"/>
+      ${aberration > 0
+        ? ch("r", 0, "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0")
+          + ch("g", 0.08, "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0")
+          + ch("b", 0.16, "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0") + `
+      <feBlend in="r" in2="g" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="b" mode="screen"/>`
+        : `
+      <feDisplacementMap in="SourceGraphic" in2="map" scale="${strength}"
+                         xChannelSelector="R" yChannelSelector="G"/>`}
+    </filter>`;
+  document.body.appendChild(svg);
+  const value = `url(#${id}) blur(${blur}px) saturate(${saturate}%)${clamp ? " contrast(0.8) brightness(0.92)" : ""}`;
+  el.style.setProperty("backdrop-filter", value);
+  el.style.setProperty("-webkit-backdrop-filter", value);
+  return id;
+}
+
+/* ===================================================================================== wiring */
+const art = document.getElementById("art");
+function paintHero() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = art.clientWidth, H = art.clientHeight;
+  if (!W || !H) return;
+  art.width = Math.round(W * dpr); art.height = Math.round(H * dpr);
+  const ctx = art.getContext("2d");
+  // cover-fit the 1600x900 frame; on tall phones keep the town and the sun in view
+  if (W < 800) {
+    // portrait: the scene fills the lower three quarters (sun near the right edge, the town's sea front on
+    // the left) anchored to the bottom, and the sky's top colour carries up behind the headline
+    const s = Math.max(W / 700, (H * 0.74) / V.h);
+    const ox = Math.min(0, Math.max(W - V.w * s, W * 0.86 - V.sunX * s)), oy = H - V.h * s;
+    const top = ctx.createLinearGradient(0, 0, 0, Math.max(1, oy));
+    top.addColorStop(0, "#121534"); top.addColorStop(1, "#1c2147");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = top; ctx.fillRect(0, 0, W, oy + 1);
+    ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ox, dpr * oy);
+    paintScene(ctx, true);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);       // feather the join between the extension and the scene
+    const fade = ctx.createLinearGradient(0, oy - 1, 0, oy + 260);
+    fade.addColorStop(0, "rgba(28,33,71,1)"); fade.addColorStop(0.45, "rgba(28,33,71,0.45)"); fade.addColorStop(1, "rgba(28,33,71,0)");
+    ctx.fillStyle = fade; ctx.fillRect(0, oy - 1, W, 262);
+    return;
+  }
+  const s = Math.max(W / V.w, H / V.h);
+  let ox = W / 2 - 800 * s; ox = Math.min(0, Math.max(W - V.w * s, ox));
+  const oy = (H - V.h * s) * 0.55;
+  ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ox, dpr * oy);
+  paintScene(ctx);
+}
+function paintThumbs() { document.querySelectorAll("canvas[data-thumb]").forEach(paintThumb); }
+
+const search = document.getElementById("search");
+// Frosted liquid glass: it carries text. In Chromium the bezel (where the map bends) shows the backdrop
+// unfrosted, so it is kept narrow and every word sits inside it, over the frosted centre.
+const LIQUID = { bezel: 14, strength: 30, blur: 18, aberration: 0.7 };
+function mountSearchGlass() { mountLiquidGlass(search, LIQUID); }
+
+let rT;
+const ro = new ResizeObserver(() => { clearTimeout(rT); rT = setTimeout(() => { paintHero(); paintThumbs(); }, 60); mountSearchGlass(); });
+ro.observe(document.getElementById("hero"));
+ro.observe(search);
+paintHero(); paintThumbs(); mountSearchGlass();
+document.fonts && document.fonts.ready.then(() => { mountSearchGlass(); paintThumbs(); });
+
+// pointer sheen on each glass surface (the plain-JS version of Glass.tsx's spring)
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+document.querySelectorAll(".ag").forEach((el) => {
+  let tx = 30, ty = 0, cx = 30, cy = 0, raf = 0;
+  const tick = () => {
+    cx += (tx - cx) * 0.14; cy += (ty - cy) * 0.14;
+    el.style.setProperty("--mx", cx.toFixed(1) + "%"); el.style.setProperty("--my", cy.toFixed(1) + "%");
+    raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.2 ? requestAnimationFrame(tick) : 0;
+  };
+  const go = () => { if (!raf) raf = requestAnimationFrame(tick); };
+  el.addEventListener("pointermove", (e) => {
+    if (reduceMotion) return;
+    const b = el.getBoundingClientRect();
+    tx = ((e.clientX - b.left) / b.width) * 100; ty = ((e.clientY - b.top) / b.height) * 100; go();
+  });
+  el.addEventListener("pointerleave", () => { tx = 30; ty = 0; go(); });
+});
+
+// the nav turns to paper once the hero has scrolled under it
+const nav = document.getElementById("nav");
+new IntersectionObserver(([e]) => nav.classList.toggle("is-light", !e.isIntersecting), { rootMargin: "-72px 0px 0px 0px", threshold: 0 })
+  .observe(document.getElementById("hero"));
+
+// save buttons
+document.querySelectorAll(".stay__save").forEach((b) => b.addEventListener("click", (e) => {
+  e.preventDefault(); b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+}));
+
+// arrival: the headline resolves from a blur once (recipe 4); the glass fades its own opacity, never a parent's
+if (!reduceMotion && !location.hash.includes("still")) {
+  const h1 = document.querySelector("[data-reveal]");
+  const label = h1.textContent;
+  const nodes = [...h1.childNodes];
+  h1.setAttribute("aria-label", label); h1.textContent = "";
+  nodes.forEach((n) => {
+    const isEm = n.nodeType === 1;
+    const words = n.textContent.split(/(\s+)/).filter(Boolean);
+    words.forEach((wd) => {
+      if (/^\s+$/.test(wd)) { h1.append(wd); return; }
+      const span = document.createElement("span"); span.className = "w"; span.setAttribute("aria-hidden", "true");
+      if (isEm) { const em = document.createElement("em"); em.textContent = wd; span.append(em); } else span.textContent = wd;
+      h1.append(span);
+    });
+  });
+  const ease = "cubic-bezier(.2,.8,.2,1)";
+  h1.querySelectorAll(".w").forEach((el, i) => {
+    el.animate([{ opacity: 0, filter: "blur(8px)", transform: "translateY(10px)" }, { opacity: 1, filter: "blur(0px)", transform: "none" }],
+      { duration: 600, easing: ease, delay: 120 + i * 45, fill: "backwards" }).finished.then(() => { el.style.filter = "none"; });
+  });
+  [search, document.getElementById("feature")].forEach((el, i) => {
+    el.animate([{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }],
+      { duration: 700, easing: ease, delay: 420 + i * 120, fill: "backwards" });
+  });
+}
+</script>
+</body>
+</html>

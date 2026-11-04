@@ -73,6 +73,13 @@ function staticAudit(target) {
     if (/prefers-reduced-transparency/.test(src)) hasReducedT = true;
 
     if (isCss) {
+      // Classes whose base rule is masked (progressive-blur bands, extended backdrops, edge strips): their
+      // variant rules (e.g. .nav.is-light .nav__edge) are helper layers too, not panels.
+      const masked = new Set();
+      for (const m of src.matchAll(/([^{}]*)\{([^{}]*)\}/g))
+        if (/(^|[^-])mask(-image)?\s*:|-webkit-mask/.test(m[2]))
+          for (const c of m[1].matchAll(/\.([\w-]+)/g)) masked.add(c[1]);
+      const lastClass = (sel) => { const all = [...sel.matchAll(/\.([\w-]+)/g)]; return all.length ? all[all.length - 1][1] : null; };
       // Walk rule blocks (innermost {...} with no nested braces).
       for (const m of src.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
         const [, selector, body] = m;
@@ -97,7 +104,7 @@ function staticAudit(target) {
         const bd = /backdrop-filter\s*:\s*([^;]+)/.exec(body);
         const r = bd && px(bd[1]);
         if (r && r > 60) add("WARN", at, `${sel}: backdrop blur ${r}px. Past ~60px glass loses the colour shapes that make it read as glass; 24-44px is the premium range.`);
-        const panel = bd && r && r >= 8 && !/mask-image/.test(body) && !/var\(--glass/.test(body);
+        const panel = bd && r && r >= 8 && !masked.has(lastClass(sel)) && !/(^|[^-])mask(-image)?\s*:|-webkit-mask/.test(body) && !/var\(--glass/.test(body);
         if (panel && r < 16 && !/@supports|prefers-reduced/.test(selector))
           add("INFO", at, `${sel}: light ${r}px backdrop blur. Over busy or moving content detail shows through as noise; NN/g and Apple use heavier blur (24-44px) for panels with text.`);
         if (panel && !/saturate/.test(bd[1]))

@@ -44,6 +44,8 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 
 ![Default, tinted (iOS 26.1-style, for prefers-contrast) and light glass](examples/glass-default-tinted-light.png)
 
+![Liquid Glass: frosted (rim frosted too) and clear (the bend shows)](examples/liquid-glass-frosted-vs-clear.png)
+
 ## How it was built
 
 An earlier version of this skill lost a blind A/B test to a model with no skill at all: it capped blur,
@@ -60,8 +62,8 @@ research and re-tested until the skill version won:
 - [NN/g: Liquid Glass Is Cracked](https://www.nngroup.com/articles/liquid-glass/) and Apple's iOS 26.1 Clear/Tinted fix
 - [CSS Filter Effects 2 spec](https://drafts.csswg.org/filter-effects-2/), [rdev/liquid-glass-react](https://github.com/rdev/liquid-glass-react) (chromatic aberration), WebKit bugs 245510 and 279115
 
-**Live examples:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/) shows three
-briefs (a meditation hero, a music app, a banking dashboard), each built with and without the skill, side by
+**Live examples:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/) shows four
+briefs (a meditation hero, a music app, a banking dashboard, a hotel booking page), each built with and without the skill, side by
 side and interactive. Open in Chrome to see the refraction.
 
 ## Quick start without an agent
