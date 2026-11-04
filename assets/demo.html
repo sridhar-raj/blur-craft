@@ -39,7 +39,7 @@
   .controls label { display: grid; gap: 4px; }
   .controls select, .controls input[type=range] { width: 100%; accent-color: #ffcf8a; }
   .controls select { background: rgb(0 0 0 / 0.35); color: inherit; border: 1px solid rgb(255 255 255 / 0.2); border-radius: 8px; padding: 6px 8px; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .controls .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
   /* Surfaces placed on the scene */
   .demo-dock { position: absolute; left: 50%; bottom: 36px; margin-left: -80px; width: min(560px, calc(100vw - 32px)); }
@@ -91,20 +91,20 @@
       <select id="thickness"><option>clear</option><option>thin</option><option selected>regular</option><option>thick</option></select></label>
     <label>Rim angle <span id="angleOut">135°</span>
       <input id="angle" type="range" min="0" max="345" step="15" value="135"></label>
-    <div class="row"><span>Tinted (iOS 26.1)</span><input id="tinted" type="checkbox"></div>
-    <div class="row"><span>Light tone</span><input id="light" type="checkbox"></div>
-    <div class="row"><span>Liquid Glass dock</span><input id="liquid" type="checkbox" checked></div>
+    <label class="row"><span>Tinted (iOS 26.1)</span><input id="tinted" type="checkbox"></label>
+    <label class="row"><span>Light tone</span><input id="light" type="checkbox"></label>
+    <label class="row"><span>Liquid Glass dock</span><input id="liquid" type="checkbox" checked></label>
     <label>Device tier <span id="tierOut"></span>
       <select id="tier"><option value="auto">auto (measured)</option><option>full</option><option>lite</option><option>flat</option></select></label>
   </aside>
 
-  <div class="demo-menu gs-menu glass" role="menu" aria-label="Example menu">
-    <button role="menuitem" class="glass-label">New session</button>
-    <button role="menuitem" class="glass-label">Share playlist</button>
-    <button role="menuitem" class="glass-secondary">Settings</button>
-  </div>
+  <nav class="demo-menu gs-menu glass" aria-label="Example menu">
+    <button class="glass-label">New session</button>
+    <button class="glass-label">Share playlist</button>
+    <button class="glass-secondary">Settings</button>
+  </nav>
 
-  <article class="demo-card glass js-swatch" style="--glass-light: 255 207 138">
+  <article class="demo-card glass glass--regular js-swatch" style="--glass-light: 255 207 138">
     <span class="glass-tertiary">Now playing</span>
     <h3 class="glass-label">Evening wind-down</h3>
     <span class="glass-secondary">12 min · Guided by Mara Lindqvist</span>
@@ -129,13 +129,22 @@
   <div class="dialog-actions"><button class="btn-ghost glass-label" id="decline">Decline</button><button class="btn-solid" id="approve">Approve</button></div>
 </div>
 
+<script>
+  if (location.protocol === "file:") addEventListener("DOMContentLoaded", () => {
+    const n = document.createElement("p");
+    n.textContent = "Opened as a file: the controls need a local server (browsers block module scripts on file://). Run `python3 -m http.server` in this folder and open http://localhost:8000/demo.html.";
+    n.style.cssText = "position:fixed;left:16px;top:64px;max-width:min(460px,calc(100vw - 32px));z-index:200;margin:0;padding:10px 14px;border-radius:10px;background:#fff;color:#111;font:13px/1.4 system-ui";
+    document.body.append(n);
+  });
+</script>
 <script type="module">
-  import { mountLiquidGlass } from "./liquid-glass.js";
+  import { watchLiquidGlass } from "./liquid-glass.js";
   import { applyGlassTier } from "./glass-tier.js";
   const $ = (id) => document.getElementById(id);
   const swatches = [...document.querySelectorAll(".glass")].filter((el) => !el.classList.contains("controls"));
   const dock = $("dock");
 
+  let stopLiquid = null;
   function apply() {
     const t = $("thickness").value;
     for (const el of document.querySelectorAll(".js-swatch, .demo-toast")) {
@@ -149,8 +158,9 @@
     }
     $("angleOut").textContent = `${$("angle").value}°`;
     $("bar").classList.toggle("gs-bar--light", $("light").checked);
-    if ($("liquid").checked) mountLiquidGlass(dock, { bezel: 18, strength: 34, blur: 4, aberration: 0.7 });
-    else { dock.style.removeProperty("backdrop-filter"); dock.style.removeProperty("-webkit-backdrop-filter"); }
+    // Liquid Glass only (re)mounts when toggled; watchLiquidGlass keeps the map in step with the dock's size.
+    if ($("liquid").checked && !stopLiquid) stopLiquid = watchLiquidGlass(dock, { bezel: 18, strength: 34, blur: 4, aberration: 0.7 });
+    if (!$("liquid").checked && stopLiquid) { stopLiquid(); stopLiquid = null; }
   }
   // URL presets, e.g. demo.html?thickness=thin&light=1 (used by the contrast tests)
   const q = new URLSearchParams(location.search);
@@ -162,7 +172,9 @@
 
   // Device tier: measured after the glass is on screen; the select overrides it.
   let measured = "full";
-  applyGlassTier().then((t) => { measured = t; setTier(); });   // re-apply: a forced tier must win
+  // Probe once the page has settled (fonts, maps), so start-up work doesn't read as a slow device.
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 300));
+  idle(() => applyGlassTier().then(({ tier }) => { measured = tier; setTier(); }));   // re-apply: a forced tier must win
   if (q.get("tier")) $("tier").value = q.get("tier");
   const setTier = () => {
     const v = $("tier").value, root = document.documentElement;
@@ -180,8 +192,9 @@
   });
 
   // Dialog over a veil (siblings, so the dialog's glass isn't inside the veil's backdrop root)
-  const open = () => { document.documentElement.classList.add("gs-modal-open"); $("veil").hidden = false; $("dialog").hidden = false; $("dialog").focus(); };
-  const close = () => { document.documentElement.classList.remove("gs-modal-open"); $("veil").hidden = true; $("dialog").hidden = true; $("open").focus(); };
+  // inert on the page behind keeps Tab and screen readers inside the dialog
+  const open = () => { document.documentElement.classList.add("gs-modal-open"); $("scene").inert = true; $("veil").hidden = false; $("dialog").hidden = false; $("dialog").focus(); };
+  const close = () => { document.documentElement.classList.remove("gs-modal-open"); $("scene").inert = false; $("veil").hidden = true; $("dialog").hidden = true; $("open").focus(); };
   $("open").addEventListener("click", open);
   for (const id of ["veil", "decline", "approve"]) $(id).addEventListener("click", close);
   addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("dialog").hidden) close(); });

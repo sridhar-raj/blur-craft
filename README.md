@@ -36,7 +36,7 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 | `assets/adaptive-tone.js` | Light/dark flip for small glass from the luminance behind it, with hysteresis (Apple's WWDC25 rule: small elements flip, panels don't) |
 | `assets/glass-tier.js` | Full / lite / flat glass by device: memory, Save-Data, a frame-rate probe (iOS Low Power Mode caps at 30fps) and Compute Pressure |
 | `assets/Glass.tsx` | React + Framer Motion wrapper with a sheen that follows the pointer and an optional `liquid` prop |
-| `assets/liquid-glass.ts` | Liquid Glass edge refraction (SVG displacement map through `backdrop-filter`, Chromium) with optional chromatic aberration; frosted fallback elsewhere |
+| `assets/liquid-glass.ts` / `.js` | Liquid Glass edge refraction (SVG displacement map through `backdrop-filter`, Chromium) with optional chromatic aberration; `watchLiquidGlass()` keeps it in step with size and cleans up; off on lite/flat tiers; frosted fallback elsewhere |
 | `references/recipes.md` | Code for light-behind-glass, extended-backdrop sticky bars, progressive blur, focus veils, blur reveals, blur-bridged crossfades, glows, depth of field, motion blur, ambient art backdrops, locked content, grain |
 | `references/research.md` | The sources behind every number, and what an earlier version got wrong |
 | `references/quirks.md` | Browser traps: the backdrop root, Safari prefixes, clipped glows, banding, WebGL, video capture |
@@ -81,7 +81,7 @@ side and interactive. Open in Chrome to see the refraction.
 
 Safari 18 and 26 on macOS Sonoma render **no blur** when `backdrop-filter` is built from CSS variables
 (WebKit bug 297620, open), and Tailwind v4's `backdrop-blur-*` is built that way. This skill writes literal
-filters and its audit flags `var()` inside `backdrop-filter`.
+filters, unprefixed first and `-webkit-` last (the bug report also shows the unprefixed property failing there), and its audit flags both problems.
 
 ## Quick start without an agent
 

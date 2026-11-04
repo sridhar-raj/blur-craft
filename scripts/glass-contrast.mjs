@@ -20,7 +20,8 @@ import { pathToFileURL } from "node:url";
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
-let target = args.find((a) => !a.startsWith("--") && args[args.indexOf(a) - 1]?.startsWith("--") !== true);
+const VALUE_FLAGS = new Set(["--width", "--height"]);
+let target = args.find((a, i) => !a.startsWith("--") && !VALUE_FLAGS.has(args[i - 1]));
 if (!target) { console.error("usage: glass-contrast.mjs <url | file.html> [--width 1600 --height 900] [--all-text]"); process.exit(2); }
 if (!/^https?:|^file:/.test(target) && existsSync(target)) target = pathToFileURL(resolve(target)).href;
 const width = Number(opt("--width", 1600)), height = Number(opt("--height", 900));
@@ -30,7 +31,9 @@ let chromium;
 try { ({ chromium } = createRequire(join(process.cwd(), "package.json"))("playwright")); }
 catch { console.error("Playwright isn't installed in this project. Run: pnpm add -D playwright"); process.exit(2); }
 
-const HIDE_TEXT = `*{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}`;
+// Only the measured lines are hidden: any other text (e.g. content scrolling behind the glass) is part of
+// the real backdrop and must stay in the screenshot.
+const HIDE_TEXT = `[data-gc-measure]{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}`;
 const NO_BLUR = `*{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}`;
 
 const browser = await chromium.launch();
@@ -68,6 +71,9 @@ for (const state of ["normal", "tint-only", "contrast"]) {
         const el = n.parentElement, cs = getComputedStyle(el);
         if (cs.visibility === "hidden" || cs.display === "none" || Number(cs.opacity) === 0) continue;
         if (el.closest("svg")) continue;                 // words painted inside artwork aren't interface text
+        // Effective alpha includes every ancestor's opacity (a 60%-opacity parent fades its text too).
+        let alpha = 1;
+        for (let a = el; a; a = a.parentElement) alpha *= Number(getComputedStyle(a).opacity);
         const range = document.createRange(); range.selectNodeContents(n);
         const size = parseFloat(cs.fontSize), weight = Number(cs.fontWeight) || 400;
         const large = size >= 24 || (size >= 18.66 && weight >= 700);
@@ -76,7 +82,8 @@ for (const state of ["normal", "tint-only", "contrast"]) {
           // Skip lines covered by another layer (a dialog's focus veil, a sheet): they're meant to recede.
           const hit = document.elementFromPoint(Math.min(innerWidth - 1, r.left + r.width / 2), Math.min(innerHeight - 1, r.top + r.height / 2));
           if (hit && !el.contains(hit) && !hit.contains(el)) continue;
-          out.push({ text: n.textContent.trim().slice(0, 40), color: cs.color, large,
+          el.dataset.gcMeasure = "";
+          out.push({ text: n.textContent.trim().slice(0, 40), color: cs.color, alpha, large,
             x: Math.max(0, Math.floor(r.left)), y: Math.max(0, Math.floor(r.top)),
             w: Math.ceil(Math.min(r.right, innerWidth) - Math.max(0, r.left)), h: Math.ceil(Math.min(r.bottom, innerHeight) - Math.max(0, r.top)) });
         }
@@ -101,15 +108,17 @@ for (const state of ["normal", "tint-only", "contrast"]) {
     const parse = (s) => { const m = s.match(/[\d.]+/g).map(Number); return { r: m[0], g: m[1], b: m[2], a: m[3] ?? 1 }; };
     return lines.map((ln) => {
       const d = ctx.getImageData(ln.x, ln.y, Math.max(1, ln.w), Math.max(1, ln.h)).data;
-      let hi = [0, 0, 0], lo = [255, 255, 255], hiL = -1, loL = 2;
-      for (let i = 0; i < d.length; i += 4) {
-        const l = L(d[i], d[i + 1], d[i + 2]);
-        if (l > hiL) { hiL = l; hi = [d[i], d[i + 1], d[i + 2]]; }
-        if (l < loL) { loL = l; lo = [d[i], d[i + 1], d[i + 2]]; }
-      }
       const t = parse(ln.color);
-      const over = (bg) => { const [r, g, b] = bg.map((v, k) => t.a * [t.r, t.g, t.b][k] + (1 - t.a) * v); return L(r, g, b); };
-      const worst = Math.min(ratio(over(hi), L(...hi)), ratio(over(lo), L(...lo)));
+      const a = t.a * ln.alpha;
+      // Per pixel: composite the text over that pixel and keep the lowest ratio. The worst pixel isn't
+      // always the brightest or darkest one (mid-tone text loses most against mid-tones).
+      let worst = Infinity;
+      for (let i = 0; i < d.length; i += 4) {
+        const bg = [d[i], d[i + 1], d[i + 2]];
+        const fg = [t.r, t.g, t.b].map((v, k) => a * v + (1 - a) * bg[k]);
+        const r = ratio(L(...fg), L(...bg));
+        if (r < worst) worst = r;
+      }
       return { ...ln, worst: Math.round(worst * 100) / 100, need: ln.large ? 3 : 4.5 };
     });
   }, { png, lines: lines.lines });
@@ -125,5 +134,5 @@ for (const state of ["normal", "tint-only", "contrast"]) {
 }
 
 await browser.close();
-console.log(failed ? `\n${failed} problem(s): failing lines, or a state where nothing could be checked. Raise --glass-dim, go a thickness up, or move the text off the bright patch.` : "\nAll text on glass passes in every state.");
+console.log(failed ? `\n${failed} problem(s): failing lines, or a state where nothing could be checked. Raise the alpha in --glass-dim, go a thickness up, or move the text off the bright patch.` : "\nAll text on glass passes in every state.");
 process.exitCode = failed ? 1 : 0;

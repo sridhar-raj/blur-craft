@@ -16,10 +16,19 @@
 // prefers-reduced-motion is NOT a performance signal (no data links it to weak hardware).
 // Probe after glass is on screen: blur cost is GPU work, so an empty page measures nothing useful.
 
-export async function measureFps(frames = 60) {
+// Resolves null when it can't measure fairly: a hidden tab (rAF paused) or a probe that never finishes.
+export async function measureFps(frames = 60, timeoutMs = 3000) {
+  if (document.hidden) return null;
   return new Promise((resolve) => {
-    let n = 0, t0;
-    const step = (t) => { t0 ??= t; if (++n < frames) requestAnimationFrame(step); else resolve(((frames - 1) * 1000) / (t - t0)); };
+    let n = 0, t0, done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    setTimeout(() => finish(null), timeoutMs);
+    const step = (t) => {
+      if (done) return;
+      if (document.hidden) return finish(null);          // tab went to the background mid-probe
+      t0 ??= t;
+      if (++n < frames) requestAnimationFrame(step); else finish(((frames - 1) * 1000) / (t - t0));
+    };
     requestAnimationFrame(step);
   });
 }
@@ -28,23 +37,25 @@ export async function glassTier() {
   const lowMem = (navigator.deviceMemory ?? 8) <= 2;
   const saveData = navigator.connection?.saveData === true;
   const cores = navigator.hardwareConcurrency ?? 8;
-  const fps = await measureFps();
-  if (saveData || lowMem || fps < 34) return "flat";
-  if (cores <= 4 || fps < 50) return "lite";
+  const fps = await measureFps();                       // null = couldn't measure: decide on the other signals
+  if (saveData || lowMem || (fps != null && fps < 34)) return "flat";
+  if (cores <= 4 || (fps != null && fps < 50)) return "lite";
   return "full";
 }
 
 const order = ["full", "lite", "flat"];
 
 // A tier the user picked (a site setting) or a developer forced wins: set data-glass-tier-lock on <html>
-// and this script never overrides it.
+// and this script never overrides it. Call it after the page settles (requestIdleCallback): start-up work
+// would read as a slow device. Returns { tier, stop } — stop() disconnects the pressure observer.
 export async function applyGlassTier({ root = document.documentElement, watchPressure = true } = {}) {
   const base = await glassTier();
   const locked = () => "glassTierLock" in root.dataset;
   if (!locked()) root.dataset.glassTier = base;
+  let obs = null;
   if (watchPressure && "PressureObserver" in globalThis) {
     try {
-      const obs = new PressureObserver((records) => {
+      obs = new PressureObserver((records) => {
         if (locked()) return;
         const state = records.at(-1)?.state;
         const down = state === "serious" || state === "critical";
@@ -52,7 +63,7 @@ export async function applyGlassTier({ root = document.documentElement, watchPre
         root.dataset.glassTier = down ? order[Math.min(i + 1, 2)] : base;
       });
       await obs.observe("cpu", { sampleInterval: 2000 });
-    } catch { /* not permitted here: keep the measured tier */ }
+    } catch { obs = null; /* not permitted here: keep the measured tier */ }
   }
-  return base;
+  return { tier: base, stop: () => obs?.disconnect() };
 }

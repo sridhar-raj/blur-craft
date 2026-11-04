@@ -101,7 +101,8 @@ https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/
   panes edge to edge (seam). Don't put accent-coloured text on acrylic.
 - **Tested here:** a `mix-blend-mode: luminosity` child over a `backdrop-filter` washes the glass grey in
   Chromium, so the luminosity layer can't be reproduced that way. `contrast(.7–.9)` in the backdrop
-  filter gives the same "colour through, sharp light/dark blocked" result (`--glass-contrast`).
+  filter gives the same "colour through, sharp light/dark blocked" result (the literal `contrast(.8–.92)`
+  in each thickness filter).
 
 ## Production CSS (read from the shipped stylesheets, November 2026)
 
@@ -120,7 +121,8 @@ https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/
 ## Liquid Glass on the web, advanced
 - **Filter order (CSS Filter Effects 2 spec):** "The first filter function or reference uses the Backdrop
   Root Image as input. Each later step uses the previous output." So `url(#refract) blur()` bends the
-  sharp backdrop and then softens it. https://drafts.csswg.org/filter-effects-2/
+  sharp backdrop and then softens it. In practice Chromium left the displaced bezel unblurred with that
+  chain, so liquid-glass.ts blurs inside the SVG filter instead (see its header and quirks.md). https://drafts.csswg.org/filter-effects-2/
 - **Chromatic aberration** (rdev/liquid-glass-react): three `feDisplacementMap` passes at slightly
   different scales, channels isolated with `feColorMatrix`, recombined with `feBlend mode="screen"`.
   https://github.com/rdev/liquid-glass-react
@@ -141,7 +143,7 @@ https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/
 - iOS 26.1 added Clear/Tinted Liquid Glass; Tinted "increases opacity and adds more contrast".
   https://tidbits.com/2025/10/21/ios-26-1-to-add-optional-opacity-to-liquid-glass/
 
-**In the skill:** the calibrated presets table, `--glass-contrast`, the tinted level and its media
+**In the skill:** the calibrated presets table, the `contrast()` clamp in the thickness filters, the tinted level and its media
 queries, the 2.5% noise layer, `aberration`, the worst-case contrast check, and the tells about seams,
 accent text and glass in glass.
 

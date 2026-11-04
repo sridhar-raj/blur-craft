@@ -3,14 +3,17 @@
 // plain glass material). Technique from kube.io/blog/liquid-glass-css-svg: a displacement map whose
 // red/green channels push backdrop pixels inward near the rim, as a convex squircle bezel bends light.
 //
-//   const id = mountLiquidGlass(el, { bezel: 22, strength: 38, blur: 6 });
-//   // el gets backdrop-filter: url(#id) blur(...) saturate(...) in Chromium; call again after a resize.
+//   const stop = watchLiquidGlass(el, { bezel: 22, strength: 38, blur: 14 });   // mounts, remounts on resize
+//   stop();                                                                     // and fonts; removes it all
+//   // In Chromium el gets backdrop-filter: url(#id) saturate(…) contrast(…) brightness(…) inline (the frost
+//   // is inside the SVG filter). mountLiquidGlass / unmountLiquidGlass are the one-shot versions.
 //
 // Keep it to one element per screen (a player, a dock, a hero button): the map is rebuilt on every
 // size change, and SVG backdrop filters are heavier than plain blur.
 //
-// Mount after layout settles and again when it changes: a ResizeObserver plus document.fonts.ready.
+// The map must match the element's size: watchLiquidGlass remounts on ResizeObserver and fonts.ready.
 // If part of the glass shows the content behind it sharp, the map is out of date with the element's size.
+// It stays off on "lite"/"flat" device tiers (glass-tier.js) and under prefers-reduced-transparency.
 // The frosting lives INSIDE the SVG filter, before the bend (feGaussianBlur → feDisplacementMap). Tested in
 // Chromium: a CSS `url() blur()` chain leaves the whole bezel ring unblurred (text under the rim reads
 // sharp), and `blur() url()` frosts everything but flattens the refraction. Blurring first inside the
@@ -80,6 +83,11 @@ export function mountLiquidGlass(el, opts = {}) {
         return null;
     if (matchMedia("(prefers-reduced-transparency: reduce)").matches)
         return null;
+    const tier = document.documentElement.dataset.glassTier;
+    if (tier && tier !== "full") {
+        unmountLiquidGlass(el);
+        return null;
+    }
     const { bezel = 22, strength = 38, blur = 14, saturate = 170, aberration = 0, clamp = true } = opts;
     // Layout size, not getBoundingClientRect(): a scale transform on the element or an ancestor would shrink
     // the map, and any part of the element outside the filter region renders with no filter at all
@@ -126,4 +134,26 @@ export function mountLiquidGlass(el, opts = {}) {
     el.style.setProperty("backdrop-filter", value);
     el.style.setProperty("-webkit-backdrop-filter", value);
     return id;
+}
+/** Removes the filter and its SVG; the element falls back to its glass.css material. */
+export function unmountLiquidGlass(el) {
+    const id = el.dataset.liquidId;
+    if (id)
+        document.getElementById(`${id}-svg`)?.remove();
+    el.style.removeProperty("backdrop-filter");
+    el.style.removeProperty("-webkit-backdrop-filter");
+}
+/** Mounts, keeps the map in step with the element's size (resize, late fonts), and returns a cleanup. */
+export function watchLiquidGlass(el, opts = {}) {
+    let alive = true, frame = 0;
+    const mount = () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => { if (alive)
+            mountLiquidGlass(el, opts); });
+    };
+    mount();
+    const ro = new ResizeObserver(mount);
+    ro.observe(el);
+    document.fonts?.ready.then(mount);
+    return () => { alive = false; cancelAnimationFrame(frame); ro.disconnect(); unmountLiquidGlass(el); };
 }

@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
-import { mountLiquidGlass, type LiquidOptions } from "./liquid-glass";
+import { watchLiquidGlass, type LiquidOptions } from "./liquid-glass";
 
 type Props = {
   children: ReactNode;
@@ -35,16 +35,13 @@ export function Glass({
   const mxPct = useMotionTemplate`${mx}%`;
   const myPct = useMotionTemplate`${my}%`;
 
+  // Liquid Glass: mount, keep in step with size, and clean up the SVG and inline filter on unmount.
+  const liquidKey = liquid ? JSON.stringify(liquid === true ? {} : liquid) : "";
   useEffect(() => {
     const el = ref.current;
-    if (!el || !liquid) return;
-    const opts = liquid === true ? {} : liquid;
-    mountLiquidGlass(el, opts);
-    const ro = new ResizeObserver(() => mountLiquidGlass(el, opts));
-    ro.observe(el);
-    document.fonts?.ready.then(() => mountLiquidGlass(el, opts));   // text reflow can resize the glass
-    return () => ro.disconnect();
-  }, [liquid]);
+    if (!el || !liquidKey) return;
+    return watchLiquidGlass(el, JSON.parse(liquidKey) as LiquidOptions);
+  }, [liquidKey]);
 
   return (
     <motion.div

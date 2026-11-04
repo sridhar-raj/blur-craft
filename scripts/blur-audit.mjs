@@ -39,8 +39,8 @@ function cssPrefixedByBuild() {
   try {
     const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    // Next 16 compiles CSS through Lightning CSS (Turbopack), which prefixes for the browserslist targets.
-    return ["@tailwindcss/turbopack", "@tailwindcss/postcss", "@tailwindcss/vite", "lightningcss", "autoprefixer", "next"].find((d) => d in deps) ?? null;
+    // Plain Next.js uses PostCSS without Autoprefixer unless configured, so "next" alone doesn't count.
+    return ["@tailwindcss/turbopack", "@tailwindcss/postcss", "@tailwindcss/vite", "lightningcss", "autoprefixer"].find((d) => d in deps) ?? null;
   } catch { return null; }
 }
 const BUILD_PREFIX = cssPrefixedByBuild();
@@ -99,6 +99,8 @@ function staticAudit(target) {
           const filterOnly = !/(^|[^-])background(-color|-image)?\s*:/.test(body);
           if (!nested && !helper && !off && !filterOnly) surfaces.add(sel.split(/[\s:>+~]/)[0]);
         }
+        if (unpref && pref && body.search(/-webkit-backdrop-filter\s*:/) < body.search(/(^|[^-])backdrop-filter\s*:/))
+          add("INFO", at, `${sel}: -webkit-backdrop-filter comes before backdrop-filter. On macOS Sonoma Safari the unprefixed property fails (WebKit 297620), so put the prefixed one last.`);
         if (unpref && !pref)
           add(BUILD_PREFIX ? "WARN" : "FAIL", at, BUILD_PREFIX
             ? `${sel}: no -webkit-backdrop-filter in source. This project's build (${BUILD_PREFIX}) adds it, but a copy pasted into a project without it gets no blur in Safari before 18.`
@@ -188,7 +190,8 @@ function staticAudit(target) {
   for (const f of list.filter((f) => /\.(html|tsx|jsx)$/.test(f))) {
     const raw = readFileSync(f, "utf8");
     let i = 0;
-    for (const m of raw.matchAll(/class(?:Name)?=["'`{][^"'`}]*?(?:^|[\s"'`{])glass(?=[\s"'`}])[^"'`}]*["'`}]/g))
+    for (const m of raw.matchAll(/class(?:Name)?=(["'`{])([^"'`}]*)/g))
+      if (/(^|[\s`])glass(\s|$)/.test(m[2]))
       surfaces.add(`${relative(process.cwd(), f)}:markup${i++}:${m.index}`);
   }
   // The shared rule itself isn't a surface once its uses are counted.

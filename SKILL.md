@@ -34,7 +34,7 @@ expensive (Apple's materials, visionOS, the best product sites) gets three thing
 | A floating card or panel with text | `.glass.glass--regular` | `thick` over a detailed photo |
 | A menu, popover or command bar | `.gs-menu.glass` | 32px over ~86%, 0.5px top highlight |
 | A dialog | `.gs-veil` + `.gs-dialog.glass.glass--thick` | `glass--solid` when it confirms money, deletes or signs; `gs-veil--flat` + `.gs-modal-open` when glass chrome sits underneath |
-| A toast or a bottom sheet | `.gs-toast` / `.gs-sheet` | |
+| A toast or a bottom sheet | `.gs-toast.glass.glass--regular` / `.gs-sheet.glass.glass--thick` | The `gs-` classes are layout only; the material comes from `.glass` |
 | Content fading under a bar | Progressive blur (recipe 2) | One scroll-edge effect per view |
 | A headline arriving, or a value changing | Blur reveal (4) / 2px crossfade (4b) | Once per screen |
 | A page washed in the art's colours | Art backdrop, baked (recipe 8) | Never a live blur under fixed glass |
@@ -69,9 +69,11 @@ Decide what will be directly behind each glass surface, and make it the most lum
 Use `assets/glass.css` (rename the `glass` prefix when copying) and `assets/surfaces.css` for the
 ready-made surfaces, or `assets/Glass.tsx` in React. Don't hand-write a one-line `backdrop-filter` card.
 
-**Write `backdrop-filter` with literal values, never `var()`.** Safari 18 and 26 on macOS Sonoma render no
-blur when the filter is built from custom properties (WebKit 297620, open), and Tailwind v4's
-`backdrop-blur-*` is built exactly that way. `glass.css` has a literal filter per thickness × tone and
+**Write `backdrop-filter` with literal values, never `var()`, unprefixed first and `-webkit-` last.**
+Safari 18 and 26 on macOS Sonoma render no blur when the filter is built from custom properties (WebKit
+297620, open), and Tailwind v4's `backdrop-blur-*` is built exactly that way. The same bug report shows the
+unprefixed property failing there even with a literal value, so the prefixed declaration goes last, where
+Safari applies it (Chrome and Firefox ignore it). `glass.css` has a literal filter per thickness × tone and
 switches by class; variables are fine for fills, dims and colours.
 
 **Thickness.** Pick by how much text the glass carries. Values were calibrated with the contrast checker
@@ -87,14 +89,14 @@ over a bright light in `demo.html`:
 
 Add `glass--light` for light glass with ink text, and `glass--neutral` in colour-critical apps (photo, video
 and design editors): no saturation boost or tone shift, because the glass mustn't change how the work looks. Over a detailed photo, start from `thick` with
-`--glass-dim` 0.65–0.75: vivid glass and readable text pull against each other there, so spend the
+`--glass-dim: rgb(10 10 18 / 0.65–0.75)` (it's a colour, not a number): vivid glass and readable text pull against each other there, so spend the
 vividness on the rim, the sheen and the light spilling around the glass.
 
 **What's in the material** (and why):
 
 | Layer | Value | Source |
 |---|---|---|
-| Backdrop | `blur(16–44px) saturate(160–180%) brightness(.96) contrast(.8–.92)` | Saturation keeps colour alive (Comeau, Apple.com's 180%). Contrast < 1 is the working CSS form of Fluent's luminosity layer: colour through, harsh light and dark blocked. Brightness ≤ 1 so a bright backdrop isn't lifted behind white text |
+| Backdrop | Literal per variant: clear `blur(16px) saturate(180%)`, thin `blur(24px) … contrast(.92)`, regular `blur(32px) … contrast(.85)`, thick `blur(44px) saturate(160%) … contrast(.8)`, solid `blur(4px) saturate(140%)`; dark glass adds `brightness(.96)`, light `brightness(1.08)`; neutral is blur only | Saturation keeps colour alive (Comeau, Apple.com's 180%). Contrast < 1 is the working CSS form of Fluent's luminosity layer: colour through, harsh light and dark blocked. Brightness ≤ 1 so a bright backdrop isn't lifted behind white text |
 | Fill | 160° white gradient over a dim layer | A flat tint reads as plastic (NN/g: gradient fills mimic reflection) |
 | Grain | 2.5% noise | Fluent acrylic ships 2% |
 | Rim | 1px gradient ring (mask-composite), bright toward the light | Edge = thickness |
@@ -114,7 +116,7 @@ component that set a darker dim stays darker). It turns on for `prefers-contrast
 |---|---|---|
 | Sticky nav | Apple.com `saturate(180%) blur(20px)` over 80%; Linear `blur(20px)` over `#0b0b0bcc` | `.gs-bar` |
 | Menu / command bar | Linear `blur(32px)` over 90%; Raycast `blur(36px)`, 0.5px top highlight | `.gs-menu` |
-| Translucent panel | Radix Themes `blur(64px)` over 70% white (the only big design system that ships a blur token) | `thick`, or `--glass-blur: 64px` for very busy backdrops |
+| Translucent panel | Radix Themes `blur(64px)` over 70% white (the only big design system that ships a blur token) | `thick`, or a custom class with a literal `backdrop-filter: blur(64px) saturate(180%)` for very busy backdrops |
 | Dialog scrim | Material 32%, Fluent Smoke 30%, Primer ~40%, Atlassian ~46%, Polaris 71% (no blur) | `.gs-veil`: 32% + 6px |
 | Hover chip | Linear `blur(8px)` over `#ffffff29` | `clear`, blur on `:hover` only |
 
@@ -183,7 +185,7 @@ Design the look first, then hold these:
   With more than a few panels, drop `backdrop-filter` under ~600px and keep the translucent fill.
 - Radius matters less than area and count: Skia downsamples past a small sigma, so 40px isn't 10× 4px.
 - Give `html` an opaque background colour: Safari then skips an extra full-screen compositing layer for
-  pages with glass (WebKit 271340).
+  pages with glass (WebKit 271340: the fix skips the layer only for opaque documents).
 - Don't blur under an opaque fill. Framer and Dia ship `backdrop-filter` on solid backgrounds, paying
   for a blur nobody can see. Above ~85% fill, use ≤ 4px or none (Arc's toasts: 85% and 3px).
 - Tier glass by device: `assets/glass-tier.js` sets `data-glass-tier` to full, lite (one 8px blur) or
@@ -213,7 +215,8 @@ Run all of these before calling glass done:
    frame failed at 4.4:1. Check phone width too (`--width 390 --height 844`). It hides the text,
    finds the brightest and darkest pixel under each line, and checks 4.5:1 (3:1 large) in three states:
    normal, tint-only (blur off, as iOS Low Power Mode shows it) and `prefers-contrast: more`. Fix failures
-   by going a thickness up, raising `--glass-dim`, or moving text off the bright patch. Never put
+   by going a thickness up, raising the alpha in `--glass-dim` (e.g. `rgb(10 10 18 / 0.6)`), or moving text
+   off the bright patch. Never put
    text-bearing glass over other text. Keep 44px targets on glass controls.
 3. **Look:** does colour shift across the glass; is the rim lit on the light side; is the glass the most
    beautiful object in its frame; does the tinted level look intentional, not broken?

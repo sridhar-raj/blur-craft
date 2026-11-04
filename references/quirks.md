@@ -28,7 +28,8 @@ What this means in practice:
 
 ## Safari
 
-- Safari before 18 needs `-webkit-backdrop-filter`. Always write both, prefixed first. In React inline
+- Safari before 18 needs `-webkit-backdrop-filter`. Always write both, unprefixed first and `-webkit-` last
+  (see the Sonoma section). In React inline
   styles that's `WebkitBackdropFilter` and `backdropFilter`.
 - Masks on backdrop layers need `-webkit-mask-image` too (`WebkitMaskImage` in React).
 - `backdrop-filter` plus `border-radius` plus `overflow: hidden` can leak square corners during a
@@ -59,12 +60,12 @@ before the bend, which frosts edge to edge.
 
 If some *other* part shows the content sharp, the displacement map is smaller than the element. Parts outside the filter region get no filter at all. Causes: mounted before fonts
 loaded or before layout settled, or sized with `getBoundingClientRect()` under a scale transform. Remount
-on ResizeObserver and `document.fonts.ready`, and size from `offsetWidth`/`offsetHeight` (the asset does
+on ResizeObserver and `document.fonts.ready`, and size from `offsetWidth`/`offsetHeight` (`watchLiquidGlass` and `Glass.tsx` do
 both). 
 
 ## Checking Safari: Playwright's WebKit can't show backdrop-filter
 
-Playwright's WebKit build (headless *and* headed, tested on WebKit 27.2) never paints `backdrop-filter`
+Playwright's WebKit build (headless *and* headed; Playwright 1.64's WebKit build, which reports version 27.2) never paints `backdrop-filter`
 in screenshots, even a bare `blur(10px)`; `filter: blur()` paints fine. A screenshot from it shows every
 glass surface as see-through and looks like a broken material. It isn't. Use it only to confirm the CSS
 parses (read `getComputedStyle(el).backdropFilter` and the `::before` mask; glass.css parses identically in
@@ -80,7 +81,17 @@ why it passes in Playwright's WebKit (27.2) and in newer Safari: an earlier vers
 only there and wrongly concluded it was fine. WebKit bug 297620 (open, P2). Tailwind v4 compiles every
 `backdrop-blur-*` this way, so Tailwind glass loses its blur on those Macs too.
 
-`glass.css` therefore writes a literal filter per thickness × tone and switches variants by class. Set
+The bug's own test file (attachment 476457) has a third case: a **literal, unprefixed**
+`backdrop-filter: blur(25px)` with no prefix, which the reporter says "does not work at all" on Sonoma
+with Safari 18.6. So on Sonoma the prefixed property is the one that works. Order the pair **unprefixed
+first, `-webkit-` last**: Chrome and Firefox ignore `-webkit-backdrop-filter`, and Safari then applies the
+prefixed declaration. Treat this order as precautionary: if WebKit treats the two names as one aliased property it changes
+nothing, and it couldn't be confirmed on a real Sonoma machine for this skill. (React inline styles
+collapse both into one property anyway.) Build tools (Autoprefixer, Lightning CSS) usually emit the prefix *first*: check
+the shipped CSS if Sonoma users matter.
+
+`glass.css` therefore writes a literal filter per thickness × tone, unprefixed then prefixed, and switches
+variants by class. Set
 fills, dims and colours with variables freely; only the filter must be literal. `blur-audit.mjs` warns on
 `var()` inside `backdrop-filter`. (Related, and different: WebKit 289149 looked identical but was an
 ancestor with `will-change: opacity` making a backdrop root.)
@@ -93,9 +104,10 @@ the crop instead.
 
 ## Component rules vs the tinted level
 
-A component rule that sets `--glass-dim` (same specificity as `.glass`, but later) would override the
-tinted level inside `@media (prefers-contrast: more)`. The asset's tinted rules use a doubled class
-(`.glass.glass`) so they still win. Keep that when renaming the prefix.
+The tinted level adds its own layer (`--glass-tint-layer`) on top of a surface's `--glass-dim` instead of
+replacing it, so a component that sets a darker dim keeps it and gets the tint on top. Its rules use a
+doubled class (`.glass.glass`) so a component's own `--glass-tint-layer` can't switch the tint off by
+accident. Keep the doubled class when renaming the prefix.
 
 ## Hover glass on many items
 
@@ -108,7 +120,8 @@ not on the resting state.
 - Safari 26 samples a fixed or sticky element at the top edge to tint its own toolbar (WebKit 301756).
   A fully transparent glass nav gives it nothing sensible to sample: give the bar a real fill colour.
 - A backdrop-filter makes WebKit add a full-screen compositing layer unless the document element has an
-  opaque background (WebKit 271340). Set `html { background: <colour> }` on pages with glass.
+  opaque background (WebKit 271340, fixed in 2024 for opaque documents: so it's the opaque `html` that
+  avoids the layer). Set `html { background: <colour> }` on pages with glass; it costs nothing.
 
 ## backdrop-filter makes a containing block
 
@@ -149,8 +162,9 @@ against the nav, not the viewport. Portal overlays out of glass containers.
   (`bgImage`/`bgOverlap`), and glass over a flat colour is scored as if it weren't blurred. That's why
   `glass-contrast.mjs` exists. Treat axe's incomplete results on glass as manual checks.
 - Chrome DevTools (Rendering tab) and Polypane 16 emulate `prefers-reduced-transparency`.
-- Visual regression: grain and the pointer sheen change every run. Freeze them with Playwright's
-  `stylePath` (`--glass-noise: none`, no sheen) and use `maxDiffPixelRatio` around 0.01 for glass regions
+- Visual regression: the grain is deterministic (`feTurbulence`), but the pointer sheen, the rim swing and
+  any animated light change between runs. Freeze them with Playwright's `stylePath`
+  (`.glass { --glass-noise: none } .glass::after { display: none }`, set on `.glass`, not `:root`) and use `maxDiffPixelRatio` around 0.01 for glass regions
   rather than loosening `threshold` globally. Keep baselines per OS and GPU.
 
 ## Clipped glows

@@ -22,7 +22,8 @@ export function sampleLuminance(el, source, size = 16) {
   // object-fit: fill or a canvas sized to its box; for object-fit: cover, pass a canvas instead).
   const sx = ((r.left - s.left) / s.width) * nw, sy = ((r.top - s.top) / s.height) * nh;
   const sw = (r.width / s.width) * nw, sh = (r.height / s.height) * nh;
-  const c = sampleLuminance.canvas ||= Object.assign(document.createElement("canvas"), { width: size, height: size });
+  const c = sampleLuminance.canvas ||= document.createElement("canvas");
+  if (c.width !== size) { c.width = size; c.height = size; }   // a later call with another size must not read out of bounds
   const ctx = c.getContext("2d", { willReadFrequently: true });
   try { ctx.drawImage(source, sx, sy, sw, sh, 0, 0, size, size); } catch { return null; }
   let d;

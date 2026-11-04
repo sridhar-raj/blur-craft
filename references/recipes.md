@@ -5,8 +5,10 @@ section's own prefix. React snippets assume `"use client"` and `framer-motion` (
 
 **Plain HTML (no React):** every Framer Motion recipe maps onto the Web Animations API. For example, the
 blur reveal becomes
-`el.animate([{ opacity: 0, filter: "blur(8px)", transform: "translateY(10px)" }, { opacity: 1, filter: "blur(0px)", transform: "none" }], { duration: 600, easing: "cubic-bezier(.2,.8,.2,1)", delay: i * 45 }).finished.then(() => el.style.filter = "none")`.
-The crossfade is the same with 2px and 200ms. Keep `filter: none` at the end, as the React versions do.
+`el.animate([{ opacity: 0, filter: "blur(8px)", transform: "translateY(10px)" }, { opacity: 1, filter: "blur(0px)", transform: "none" }], { duration: 600, easing: "cubic-bezier(.2,.8,.2,1)", delay: i * 45, fill: "backwards" })`.
+`fill: "backwards"` holds the hidden first frame during the delay (no flash), and when the animation ends
+the element returns to its stylesheet state, where `filter` is already `none`. The crossfade is the same
+with 2px and 200ms.
 
 0. Light behind the glass (do this first)
 1. Glass surface (assets/glass.css, assets/Glass.tsx)
@@ -123,7 +125,8 @@ Or without React: `mountLiquidGlass(el, { bezel: 26, strength: 40, blur: 2 })` f
 ## 1c. Extended-backdrop sticky bar
 
 A frosted header that also samples content just *below* itself, so colour glows into the glass as content
-approaches instead of popping in when it touches the edge (Josh Comeau).
+approaches instead of popping in when it touches the edge (Josh Comeau). `assets/surfaces.css` ships this
+ready-made as `.gs-bar` (with device tiers and glass-on-scroll); the code below is the same pattern.
 
 ```css
 .bc-bar { position: sticky; top: 0; z-index: 10; isolation: isolate; }
@@ -131,25 +134,23 @@ approaches instead of popping in when it touches the edge (Josh Comeau).
   position: absolute;
   inset: 0;
   height: 200%;                                   /* sample twice the bar's height */
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: blur(16px) saturate(180%);
-  background: linear-gradient(to bottom, var(--page-bg) 0%, transparent 50%);  /* stops top-edge flicker */
+  backdrop-filter: blur(20px) saturate(180%);       /* Apple.com's nav values; literal (Sonoma) */
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: linear-gradient(to bottom, rgb(14 14 20 / 0.8) 0 50%, transparent 50%);   /* 80% fill, as Apple */
   -webkit-mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
   mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
   pointer-events: none;                           /* the masked half would otherwise block clicks */
   z-index: -1;
 }
-.bc-bar__edge {                                    /* glassy bottom edge: a thin brighter strip */
+.bc-bar__edge {                                    /* a 1px lit edge where the glass ends (no second blur) */
   position: absolute;
-  inset: 0;
-  transform: translateY(100%);
-  height: 100%;
-  -webkit-backdrop-filter: blur(12px) brightness(120%) saturate(140%);
-  backdrop-filter: blur(12px) brightness(120%) saturate(140%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0 4px, transparent 4px);
-  mask-image: linear-gradient(to bottom, #000 0 4px, transparent 4px);
+  inset: auto 0 0 0;
+  height: 1px;
   pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14) 20%, rgb(255 255 255 / 0.14) 80%, transparent);
 }
+/* Comeau's thicker "glassy edge" is a second live blur under the bar (a 4px strip with
+   blur(12px) brightness(120%)): richer, but it doubles the blurred surfaces per bar. */
 ```
 
 ```html
@@ -193,8 +194,8 @@ export function ProgressiveBlur({
             style={{
               position: "absolute",
               inset: 0,
-              WebkitBackdropFilter: `blur(${blur}px)`,
               backdropFilter: `blur(${blur}px)`,
+              WebkitBackdropFilter: `blur(${blur}px)`,
               WebkitMaskImage: mask,
               maskImage: mask,
             }}
@@ -244,9 +245,9 @@ export function FocusVeil({ open, onClose }: { open: boolean; onClose: () => voi
   position: absolute;      /* or fixed for a full page */
   inset: 0;
   z-index: 20;             /* the dialog sits above this */
-  background: rgb(8 8 12 / 0.35);
-  -webkit-backdrop-filter: blur(6px) saturate(0.9);
+  background: rgb(8 8 12 / 0.32);   /* Material 3's scrim; surfaces.css .gs-veil */
   backdrop-filter: blur(6px) saturate(0.9);
+  -webkit-backdrop-filter: blur(6px) saturate(0.9);
 }
 ```
 
@@ -338,8 +339,12 @@ Cursor.com's glass (live CSS, Nov 2026) morphs one glass shape into another with
 ```
 
 ```css
-@keyframes bc-press { 50% { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.52), inset 0 0 12px rgb(255 255 255 / 0.24); } }
-.bc-glass-button:active { animation: bc-press 0.22s ease-out; }
+/* A pseudo-element carries the glow, so the button's own drop shadows aren't replaced mid-press. */
+.bc-glass-button::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.52), inset 0 0 12px rgb(255 255 255 / 0.24); }
+@keyframes bc-press { 50% { opacity: 1; } }
+.bc-glass-button:active::after { animation: bc-press 0.22s ease-out; }
+@media (prefers-reduced-motion: reduce) { .bc-glass-button:active::after { animation: none; opacity: 0.6; } }
 @media (hover: hover) { .bc-glass-button:hover { --glass-fill-top: rgb(255 255 255 / 0.18); } }
 ```
 
@@ -399,11 +404,7 @@ blurred and partly out of frame. Optional rack focus moves the sharp plane on ho
 ```tsx
 import { motion } from "framer-motion";
 
-const planes = {
-  far:  { blur: 6, scale: 1.04, opacity: 0.8 },
-  mid:  { blur: 0, scale: 1,    opacity: 1 },
-  near: { blur: 10, scale: 1.12, opacity: 0.9 },
-};
+const planes = { far: { blur: 6 }, mid: { blur: 0 }, near: { blur: 10 } };   // scale/opacity live in CSS
 
 export function DepthStack({ focus = "mid" as "far" | "mid" }) {
   // Rack focus: when `focus` is "far", the far plane sharpens and the subject softens.
@@ -489,7 +490,7 @@ export async function bakeAmbient(src: string, size = 96): Promise<string> {
   c.width = size;
   c.height = Math.round((size * img.naturalHeight) / img.naturalWidth);
   const ctx = c.getContext("2d")!;
-  ctx.filter = "blur(2px) saturate(160%)";          // a little pre-softening removes pixel grid at the edges
+  ctx.filter = "blur(2px) saturate(160%)";          // pre-softening; canvas ctx.filter needs Safari 18+ (ignored before)
   ctx.drawImage(img, 0, 0, c.width, c.height);
   return c.toDataURL("image/jpeg", 0.8);
 }
@@ -522,7 +523,7 @@ overlay). YouTube's ambient mode samples instead: draw the frame into a tiny can
 ```
 
 ```css
-.bc-video { position: relative; }
+.bc-video { position: relative; isolation: isolate; }   /* keeps the glow's z-index: -1 inside this box */
 .bc-video__glow { position: absolute; inset: -12%; width: 124%; height: 124%; opacity: 0.45; filter: blur(24px); z-index: -1; }
 @media (prefers-reduced-motion: reduce) { .bc-video__glow { display: none; } }
 ```
@@ -531,13 +532,15 @@ overlay). YouTube's ambient mode samples instead: draw the frame into a tiny can
 const ctx = glow.getContext("2d");
 const draw = () => ctx.drawImage(video, 0, 0, 10, 6);
 video.addEventListener("loadeddata", draw); video.addEventListener("seeked", draw);
-let n = 0;
-const onFrame = () => { if (++n % 4 === 0) draw(); video.requestVideoFrameCallback(onFrame); };  // every 4th frame
-video.addEventListener("play", () => video.requestVideoFrameCallback(onFrame));
+let n = 0, handle = 0;
+const onFrame = () => { if (++n % 4 === 0) draw(); handle = video.requestVideoFrameCallback(onFrame); };  // every 4th frame
+video.addEventListener("play", () => { video.cancelVideoFrameCallback(handle); handle = video.requestVideoFrameCallback(onFrame); });
+video.addEventListener("pause", () => video.cancelVideoFrameCallback(handle));   // one chain, never stacked
 ```
 
-- `requestVideoFrameCallback`: Chrome 83, Safari 15.4, Firefox 132. The filter is on a 10×6 canvas, so it
-  costs almost nothing.
+- `requestVideoFrameCallback`: Chrome 83, Safari 15.4, Firefox 132. Sampling is cheap (a 10×6 draw);
+  the CSS `blur(24px)` still runs over the glow's displayed box, but it's a static layer that only
+  repaints when a new frame is drawn, which is far cheaper than a live backdrop blur over the video.
 - Controls over the video need a rim and highlight, not just a tint (Cursor's player: 50% black + 20px).
 
 ## 9. Locked content
@@ -586,8 +589,9 @@ faint noise layer hides the banding and makes the light feel photographic.
 ```
 
 - Static grain only. Animated grain over a whole frame doubles the video size and distracts.
-- `mix-blend-mode` makes the layer a backdrop root, so don't put glass inside the grained element. Put
-  the grain on a sibling above it.
+- Put grain on a sibling layer or a pseudo-element, not as a `mix-blend-mode` (or `filter`) on a
+  *wrapper* of the glass: that wrapper would become a backdrop root and the glass inside would go flat.
+  A blended `::after` on its own is fine; it has no glass inside it.
 
 
 ## 11. Merging glass shapes (Liquid Glass merge)
@@ -600,8 +604,8 @@ stay separate.
 ```css
 .bc-goo-glass {
   position: fixed; inset: 0; pointer-events: none;
-  -webkit-backdrop-filter: blur(18px) saturate(170%) brightness(0.96);   /* literal (Sonoma) */
-  backdrop-filter: blur(18px) saturate(170%) brightness(0.96);
+  backdrop-filter: blur(18px) saturate(170%) brightness(0.96);   /* literal (Sonoma) */
+  -webkit-backdrop-filter: blur(18px) saturate(170%) brightness(0.96);
   background: rgb(10 10 18 / 0.25);
   -webkit-mask: var(--goo-mask) 0 0 / 100% 100% no-repeat;
   mask: var(--goo-mask) 0 0 / 100% 100% no-repeat;
