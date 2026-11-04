@@ -47,7 +47,8 @@ const order = ["full", "lite", "flat"];
 
 // A tier the user picked (a site setting) or a developer forced wins: set data-glass-tier-lock on <html>
 // and this script never overrides it. Call it after the page settles (requestIdleCallback): start-up work
-// would read as a slow device. Returns { tier, stop } — stop() disconnects the pressure observer.
+// would read as a slow device. Safari has no requestIdleCallback: fall back to setTimeout(…, 300).
+// Returns { tier, stop } — stop() disconnects the pressure observer.
 export async function applyGlassTier({ root = document.documentElement, watchPressure = true } = {}) {
   const base = await glassTier();
   const locked = () => "glassTierLock" in root.dataset;

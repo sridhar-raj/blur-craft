@@ -222,7 +222,8 @@ Run all of these before calling glass done:
    beautiful object in its frame; does the tinted level look intentional, not broken?
 4. **Audit:** `node <skill>/scripts/blur-audit.mjs <folder | .css | .tsx | .html>`, and `--url` with the
    page running for blurred area and frame rate.
-5. **Safari:** read computed styles in Playwright's WebKit, but judge the look in real Safari:
+5. **Other browsers:** open `assets/browser-check.html` in the browser in question (real Safari, a Sonoma
+   Mac, Firefox, an old iPhone): ten tiles show which blur cases work there. Read computed styles in Playwright's WebKit, but judge the look in real Safari:
    Playwright's WebKit never paints `backdrop-filter` in screenshots, and it runs a newer WebKit than
    Sonoma's Safari, so it can't show the `var()` bug either (the audit's literal-filter check can).
 6. **Don't trust axe for glass.** axe-core ignores `backdrop-filter`: text on glass over images comes back
@@ -253,6 +254,7 @@ Run all of these before calling glass done:
 - `assets/glass.css`: the material: layers, thickness scale, tinted level, light tone, text, fallbacks.
 - `assets/surfaces.css`: sticky bar, dock, menu, veil + dialog, toast, sheet.
 - `assets/demo.html`: live playground of every surface with controls (also the calibration page).
+- `assets/browser-check.html`: ten side-by-side blur cases to check any browser by eye (Sonoma, Firefox…).
 - `assets/Glass.tsx`: React + Framer Motion wrapper (pointer sheen, `liquid`, `tinted`).
 - `assets/liquid-glass.ts` / `.js`: Liquid Glass refraction with chromatic aberration.
 - `assets/adaptive-tone.js`: light/dark flip for small glass from the luminance behind it.

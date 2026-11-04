@@ -73,6 +73,27 @@ WebKit and Chromium), and check the look in real Safari. In WebKit `matchMedia("
 no-preference)")` is false because the query is unsupported, which matches the research: only
 `prefers-contrast` reaches Safari users.
 
+## Support at a glance (MDN browser-compat data, November 2026)
+
+| Feature the skill uses | Chrome | Firefox | Safari |
+|---|---|---|---|
+| `backdrop-filter` | 76 | 103 | 18 (`-webkit-` from 9) |
+| `mask-image`, `mask-composite` (the rim) | 120 (`-webkit-` before) | 53 | 15.4 |
+| `@property` (the rim angle) | 85 | 128 | 16.4 |
+| `animation-timeline: scroll()` (glass on scroll) | 115 | 159 | 26 |
+| `prefers-contrast` (tinted level) | 96 | 101 | 14.1 |
+| `prefers-reduced-transparency` | 118 | flag only | none |
+| `inert` (dialog) | 102 | 112 | 15.5 |
+| `requestVideoFrameCallback` (video glow) | 83 | 132 | 15.4 |
+| `requestIdleCallback` (tier probe timing) | 47 | 55 | none: use `setTimeout` |
+| canvas `ctx.filter` (baked art backdrop) | 52 | 49 | flag only: skipped, upscaling still blurs |
+| `PressureObserver` (tier downgrades) | 125 | none | none |
+| SVG filter in `backdrop-filter` (Liquid Glass) | yes | ignored | paints nothing (245510) |
+
+Firefox: the closest open rendering bug is 1782876 (backdrop-filter not rendering when an *ancestor* has
+transform, opacity, clip-path or a mask), which is the backdrop-root rule below. Firefox couldn't be
+launched in this skill's test environment, so it's covered by compatibility data, not screenshots.
+
 ## Never build backdrop-filter from var()
 
 Safari 18.x and 26.x **on macOS Sonoma** render no blur when `backdrop-filter` is composed from custom
@@ -85,7 +106,9 @@ The bug's own test file (attachment 476457) has a third case: a **literal, unpre
 `backdrop-filter: blur(25px)` with no prefix, which the reporter says "does not work at all" on Sonoma
 with Safari 18.6. So on Sonoma the prefixed property is the one that works. Order the pair **unprefixed
 first, `-webkit-` last**: Chrome and Firefox ignore `-webkit-backdrop-filter`, and Safari then applies the
-prefixed declaration. Treat this order as precautionary: if WebKit treats the two names as one aliased property it changes
+prefixed declaration. `assets/browser-check.html` shows every case side by side (literal, prefixed, both orders, var(),
+Tailwind's shape, masked, the material, a backdrop root): open it on a Sonoma Mac to see which blur.
+Treat this order as precautionary: if WebKit treats the two names as one aliased property it changes
 nothing, and it couldn't be confirmed on a real Sonoma machine for this skill. (React inline styles
 collapse both into one property anyway.) Build tools (Autoprefixer, Lightning CSS) usually emit the prefix *first*: check
 the shipped CSS if Sonoma users matter.

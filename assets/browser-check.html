@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blur-craft browser check</title>
+<link rel="stylesheet" href="glass.css">
+<link rel="stylesheet" href="surfaces.css">
+<style>
+  /* Open this page in the browser you need to check (Safari on macOS Sonoma, Firefox, an old iPhone…).
+     Each tile puts glass over sharp stripes. PASS = the stripes inside the box are soft. FAIL = they're as
+     sharp as outside it. No script can read the rendered pixels, so the check is your eyes. */
+  html { background: #0b0b12; }
+  body { margin: 0; padding: 24px max(16px, 3vw) 48px; color: #ecebf3; font: 15px/1.5 -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 24px; margin: 0 0 6px; }
+  p { margin: 0 0 8px; max-width: 80ch; color: #c9c7d6; }
+  code { font: 13px ui-monospace, Menlo, monospace; color: #fff; }
+  .ua { font: 12px ui-monospace, Menlo, monospace; color: #9a98ab; margin-bottom: 20px; word-break: break-all; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .tile { display: grid; gap: 8px; align-content: start; }
+  .tile h2 { font-size: 14px; margin: 0; }
+  .tile small { color: #9a98ab; }
+  .stage { position: relative; height: 150px; border-radius: 12px; overflow: hidden;
+    background: repeating-linear-gradient(90deg, #fff 0 3px, transparent 3px 18px), linear-gradient(135deg, #ff5e7a, #6a3df5 50%, #3df5d0); }
+  .stage::after { content: "ABC 123"; position: absolute; left: 50%; top: 50%; translate: -50% -50%; font: 800 34px sans-serif; color: #111; z-index: 0; }
+  .box { position: absolute; inset: 28px 40px; border-radius: 14px; background: rgb(20 20 30 / 0.15); outline: 1px solid rgb(255 255 255 / 0.5); z-index: 1; }
+  .expect { font-size: 12px; }
+  .expect b { color: #9dffb8; } .expect i { color: #ffb4b4; font-style: normal; }
+
+  /* The cases (all literal unless the tile says var()) */
+  .c1 { backdrop-filter: blur(12px); }
+  .c2 { -webkit-backdrop-filter: blur(12px); }
+  .c3 { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .c4 { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .c5 { --r: 12px; backdrop-filter: blur(var(--r)); -webkit-backdrop-filter: blur(var(--r)); }
+  .c6 { --f: blur(12px); backdrop-filter: var(--f); -webkit-backdrop-filter: var(--f); }
+  .c7 { /* Tailwind v4's compiled shape */ --tw-backdrop-blur: blur(12px);
+        -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,); backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,); }
+  .c8 { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+  .parent-fade { position: absolute; inset: 0; opacity: 0.99; z-index: 1; }
+</style>
+</head>
+<body>
+  <h1>blur-craft browser check</h1>
+  <p>Each box should make the stripes and the letters behind it <strong>soft</strong>. If they're as sharp inside the box as outside, that case doesn't blur in this browser.</p>
+  <p class="ua" id="ua"></p>
+
+  <div class="grid">
+    <div class="tile"><h2>1. Unprefixed, literal</h2><div class="stage"><div class="box c1"></div></div>
+      <span class="expect">Chrome, Firefox, Safari 18+ on macOS 15/26: <b>soft</b>. Safari 18/26 on <b>Sonoma</b>: reported <i>sharp</i> (WebKit 297620).</span></div>
+    <div class="tile"><h2>2. Prefixed only, literal</h2><div class="stage"><div class="box c2"></div></div>
+      <span class="expect">Safari (all): <b>soft</b>. Chrome and Firefox ignore the prefix: <i>sharp</i> is expected there.</span></div>
+    <div class="tile"><h2>3. Both, unprefixed first (blur-craft's order)</h2><div class="stage"><div class="box c3"></div></div>
+      <span class="expect">Should be <b>soft</b> everywhere. <strong>The key Sonoma test</strong>: if this is soft and 4 is sharp, the order matters there.</span></div>
+    <div class="tile"><h2>4. Both, prefixed first (Autoprefixer's order)</h2><div class="stage"><div class="box c4"></div></div>
+      <span class="expect">Soft in Chrome, Firefox and newer Safari. On Sonoma: unknown; compare with 3.</span></div>
+    <div class="tile"><h2>5. var() radius, both</h2><div class="stage"><div class="box c5"></div></div>
+      <span class="expect">Sonoma Safari 18/26: reported <i>sharp</i>. Elsewhere <b>soft</b>.</span></div>
+    <div class="tile"><h2>6. var() holding the whole filter</h2><div class="stage"><div class="box c6"></div></div>
+      <span class="expect">Sonoma Safari 18/26: reported <i>sharp</i>. Elsewhere <b>soft</b>.</span></div>
+    <div class="tile"><h2>7. Tailwind v4 compiled shape</h2><div class="stage"><div class="box c7"></div></div>
+      <span class="expect">Same as 5/6: Sonoma Safari <i>sharp</i>, elsewhere <b>soft</b>.</span></div>
+    <div class="tile"><h2>8. Masked (the extended-backdrop nav bar)</h2><div class="stage"><div class="box c8"></div></div>
+      <span class="expect"><b>Soft</b> at the top, fading to sharp at the bottom, everywhere.</span></div>
+    <div class="tile"><h2>9. blur-craft material (glass--regular)</h2><div class="stage"><div class="box glass glass--regular" style="--glass-radius: 14px"></div></div>
+      <span class="expect">Should be <b>soft</b> everywhere, Sonoma included. This is what the skill ships.</span></div>
+    <div class="tile"><h2>10. Backdrop root (parent at opacity .99)</h2><div class="stage"><div class="parent-fade"><div class="box c3"></div></div></div>
+      <span class="expect">Expected <i>sharp/flat</i> everywhere (spec: the faded parent becomes the backdrop root). If this blurs, the browser doesn't follow the spec.</span></div>
+  </div>
+
+  <p style="margin-top:24px">Report what you see (tile numbers that are sharp) with the browser and macOS version. Source: <a href="https://github.com/sridhar-raj/blur-craft" style="color:#c9b2ff">github.com/sridhar-raj/blur-craft</a></p>
+<script>
+  document.getElementById("ua").textContent = navigator.userAgent +
+    " · backdrop-filter supported: " + CSS.supports("backdrop-filter", "blur(1px)") +
+    " · -webkit-backdrop-filter supported: " + CSS.supports("-webkit-backdrop-filter", "blur(1px)") +
+    " · (Safari's user agent says 10_15_7 on every macOS, so note your macOS version by hand)";
+</script>
+</body>
+</html>

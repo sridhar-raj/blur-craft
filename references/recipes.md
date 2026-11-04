@@ -490,7 +490,8 @@ export async function bakeAmbient(src: string, size = 96): Promise<string> {
   c.width = size;
   c.height = Math.round((size * img.naturalHeight) / img.naturalWidth);
   const ctx = c.getContext("2d")!;
-  ctx.filter = "blur(2px) saturate(160%)";          // pre-softening; canvas ctx.filter needs Safari 18+ (ignored before)
+  ctx.filter = "blur(2px) saturate(160%)";          // pre-softening; Safari still has canvas ctx.filter behind a flag, so
+                                                    // there it's skipped and the upscaling alone does the blur (still fine)
   ctx.drawImage(img, 0, 0, c.width, c.height);
   return c.toDataURL("image/jpeg", 0.8);
 }
