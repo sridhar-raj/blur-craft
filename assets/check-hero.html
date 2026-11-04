@@ -156,6 +156,7 @@
     <button id="vWritten" aria-pressed="true">As written (the traps)</button>
     <button id="vFixed" aria-pressed="false">Fixed with blur-craft</button>
   </div>
+  <p class="as-fixed">What's measured: in Chrome, the fixed view really blurs every surface (the Versions panel and the Shortcuts card go from no blur to blurred). Firefox and Safari 18+ are green because those browsers document support for the unprefixed property, not because they were tested here. Sonoma stays yellow: it's the workaround for WebKit bug 297620, but nobody has run it on a Sonoma Mac yet, so open this page there and tell us.</p>
   <table>
     <thead><tr><th>#</th><th>Surface</th><th>Technique</th><th>Chrome, Edge</th><th>Firefox</th><th>Safari 18+ (macOS 15/26, iOS 18+)</th><th>Safari on macOS Sonoma</th></tr></thead>
     <tbody class="as-written">
@@ -171,16 +172,16 @@
       <tr><td>10</td><td>Bottom edge</td><td>masked blur (progressive)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="maybe">unprefixed mask: check</td></tr>
     </tbody>
     <tbody class="as-fixed">
-      <tr><td>1</td><td>Nav bar</td><td>literal, unprefixed then <code>-webkit-</code> (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>2</td><td>"Tabula 3" pill</td><td>literal, unprefixed then <code>-webkit-</code> instead of the <code>var()</code> chain (<code>glass.tailwind.css</code> utilities)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>3</td><td>"Free for 14 days" chip</td><td><code>-webkit-</code> line added after the unprefixed one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>4</td><td>"What's new" chip</td><td>order swapped: unprefixed first, <code>-webkit-</code> last</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>5</td><td>Versions panel</td><td>unprefixed line added before the <code>-webkit-</code> one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>6</td><td>"Saved" toast</td><td>the filter written out literally, no <code>var()</code></td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>7</td><td>Shortcuts card</td><td>parent opacity back to 1 (fade the glass itself)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
+      <tr><td>1</td><td>Nav bar</td><td>literal, unprefixed then <code>-webkit-</code> (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>2</td><td>"Tabula 3" pill</td><td>literal, unprefixed then <code>-webkit-</code> instead of the <code>var()</code> chain (<code>glass.tailwind.css</code> utilities)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>3</td><td>"Free for 14 days" chip</td><td><code>-webkit-</code> line added after the unprefixed one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>4</td><td>"What's new" chip</td><td>order swapped: unprefixed first, <code>-webkit-</code> last</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>5</td><td>Versions panel</td><td>unprefixed line added before the <code>-webkit-</code> one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>6</td><td>"Saved" toast</td><td>the filter written out literally, no <code>var()</code></td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>7</td><td>Shortcuts card</td><td>parent opacity back to 1 (fade the glass itself)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
       <tr><td>8</td><td>Dictate button</td><td>WebGL Liquid Glass (unchanged)</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td></tr>
-      <tr><td>9</td><td>Editor window</td><td>blur-craft material (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>10</td><td>Bottom edge</td><td>masked blur, mask written both ways (<code>mask-image</code> + <code>-webkit-mask-image</code>)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom (expected)</td></tr>
+      <tr><td>9</td><td>Editor window</td><td>blur-craft material (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>10</td><td>Bottom edge</td><td>masked blur (unchanged: the mask was already written both ways)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="maybe">expected, untested</td></tr>
     </tbody>
   </table>
   <p>Anything that doesn't match the table is a finding: note the number, the browser and its version (Safari's user agent always says macOS 10_15_7, so check  → About This Mac for the real macOS version).</p>
