@@ -145,6 +145,54 @@ https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/
 queries, the 2.5% noise layer, `aberration`, the worst-case contrast check, and the tells about seams,
 accent text and glass in glass.
 
+## Apple WWDC25 sessions (transcripts)
+- "Meet Liquid Glass" (219): lensing "dynamically bends, shapes, and concentrates light"; highlights move
+  with interactions and device motion; shadows grow over text and fade over light solids; "Small elements…
+  flip from light to dark… Bigger elements, like menus and sidebars… do not flip"; larger glass simulates
+  thicker material; regular and clear "should never be mixed", clear needs a dimming layer and bold,
+  bright content; "always avoid glass on glass"; tint only primary elements; avoid content intersecting
+  glass at rest. https://developer.apple.com/videos/play/wwdc2025/219/
+- "Get to know the new design system" (356): soft scroll edge for glass controls, hard for pinned headers,
+  one per view, "not decorative"; concentric radii (inner = outer − padding); group bar items by
+  function; apply the material to the control, not its inner views; typography "bolder" for legibility.
+  https://developer.apple.com/videos/play/wwdc2025/356/
+- SwiftUI docs: limit simultaneous glass effects; group them in containers so shapes can merge.
+
+## Design-system tokens
+- Radix Themes 3.2.1: translucent panels `blur(64px)` over `rgba(255,255,255,.7)` (light), blur on a
+  `::before` so children aren't trapped; P3 alpha scales. https://unpkg.com/@radix-ui/themes@3.2.1/styles.css
+- Scrims without blur: Primer `#c8d1da66`/`#21283066`, Polaris `rgba(0,0,0,.71)`, Carbon
+  `rgba(0,0,0,.6)`, Atlassian `#050C1F75`. Geist publishes radii only (6/12/16px), no glass values.
+
+## Adaptive tone, modern CSS, performance, legibility
+- `contrast-color()` is Baseline 2026 but only takes a known colour; it can't sample a backdrop. Lea Verou's
+  OKLCH threshold (0.623 WCAG-safe, ~0.70 APCA) works today. https://lea.verou.me/blog/2024/contrast-color/
+- Scroll-driven animations: Chrome 115, Safari 26, Firefox 159. Scroll-state queries (`stuck`): Chrome 133.
+- Safari 26 tints its toolbar from a fixed or sticky element at the top edge (WebKit bug 301756): give a
+  glass nav a real background colour. https://bugs.webkit.org/show_bug.cgi?id=301756
+- WebKit 271340: a backdrop-filter adds a full-screen compositing layer unless `html` has an opaque
+  background (fixed 2024). https://bugs.webkit.org/show_bug.cgi?id=271340
+- Measured on a Galaxy A15 (Mali-G57): seven `blur(18px)` panels cost ~3.5ms/frame, 75–80% of frames on
+  time vs 98.9% without. https://github.com/Station-Sciences/bot-crossing/issues/74
+- Skia downsamples blurs past a small sigma (`kMaxLinearBlurSigma = 4`), so cost is dominated by area and
+  count rather than radius. https://skia.googlesource.com/skia/+/chrome/m118/src/gpu/BlurUtils.h
+- Harrison & Vicente, CHI '96: an anti-interference outline let 75–90% transparent menus perform like 50%
+  ones; interference is worst when background and text are close in shade.
+- Progressive blur in CSS: `linear-blur()` proposed (csswg #13285, open). Stacked masked layers remain the
+  technique. https://github.com/w3c/csswg-drafts/issues/13285
+
+**In the skill:** the WWDC25 rules list, adaptive-tone.js, the scrim column of the presets, the
+`gs-bar--on-scroll` option, the Safari toolbar note, the `html` background rule, the phone budget, the
+text halo, concentric radii, and the registered rim angle.
+
+## Calibration (this skill's own measurements)
+Thickness dims, text alphas and backdrop brightness in glass.css were set by running
+`scripts/glass-contrast.mjs` on `assets/demo.html` (a bright warm light under every surface) across all
+thicknesses, both tones and three states. Regular and thick pass 4.5:1 everywhere; thin and clear don't
+over the brightest light, which matches Apple's guidance that clear glass is for bold content only. Run
+over the four A/B example pages, the checker also failed small secondary text that agents had judged
+readable by eye, which is why it's now a required step.
+
 ## What the first version of this skill got wrong (and why it lost an A/B test)
 
 The first version capped glass at 12–24px, demanded a 45%+ flat tint, limited each screen to one small

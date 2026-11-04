@@ -1,250 +1,219 @@
 ---
 name: blur-craft
 description: >-
-  Make blur and glass look premium in UI: Apple-grade frosted glass (a five-layer material with a lit
-  gradient rim, specular sheen that follows the pointer and a thickness scale), Liquid Glass edge
-  refraction, light composed behind the glass, progressive blur under bars, focus blur behind dialogs,
-  blur-in reveals and blur-bridged crossfades, glows, depth of field and ambient art backdrops. Ships a
-  drop-in glass material (CSS + React/Framer Motion), a refraction helper and an audit script. Use this
-  whenever a design involves glass, glassmorphism, frosted or translucent panels, backdrop-filter, blur,
-  soft glows, bokeh, depth, a player/dock/toolbar/sheet floating over art or video, dimming behind a
-  dialog, blur reveals, or a request to make something feel premium, layered, luminous or "Apple-like",
-  and whenever reviewing or fixing a page that already uses blur, even if the user never says "blur".
+  Make blur and glass look premium in UI, and prove it's readable: Apple-grade frosted glass (a
+  measured five-layer material with a lit rim, pointer sheen, thickness scale and an iOS 26.1-style
+  tinted level), ready-made glass surfaces (sticky nav, dock, menu, dialog over a focus veil, toast,
+  sheet), Liquid Glass refraction with chromatic aberration, adaptive light/dark tone, progressive blur,
+  blur reveals and blur-bridged crossfades, glows, depth of field and ambient art backdrops, plus a
+  worst-case contrast checker and an audit script. Use this whenever a design involves glass,
+  glassmorphism, frosted or translucent panels, backdrop-filter, blur, soft glows, bokeh, depth, a
+  player/dock/toolbar/sheet floating over art, photos or video, dimming behind a dialog, blur reveals,
+  or a request to make something feel premium, layered, luminous or "Apple-like", and whenever reviewing
+  or fixing a page that already uses blur, even if the user never says "blur".
 ---
 
 # Blur craft
 
-Most glass on the web looks cheap for the same three reasons: there is nothing interesting behind it,
-the material is a single flat tint with one blur, and the text on it is a muddy grey. Glass that looks
-expensive (Apple's materials, visionOS windows, the best product sites) gets three things right, in
-this order:
+Most glass on the web looks cheap for three reasons: nothing interesting sits behind it, the material is
+one flat tint with one blur, and the text on it is a muddy grey that nobody measured. Glass that looks
+expensive (Apple's materials, visionOS, the best product sites) gets three things right, in this order:
 
-1. **The light behind the glass is designed.** Glass shows off what sits behind it. Put a light source
-   there on purpose (a glow, the sun in the art, the product's own colours, a live component) so colour
-   shifts across the surface.
-2. **The glass is a material, not a tint.** Five layers: heavy blur with high saturation, a gradient fill
-   that catches light, a lit gradient rim, a specular highlight, and depth. That's
-   `assets/glass.css`.
-3. **Text on glass is vibrant.** Near-solid white for primary text, translucent white for secondary text,
-   never a mid grey. Thicker glass under more text.
+1. **The light behind the glass is designed.** Glass shows off what's behind it, so put a light there.
+2. **The glass is a material, not a tint.** Saturated blur, a gradient fill, a lit rim, a specular sheen,
+   depth, grain. That's `assets/glass.css`.
+3. **The text is measured.** Translucent glass changes contrast with every pixel behind it, so contrast is
+   checked at the worst point, by script, in three states (`scripts/glass-contrast.mjs`).
 
-Do these three and blur stops reading as a template. The rest of this skill is when to use which blur,
-and how to keep it fast.
+## Quick path
+
+| I'm building… | Use | Notes |
+|---|---|---|
+| A sticky nav bar | `.gs-bar` (surfaces.css) | Extended backdrop; add `gs-bar--on-scroll` to turn glassy only after scrolling |
+| A player, dock or pill over art | `.gs-dock.glass.glass--clear` + `liquid-glass.js` | Clear Liquid Glass, one per screen; adaptive tone if the art changes a lot |
+| A floating card or panel with text | `.glass.glass--regular` | `thick` over a detailed photo |
+| A menu, popover or command bar | `.gs-menu.glass` | 32px over ~86%, 0.5px top highlight |
+| A dialog | `.gs-veil` + `.gs-dialog.glass.glass--thick` | Add `glass--solid` when it confirms money, deletes or signs |
+| A toast or a bottom sheet | `.gs-toast` / `.gs-sheet` | |
+| Content fading under a bar | Progressive blur (recipe 2) | One scroll-edge effect per view |
+| A headline arriving, or a value changing | Blur reveal (4) / 2px crossfade (4b) | Once per screen |
+| A page washed in the art's colours | Art backdrop, baked (recipe 8) | Never a live blur under fixed glass |
+
+Then: compose the light (§1), set the material (§2), check (§5). `assets/demo.html` shows every surface
+live with controls; open it to see what each class does before choosing.
 
 ## 1. Compose the light first
 
-Before writing any glass, decide what will be directly behind it in the frame and make that the most
-luminous thing on the page.
+Decide what will be directly behind each glass surface, and make it the most luminous thing there.
 
-- **Place a light under the glass.** A warm glow, a gradient orb, the bright part of the art, a live
-  OriginKit component. Without one, the glass blurs a flat colour, and a flat colour blurred is the same
-  flat colour.
+- **Place a light under the glass:** a glow, the sun in the art, the product's colours, a live WebGL
+  component. Blurred flat colour is the same flat colour; glass over a void is a grey box.
 - **Let the light cross the edge.** The best glass sits half over the light and half over darkness, so
-  the frosting shows a gradient of the scene across its width. A card that sits fully inside a uniform
-  area reads as a grey box.
-- **Take the light's colour and direction into the rim.** Set `--glass-light` to the scene's light
-  (`"255 200 160"` for a sunset) and aim `--glass-rim-angle` at it. The rim's bright end sits on the side
-  the light comes from:
+  colour shifts across its width.
+- **Aim the rim at the light.** Set `--glass-light` to the light's colour (`255 200 160` for a sunset) and
+  `--glass-rim-angle` to its direction. The rim's bright end faces the light:
 
-  | Light comes from | top-left | top | top-right | right | bottom-right | bottom | bottom-left | left |
+  | Light from | top-left | top | top-right | right | bottom-right | bottom | bottom-left | left |
   |---|---|---|---|---|---|---|---|---|
-  | `--glass-rim-angle` | 135deg | 180deg | 225deg | 270deg | 315deg | 0deg | 45deg | 90deg |
+  | angle | 135deg | 180deg | 225deg | 270deg | 315deg | 0deg | 45deg | 90deg |
 
-  A light *under* the glass (a dock over a glow) takes the angle of the edge it's nearest to, plus about
-  15deg toward the centre. Raise `--glass-rim-hot` to 0.8–0.9 when the light is strong.
-- **Give the glass room to be big.** Glass reads as a material when it's large enough to show the
-  scene changing under it. A small chip of glass reads as a grey pill. The glass panel is usually the
-  hero object of its screen; size it like one.
+  A light *under* the glass takes the angle of its nearest edge plus ~15deg toward the centre. The angle is
+  a registered `@property`, so it can follow the pointer or the scroll smoothly (Apple's highlights travel
+  around the material as the light moves).
+- **Size glass like the hero it is.** It reads as a material when it's big enough to show the scene change
+  under it. Apple makes larger glass behave as *thicker* glass: deeper shadow, softer scatter.
 
-## 2. Build the material
+## 2. Set the material
 
-Copy `assets/glass.css` into the section (rename the `glass` prefix to the section's own) and use it, or
-use `assets/Glass.tsx` for the pointer sheen. Don't hand-write a one-line `backdrop-filter` card: that's
-what makes glass look generic.
+Use `assets/glass.css` (rename the `glass` prefix when copying) and `assets/surfaces.css` for the
+ready-made surfaces, or `assets/Glass.tsx` in React. Don't hand-write a one-line `backdrop-filter` card.
 
-| Layer | What it does | Values the research supports |
-|---|---|---|
-| Backdrop | Frosts and enriches the scene | `blur(24–44px) saturate(160–180%) brightness(1.05)`. Saturation stops blurred colour going muddy (Comeau). More blur reads better over busy or moving backdrops (NN/g) |
-| Fill | Catches light | A 160° gradient, `white / .16` → `white / .04`, over a dim layer of 10–50% black. A flat tint looks like plastic |
-| Rim | Says "this is a slab of glass" | A 1px gradient ring via `mask-composite`, bright on the light side, dim on the far side |
-| Specular | The glint | An inset 1px top highlight, plus a radial sheen that follows the pointer |
-| Depth | Thickness and lift | A faint inner glow and a long soft drop shadow |
+**Thickness.** Pick by how much text the glass carries. Values were calibrated with the contrast checker
+over a bright light in `demo.html`:
 
-**Thickness** (from Apple's material scale): pick by how much the glass has to carry.
-
-| Class | Blur, dim | Use for |
-|---|---|---|
-| `glass--clear` | 16px, 10% | Floating over rich media (photo, video, a live component) with little text: a play button, a dock, a pill |
-| `glass--thin` | 24px, 20% | Controls and small cards; context stays visible |
-| `glass--regular` | 32px, 30% | Players, panels, toasts: the default |
-| `glass--thick` | 44px, 50% | Sheets, menus, dialogs: lots of text or a very bright backdrop |
-| `glass--solid` | 20px, 92% | Trust-critical dialogs: payments, deletes, signatures |
-
-Add `glass--light` to any of them for light glass over light scenes.
-
-Apple's rule for clear glass over bright content: add a ~35% dark dimming layer. That's the dim value
-above; raise it until the text passes.
-
-**Calibrated presets by surface.** These are the values respected products actually ship (their CSS
-and source, read for this skill), so start here rather than inventing numbers:
-
-| Surface | Production reference | Start from |
-|---|---|---|
-| Sticky nav bar | Apple.com: `saturate(180%) blur(20px)` over 80% fill, 92%/88% fill without blur. Linear: `blur(20px)` over `#0b0b0bcc` | `thin` + `--glass-blur: 20px`, fill .8 for text-heavy bars; extended backdrop (recipe 1c) |
-| Menu, popover, command bar | Linear `blur(32px)` over 90% fill; Raycast window `blur(36px)` over `#0009` with a 0.5px top highlight | `thick`, radius 12–16px |
-| Floating panel or dock over art | Raycast action panel `blur(48px)`; Apple Liquid Glass (clear) | `regular` or `clear` + Liquid Glass |
-| Dialog scrim (focus veil) | Material 3: scrim at 32%. Fluent Smoke: 30% black. Raycast: 60% black + `blur(2px)` | veil 30–35% + `blur(4–6px)` |
-| Hover chip on an image | Linear `blur(8px)` over `#ffffff29` | `clear`, backdrop only on `:hover` |
-| Text-bearing panel over a detailed photo (search bar, booking card) | Measured on a test page: a busy town scene needed dim .68–.70 to pass 4.5:1 | `thick` with `--glass-dim` .65–.75, secondary text at .84+ alpha |
-
-Over a detailed photo, vivid glass and readable text pull against each other: the dim that makes the
-text pass also mutes the colour. Spend the vividness on the rim, the sheen and the light that spills
-around the glass, and let the fill be as dark as legibility needs.
-
-**Two levels, like iOS 26.1.** After Liquid Glass shipped, readers struggled with text over photos
-(NN/g, October 2025) and Apple added a Clear/Tinted switch: Tinted "increases opacity and adds more
-contrast". `glass.css` has the same two levels. The tinted level turns on automatically for
-`prefers-contrast: more` and `prefers-reduced-transparency`, and can be offered as a user setting with
-`<html data-glass="tinted">`. **Safari ignores `prefers-reduced-transparency`**, so on iPhone and Mac
-`prefers-contrast` is the signal that gets through.
-
-**The brightness clamp.** Microsoft's Acrylic adds a "luminosity" layer that lets the backdrop's colour
-through but blocks sharp light and dark (a white stripe, a shadow) behind text. The browser version that
-works is `contrast(.7–.9)` in the backdrop filter (`--glass-contrast`, on by default for `regular` and
-`thick`). A `mix-blend-mode: luminosity` child was tested and washes glass grey, so don't use it.
-
-**Where glass belongs:** on the functional layer (navigation, toolbars, players, docks, sheets, popovers)
-floating over content. Apple's HIG keeps it out of the content layer itself. Don't make every card in a
-grid glass. One hero glass surface plus thinner supporting glass reads as designed. Six equal glass
-cards read as a template.
-
-**Match the register of the brief.** The brief's tone sets the theme and how loud the light is, not
-this skill:
-
-| Register | Ground | Light behind glass | Glass |
+| Class | Blur, dim | Passes 4.5:1 over a bright light? | Use for |
 |---|---|---|---|
-| Immersive (music, media, games, launches) | Dark | Strong, saturated, the art's own colours | `clear`/`regular`, Liquid Glass on the hero control |
-| Calm (wellness, travel, creative tools) | Dark or light | Soft, one warm light and one cool counter-light | `regular` |
-| Trusted (finance, health, legal, admin) | Light or quiet dark; follow the brand | Barely there: a faint brand tint, or none | `thick`, or `glass--solid` on anything that confirms money or data |
+| `glass--clear` | 16px, 22% | No: bold or large text and icons only | Docks, play buttons, pills over media (Apple: clear needs bold, bright content and a dimming layer) |
+| `glass--thin` | 24px, 30% | Not over the brightest light | Controls, chips, small cards over moderate backdrops |
+| `glass--regular` | 32px, 48% | Yes, all three states | Players, panels, toasts: the default |
+| `glass--thick` | 44px, 56% | Yes | Menus, sheets, dialogs, anything text-heavy |
+| `glass--solid` | 20px, 92% | Yes | Payments, deletes, signatures |
 
-**Trust-critical surfaces stay nearly solid.** A dialog that sends money, deletes data or signs
-something carries numbers people must read without doubt. Use `glass--solid` (92% fill with a light
-blur and the rim): it still belongs to the glass family, but nothing behind it competes with the amount.
-Put the focus veil behind it and keep the drama in the veil, not the dialog. A light, solid dialog over a
-blurred page often reads as more trustworthy than a dark glass one.
+Add `glass--light` for light glass with ink text. Over a detailed photo, start from `thick` with
+`--glass-dim` 0.65–0.75: vivid glass and readable text pull against each other there, so spend the
+vividness on the rim, the sheen and the light spilling around the glass.
 
-## 3. The signature effects
+**What's in the material** (and why):
 
-Each has code in `references/recipes.md`. Reach for these when a brief calls for something more than a
-panel:
+| Layer | Value | Source |
+|---|---|---|
+| Backdrop | `blur(16–44px) saturate(160–180%) brightness(.96) contrast(.8–.92)` | Saturation keeps colour alive (Comeau, Apple.com's 180%). Contrast < 1 is the working CSS form of Fluent's luminosity layer: colour through, harsh light and dark blocked. Brightness ≤ 1 so a bright backdrop isn't lifted behind white text |
+| Fill | 160° white gradient over a dim layer | A flat tint reads as plastic (NN/g: gradient fills mimic reflection) |
+| Grain | 2.5% noise | Fluent acrylic ships 2% |
+| Rim | 1px gradient ring (mask-composite), bright toward the light | Edge = thickness |
+| Specular | inset top line + pointer sheen | Apple's specular highlights |
+| Text | primary 97%, secondary 82%, tertiary 70% white, faint halo | Measured; the halo follows Harrison & Vicente (CHI '96): an outline made 75–90% transparent menus read like 50% ones |
+| Radius | `--glass-inner-radius = radius − padding` | Apple's concentricity rule: inner corners neither pinched nor flared |
 
-- **Liquid Glass refraction** (`assets/liquid-glass.ts`): the rim bends the content behind it like a
-  lens, as in Apple's Liquid Glass. It works in Chromium and falls back to frosted glass elsewhere. Use it
-  on one hero control (a player, a dock, a big button), over a detailed backdrop where the bending
-  shows: lines, type, a photo. Never on a dialog above a focus veil: the veil has already blurred away
-  the detail the refraction would bend, so it costs a filter and shows nothing. **Refraction and
-  frosting trade off:** the bend is only visible through clear glass (`blur` 0–6). Frosted Liquid Glass
-  (`blur` 12–20) frosts edge to edge but the bend becomes a soft colour shift at the rim. So: clear
-  Liquid Glass for controls with a word or an icon (a dock, a play button, a tab bar), frosted material
-  for surfaces with sentences. Keep text a bezel-width inside the edge either way. `aberration: 0.6–1`
-  adds the prism fringe at the rim (red bends least, blue most) that sells it as optics. Safari and
-  Firefox don't run SVG backdrop filters (WebKit bug 245510, in review), so they get the frosted
-  material, which is why the material has to look finished on its own.
-- **Extended backdrop** for sticky bars (Comeau): the blur samples content *below* the bar too, so
-  colour glows into the glass before content scrolls under it. That's the difference between a real
-  frosted bar and a fake one.
-- **Progressive blur** under bars and at scroll edges: content dissolves instead of being cut.
-- **Blur-bridged crossfade** (Emil Kowalski): a `blur(2px)` during a swap makes two states read as one
-  morph. Use it for tabs, number changes and icon swaps.
-- **Blur reveal:** a headline or hero object resolves from `blur(8px)`, once, as the page's arrival
-  moment.
-- **Focus veil:** a dialog opens and the page behind it steps back 4–8px.
-- **Depth of field:** near and far planes soft around a sharp subject, with rack focus on hover.
-- **Ambient art backdrop:** a heavily blurred copy of the product's art washes the page in its colours.
+**Two levels, like iOS 26.1.** Apple added Clear/Tinted after the Liquid Glass legibility backlash. The
+tinted level turns on for `prefers-contrast: more`, for `prefers-reduced-transparency`, with
+`glass--tinted`, or site-wide with `<html data-glass="tinted">` (offer it as a setting). **Safari ignores
+`prefers-reduced-transparency`**; `prefers-contrast` is the signal that reaches iPhone and Mac users.
 
-## 4. Look at it, then fix it
+**Calibrated presets** (production CSS and published tokens, read for this skill):
 
-Screenshot the page at the brightest moment of the backdrop and check each glass surface. First, prove
-the glass frosts at all: temporarily put bold, high-contrast text (red, 30px) right behind every glass
-surface, capture at `deviceScaleFactor: 1` and enlarge the crop. (Headless Chromium at scale factor 2
-leaves the lower part of large backdrop-filtered elements unblurred, which looks like a hole but isn't.) Any letter that reads sharp is a hole in the material (a backdrop root, an
-out-of-date Liquid Glass map, a missing prefix). A normal screenshot hides this; the probe takes a minute.
-Then:
+| Surface | Reference | Start from |
+|---|---|---|
+| Sticky nav | Apple.com `saturate(180%) blur(20px)` over 80%; Linear `blur(20px)` over `#0b0b0bcc` | `.gs-bar` |
+| Menu / command bar | Linear `blur(32px)` over 90%; Raycast `blur(36px)`, 0.5px top highlight | `.gs-menu` |
+| Translucent panel | Radix Themes `blur(64px)` over 70% white (the only big design system that ships a blur token) | `thick`, or `--glass-blur: 64px` for very busy backdrops |
+| Dialog scrim | Material 32%, Fluent Smoke 30%, Primer ~40%, Atlassian ~46%, Polaris 71% (no blur) | `.gs-veil`: 32% + 6px |
+| Hover chip | Linear `blur(8px)` over `#ffffff29` | `clear`, blur on `:hover` only |
 
-1. **Does colour visibly shift across the glass?** If it reads as one flat colour, move the glass over
-   the edge of a light, or move the light.
-2. **Is the rim lit on the light side?** Aim `--glass-rim-angle` at the light and raise `--glass-rim-hot`;
-   set `--glass-light` to the scene's colour.
-3. **Is it the most beautiful object in the frame?** Glass should be the hero, not a container. If the
-   background outshines it, make the glass bigger or the backdrop calmer elsewhere.
-4. **Is every word crisp and readable?** Measure the worst case, as WCAG's failure F83 does for text on
-   images: find the brightest patch the backdrop can put behind light text (darkest for dark text),
-   composite the glass over it, and check 4.5:1 for body text, 3:1 for large text. Sample under each
-   line's own box (a `Range` around the words), not the element's box, or a wide headline box counts
-   background the words never touch. Check twice: with the blur, and with the tint alone (`backdrop-filter:
-   none`), which is what iOS Low Power Mode and blur-less browsers show. The tint alone must still pass. If it fails, go a
-   thickness up or turn on `--glass-contrast`. Never put text-bearing glass over other text (the worst
-   Liquid Glass failures were search bars over email previews). Controls on glass keep 44px targets.
-5. **Does it still look right in the fallback?** Emulate reduced transparency (Playwright's context option
-   doesn't cover it; use CDP: `const cdp = await page.context().newCDPSession(page); await
-   cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value:
-   "reduce" }] })`). The glass should become a good-looking solid panel, not a broken one. A faint radial
-   in the light's colour keeps it from looking flat.
+Most enterprise systems (Primer, Polaris, Carbon, Atlassian, Geist) use opaque surfaces over a scrim and
+no blur at all, which says something: glass is a choice for the functional layer, not a default.
 
-Then run the checker:
-`node <this skill's folder>/scripts/blur-audit.mjs <folder, .css, .tsx or .html>`, and with the page
-running, `… --url <page url>` for blurred area and frame rate.
+**Rules from Apple's own sessions (WWDC25 "Meet Liquid Glass", "Get to know the new design system"):**
 
-## 5. Keep it fast (a guardrail, not the goal)
+- Glass belongs to the navigation and control layer floating over content, never the content itself.
+  "Always avoid glass on glass." Elements *on* glass use fills and vibrancy, not more glass.
+- Regular and clear glass "should never be mixed" on one screen.
+- Only small elements flip between light and dark with the content behind them; menus, sidebars and
+  panels never flip. `assets/adaptive-tone.js` does the small-element flip with hysteresis.
+- Shadows deepen over text and soften over light solids; larger glass casts deeper shadows.
+- Tint only primary actions. "If you want to imbue color into your app, do it in the content layer."
+- Apply the material to the control, not its inner views; group bar items by function, keep text
+  buttons and the primary action in their own containers.
+- One scroll-edge effect per view: soft for glass controls, hard for pinned headers or bare-text
+  controls, and none where nothing floats ("they're not decorative").
+- At rest (first launch), avoid content intersecting the glass.
 
-Design for the look first, then check these. They keep a section at 60fps without changing how it looks:
+**Match the brief's register.** Immersive briefs (music, media, launches): dark ground, strong light in
+the art's colours, clear glass and Liquid Glass on the hero control. Calm briefs (wellness, travel):
+one warm and one cool light, regular glass. Trusted briefs (finance, health, admin): light or quiet dark,
+barely any light behind, thick or solid glass on anything that confirms money or data. A light, solid
+dialog over a blurred page reads as more trustworthy than dark glass.
 
-- Animate opacity and transform of blurred layers, not the blur radius, for anything long or looping.
-  Short one-off moves are fine: Apple.com animates its menu curtain's `backdrop-filter` from `blur(0)` to
-  `blur(20px)` over 320ms. Reveals (≤ 600ms) and the 2px crossfade also qualify.
-- Never blur two stacked surfaces at once. Apple's nav drops its own `backdrop-filter` while a flyout is
-  open and hands the blur to the flyout.
-- A sticky or fixed blur re-runs on every scroll frame (it costs nothing at rest). Keep large ones to one
-  per screen, and bake any big blurred image beneath it (recipe 8).
-- Glass over a live WebGL component re-blurs every frame. Fine for a player or a panel. If the glass has
-  to cover most of the frame, blur a still of the art instead.
-- `filter: blur()` on big glows: prefer a `radial-gradient` when the shape is round.
-- Backdrop root: a parent with `opacity < 1`, `filter`, a mask or `will-change` makes glass inside it go
-  flat. Fade the glass itself, and clear reveal filters with `transitionEnd: { filter: "none" }`. See
-  `references/quirks.md`.
+## 3. Signature effects
+
+Code in `references/recipes.md`:
+
+- **Liquid Glass refraction** (`liquid-glass.ts`/`.js`): the rim bends what's behind it like a lens, with
+  optional chromatic aberration (0.6–1). Chromium only (Safari's SVG backdrop filters are still in review,
+  WebKit 245510), so the frosted material must look finished on its own. Refraction and frosting trade
+  off: the bend shows through clear glass (`blur` 0–6); frosted (12–20) frosts edge to edge and the bend
+  becomes a soft colour shift. Clear for a word or an icon, frosted for sentences, text a bezel-width
+  inside the edge. Never on a dialog over a veil: there's nothing sharp left to bend.
+- **Extended backdrop** for sticky bars: colour arrives in the glass before content scrolls under it.
+  `gs-bar--on-scroll` makes the bar glassy only after scrolling, in pure CSS (scroll-driven animations).
+- **Progressive blur:** content dissolves under a bar instead of being cut. Stacked masked layers are the
+  only way until CSS gets `linear-blur()` (proposed, csswg #13285).
+- **Blur-bridged crossfade:** 2px blur during a state swap (Emil Kowalski).
+- **Blur reveal:** from `blur(8px)`, once, as the arrival moment.
+- **Focus veil:** the page behind a dialog steps back 4–8px.
+- **Depth of field**, **velocity motion blur**, **art backdrop** (baked), **locked content**, **grain**.
+
+## 4. Keep it fast
+
+Design the look first, then hold these:
+
+- Long or looping animation goes on opacity and transform, not the blur radius. Short one-offs are fine:
+  Apple.com animates its menu curtain's blur 0 → 20px over 320ms.
+- Never blur two stacked surfaces at once (Apple's nav drops its own blur while a flyout is open).
+- A fixed or sticky blur re-runs every scroll frame. One large one per screen; bake big blurred images
+  beneath it (measured: 60 → 22fps with a live blur, back to 60 baked).
+- Phones: seven 18px panels cost ~3.5ms per frame on a Mali-G57 (75–80% of frames on time vs 99% without).
+  With more than a few panels, drop `backdrop-filter` under ~600px and keep the translucent fill.
+- Radius matters less than area and count: Skia downsamples past a small sigma, so 40px isn't 10× 4px.
+- Give `html` an opaque background colour: Safari then skips an extra full-screen compositing layer for
+  pages with glass (WebKit 271340).
+- Backdrop root: a parent with `opacity < 1`, `filter`, a mask or `will-change` flattens glass inside it.
+  Fade the glass itself; clear reveal filters (`filter: none`) when they finish.
+
+## 5. Check it (required)
+
+Run all of these before calling glass done:
+
+1. **Frost probe.** Put bold red text behind every glass surface, capture at `deviceScaleFactor: 1`
+   (headless Chromium at 2 fakes holes) and enlarge. Any sharp letter is a hole: a backdrop root, a stale
+   Liquid Glass map, a missing prefix.
+2. **Contrast, measured:** `node <skill>/scripts/glass-contrast.mjs <url or file.html>`. It hides the text,
+   finds the brightest and darkest pixel under each line, and checks 4.5:1 (3:1 large) in three states:
+   normal, tint-only (blur off, as iOS Low Power Mode shows it) and `prefers-contrast: more`. Fix failures
+   by going a thickness up, raising `--glass-dim`, or moving text off the bright patch. Never put
+   text-bearing glass over other text. Keep 44px targets on glass controls.
+3. **Look:** does colour shift across the glass; is the rim lit on the light side; is the glass the most
+   beautiful object in its frame; does the tinted level look intentional, not broken?
+4. **Audit:** `node <skill>/scripts/blur-audit.mjs <folder | .css | .tsx | .html>`, and `--url` with the
+   page running for blurred area and frame rate.
+5. **Safari:** read computed styles in Playwright's WebKit (glass.css parses identically there), but judge
+   the look in real Safari: Playwright's WebKit never paints `backdrop-filter` in screenshots.
 
 ## Tells to avoid
 
-- Glass over a flat colour or a dark void: there's nothing to frost.
-- One flat tint with a 1px white border at 10%: plastic, not glass.
-- Mid-grey text on glass: use translucent white (vibrancy) instead.
-- A grid of identical glass cards.
-- Light blur (under ~14px) on a big panel with text over busy content: the detail shows through as
-  noise. Go thicker. (Clear liquid glass with little text is the exception: there the bending is the point.)
-- Random blurred blobs unrelated to the product's colours. Light behind glass should come from the scene.
-- Glass panes edge to edge: Fluent warns they leave a visible seam. Leave a gap or merge them into one.
-- Accent-coloured text or links on glass (Fluent): the backdrop shifts the hue. Use white or ink, and put
-  colour in a solid chip.
-- Glass inside glass. If a child needs its own blur, put the parent's blur on a `::before` layer
-  (`inset: 0; z-index: -1; border-radius: inherit`), as Raycast does, so the parent isn't a backdrop root.
+- Glass over a flat colour or a void; one flat tint with a 10% white border; mid-grey text on glass.
+- A grid of identical glass cards; glass inside glass; glass panes edge to edge (Fluent: a visible seam).
+- Light blur (under ~14px) on a big text panel over busy content.
+- Accent-coloured text or links on glass (the backdrop shifts the hue): put colour in a solid chip.
+- Random blurred blobs unrelated to the product's colours.
+- Tinting every glass element instead of only the primary action.
 
-## Working with other skills and libraries
+## Working with other skills
 
-- **taste-skill** (if installed) bans glass outright. Keep its process and critique; this skill decides
-  when glass has earned its place and how to make it look right.
-- **React projects:** the recipes use Framer Motion. Plain HTML maps onto the Web Animations API (see
-  the note at the top of `references/recipes.md`).
-- **WebGL backgrounds** (OriginKit, shader gradients, three.js scenes) are the best light source to put
-  behind glass: they move, so the frosting is alive. Mind the per-frame cost in section 5.
+- **taste-skill** (if installed) bans glass outright. Keep its process; this skill decides when glass has
+  earned its place and how to make it right.
+- **React:** recipes use Framer Motion. Plain HTML maps onto the Web Animations API (recipes.md, top).
+- **WebGL backgrounds** (OriginKit, shader gradients, three.js) are the best light behind glass. Mind §4.
 
 ## Files
 
-- `assets/glass.css`: the glass material: five layers, thickness scale, light and dark tones,
-  vibrancy text, fallbacks.
-- `assets/Glass.tsx`: React + Framer Motion wrapper with the pointer sheen and the optional `liquid` prop.
-- `assets/liquid-glass.ts`: Liquid Glass edge refraction (an SVG displacement map applied through
-  `backdrop-filter`, Chromium only, with a fallback).
-- `references/recipes.md`: code for every effect in section 3.
-- `references/research.md`: the sources and what each one established.
-- `references/quirks.md`: browser and performance traps.
-- `scripts/blur-audit.mjs`: static audit (CSS, TSX and `.html`) plus `--url` for a live check.
+- `assets/glass.css`: the material: layers, thickness scale, tinted level, light tone, text, fallbacks.
+- `assets/surfaces.css`: sticky bar, dock, menu, veil + dialog, toast, sheet.
+- `assets/demo.html`: live playground of every surface with controls (also the calibration page).
+- `assets/Glass.tsx`: React + Framer Motion wrapper (pointer sheen, `liquid`, `tinted`).
+- `assets/liquid-glass.ts` / `.js`: Liquid Glass refraction with chromatic aberration.
+- `assets/adaptive-tone.js`: light/dark flip for small glass from the luminance behind it.
+- `references/recipes.md`: code for every effect. `references/research.md`: sources and what each
+  established. `references/quirks.md`: browser and performance traps.
+- `scripts/glass-contrast.mjs`: worst-case contrast in three states. `scripts/blur-audit.mjs`: static
+  and live audit.

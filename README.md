@@ -9,6 +9,8 @@ things Apple-grade glass gets right, gives it a drop-in material to build with, 
 
 ![Same brief, without the skill (top) and with it (bottom)](examples/stillwater-without-vs-with.png)
 
+**[Open the live playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface, with thickness, tint, tone and rim controls) · **[See the A/B examples](https://sridhar-raj.github.io/blur-craft/)**
+
 *Same brief, same model. Top: without the skill. Bottom: with it. The glass picks up the sunset behind
 it, the rim glows on the sun's side, and the horizon bends through the card's lower edge.*
 
@@ -29,11 +31,15 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 |---|---|
 | `SKILL.md` | The method: compose the light behind the glass, build the material, choose thickness and register, five look-checks |
 | `assets/glass.css` | The glass material: five layers (saturated blur, gradient fill, lit gradient rim, specular sheen, depth) plus 2.5% grain and a brightness clamp; a thickness scale (`clear`, `thin`, `regular`, `thick`, `solid`); light and dark tones; a tinted level for `prefers-contrast` (which, unlike `prefers-reduced-transparency`, reaches Safari); vibrancy text; fallbacks |
+| `assets/surfaces.css` | Ready-made surfaces on the material: sticky nav (extended backdrop, optional glass-on-scroll in pure CSS), dock, menu, veil + dialog, toast, sheet |
+| `assets/demo.html` | Live playground of every surface with controls; also the page the material was calibrated on |
+| `assets/adaptive-tone.js` | Light/dark flip for small glass from the luminance behind it, with hysteresis (Apple's WWDC25 rule: small elements flip, panels don't) |
 | `assets/Glass.tsx` | React + Framer Motion wrapper with a sheen that follows the pointer and an optional `liquid` prop |
 | `assets/liquid-glass.ts` | Liquid Glass edge refraction (SVG displacement map through `backdrop-filter`, Chromium) with optional chromatic aberration; frosted fallback elsewhere |
 | `references/recipes.md` | Code for light-behind-glass, extended-backdrop sticky bars, progressive blur, focus veils, blur reveals, blur-bridged crossfades, glows, depth of field, motion blur, ambient art backdrops, locked content, grain |
 | `references/research.md` | The sources behind every number, and what an earlier version got wrong |
 | `references/quirks.md` | Browser traps: the backdrop root, Safari prefixes, clipped glows, banding, WebGL, video capture |
+| `scripts/glass-contrast.mjs` | Worst-case contrast for every line of text on glass, in three states (normal, blur off as in Low Power Mode, prefers-contrast: more) |
 | `scripts/blur-audit.mjs` | Audit for CSS, TSX and HTML files, plus `--url` for a live check of blurred area and frame rate (uses Playwright if the project has it) |
 
 ![Old single-tint recipe vs the glass material](examples/material-old-vs-new.png)
@@ -56,7 +62,9 @@ research and re-tested until the skill version won:
 - [Josh W. Comeau: Next-level frosted glass with backdrop-filter](https://www.joshwcomeau.com/css/backdrop-filter/)
 - [Nielsen Norman Group: Glassmorphism](https://www.nngroup.com/articles/glassmorphism/)
 - [kube.io: Liquid Glass in the browser](https://kube.io/blog/liquid-glass-css-svg)
+- [Apple WWDC25: Meet Liquid Glass](https://developer.apple.com/videos/play/wwdc2025/219/) and [Get to know the new design system](https://developer.apple.com/videos/play/wwdc2025/356/)
 - [Emil Kowalski: design engineering skills](https://github.com/emilkowalski/skills)
+- Radix Themes, Primer, Polaris, Carbon and Atlassian tokens; Lea Verou's contrast-color threshold; Harrison & Vicente, CHI '96 (text over transparent menus)
 - [Microsoft WinUI Acrylic source](https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/Acrylic) (blur 30, 2% noise, the luminosity layer)
 - The production CSS of Apple.com, Linear and Raycast (nav bars, menus, panels), read for calibrated presets
 - [NN/g: Liquid Glass Is Cracked](https://www.nngroup.com/articles/liquid-glass/) and Apple's iOS 26.1 Clear/Tinted fix
@@ -70,6 +78,7 @@ side and interactive. Open in Chrome to see the refraction.
 
 ```html
 <link rel="stylesheet" href="assets/glass.css">
+<link rel="stylesheet" href="assets/surfaces.css">
 
 <div class="glass glass--regular" style="--glass-light: 255 200 160; --glass-rim-angle: 45deg">
   <p class="glass-tertiary">Now playing</p>

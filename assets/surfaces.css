@@ -1,0 +1,138 @@
+/* Ready-made glass surfaces, built on glass.css. Each is calibrated from production values (Apple.com,
+ * Linear, Raycast, Material, Fluent; see references/research.md) and passes scripts/glass-contrast.mjs on
+ * the demo page (assets/demo.html). Rename the `gs-` prefix with the `glass` prefix when copying.
+ *
+ *   .gs-bar      sticky nav bar with extended backdrop and glassy edge (Comeau; Apple 20px/180%/80%)
+ *   .gs-dock     floating dock or player over art (pill; pair with liquid-glass.ts, clear)
+ *   .gs-menu     menu / popover / command bar (Linear 32px over 90%, Raycast 0.5px top highlight)
+ *   .gs-veil     dialog scrim (Material 32%, Fluent Smoke 30%) with a 6px focus blur
+ *   .gs-dialog   dialog over the veil: thick, or add .glass--solid for money/deletes
+ *   .gs-toast    small notification
+ *   .gs-sheet    bottom sheet on phones
+ */
+
+/* ---------- Sticky bar ---------- */
+.gs-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 56px;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px));
+  /* Safari 26 samples a fixed/sticky bar at the top edge to tint its own toolbar: give the bar a real
+     colour (the fill below), never a fully transparent one (WebKit bug 301756). */
+}
+.gs-bar__backdrop {               /* samples twice the bar's height: colour arrives before content does */
+  position: absolute;
+  inset: 0;
+  height: 200%;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--gs-bar-fill, rgb(14 14 20 / 0.8)) 0 50%, transparent 50%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+  mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+}
+.gs-bar__edge {                   /* a 1px lit edge where the glass ends */
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14) 20%, rgb(255 255 255 / 0.14) 80%, transparent);
+}
+.gs-bar--light { --gs-bar-fill: rgb(250 250 252 / 0.8); color: rgb(10 12 20 / 0.92); }
+.gs-bar--light .gs-bar__edge { background: rgb(0 0 0 / 0.1); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gs-bar__backdrop { --gs-bar-fill: rgb(14 14 20 / 0.95); }
+  .gs-bar--light .gs-bar__backdrop { --gs-bar-fill: rgb(250 250 252 / 0.95); }
+}
+
+/* Optional: the bar turns to glass once the page scrolls, with no JS (scroll-driven animations:
+   Chrome/Edge 115, Safari 26, Firefox 159). Animates the opacity of the pre-blurred layer, which is
+   cheap, rather than the blur radius. Add class gs-bar--on-scroll. */
+@supports (animation-timeline: scroll()) {
+  .gs-bar--on-scroll .gs-bar__backdrop,
+  .gs-bar--on-scroll .gs-bar__edge { animation: gs-bar-in linear both; animation-timeline: scroll(root); animation-range: 0 120px; }
+  @keyframes gs-bar-in { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* ---------- Dock / player ---------- */
+.gs-dock {
+  --glass-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px 10px 10px;
+  min-height: 64px;
+}
+.gs-dock button { min-width: 44px; min-height: 44px; }   /* targets survive the glass */
+
+/* ---------- Menu / popover / command bar ---------- */
+.gs-menu {
+  --glass-radius: 14px;
+  --glass-blur: 32px;
+  --glass-dim: rgb(10 10 14 / 0.86);
+  --glass-contrast: 0.85;
+  display: grid;
+  padding: 6px;
+  min-width: 220px;
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.3),
+    0 0 0 0.5px rgb(0 0 0 / 0.8),
+    0 16px 40px -8px rgb(0 0 0 / 0.6);
+}
+.gs-menu.glass--light { --glass-dim: rgb(250 250 252 / 0.88); box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 16px 40px -8px rgb(20 20 40 / 0.25); }
+.gs-menu > * { padding: 8px 10px; border-radius: 8px; }
+.gs-menu.glass--light > :is(:hover, :focus-visible) { background: rgb(0 0 0 / 0.06); }
+.gs-menu > :is(:hover, :focus-visible) { background: rgb(255 255 255 / 0.08); outline: none; }
+
+/* ---------- Veil + dialog ---------- */
+.gs-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgb(8 8 12 / 0.32);
+  -webkit-backdrop-filter: blur(6px) saturate(0.9);
+  backdrop-filter: blur(6px) saturate(0.9);
+}
+.gs-dialog {
+  --glass-radius: 24px;
+  position: fixed;
+  z-index: 91;                     /* a sibling of the veil, never its child (backdrop root) */
+  inset: 0;
+  margin: auto;
+  width: min(440px, calc(100vw - 32px));
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 24px;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .gs-veil { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(8 8 12 / 0.6); }
+}
+
+/* ---------- Toast ---------- */
+.gs-toast {
+  --glass-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  max-width: 360px;
+}
+
+/* ---------- Bottom sheet (phones) ---------- */
+.gs-sheet {
+  --glass-radius: 28px;
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 91;
+  padding: 12px 20px max(20px, env(safe-area-inset-bottom, 0px));
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.gs-sheet__grip { width: 36px; height: 5px; border-radius: 3px; margin: 0 auto 12px; background: rgb(255 255 255 / 0.3); }

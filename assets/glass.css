@@ -20,10 +20,14 @@
  * prefers-reduced-transparency, so prefers-contrast is the signal that reaches iPhone and Mac users.
  */
 
+/* Registered so the rim can swing smoothly toward a moving light (pointer, scroll, device tilt):
+   Apple's specular highlights "respond to geometry" and travel around the material. */
+@property --glass-rim-angle { syntax: "<angle>"; inherits: true; initial-value: 135deg; }
+
 .glass {
   --glass-blur: 30px;
   --glass-sat: 180%;
-  --glass-bright: 1.05;
+  --glass-bright: 0.96;                     /* dark glass: never lift a bright backdrop behind white text */
   --glass-contrast: 1;                      /* < 1 limits the backdrop's brightness range: Fluent's luminosity layer,
                                                in the CSS form that works in browsers (a mix-blend child does not) */
   --glass-fill-top: rgb(255 255 255 / 0.16);
@@ -31,15 +35,19 @@
   --glass-dim: rgb(10 10 18 / 0.28);        /* dimming under the fill; Apple uses ~35% over bright content */
   --glass-light: 255 255 255;               /* r g b of the scene's light */
   --glass-radius: 28px;
-  --glass-rim-angle: 150deg;                /* bright end of the rim faces the light: 135deg top-left, 180 top, 225 top-right, 270 right, 315 bottom-right, 0 bottom, 45 bottom-left, 90 left */
+  --glass-rim-angle: 135deg;                /* bright end of the rim faces the light: 135deg top-left, 180 top, 225 top-right, 270 right, 315 bottom-right, 0 bottom, 45 bottom-left, 90 left */
   --glass-rim-hot: 0.6;                     /* rim alpha on the lit side; 0.8-0.9 when the light is strong */
   --glass-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.05'/></svg>");
   --mx: 30%;                                 /* pointer position for the sheen, set from JS */
   --my: 0%;
 
+  --glass-pad: 20px;                         /* set to the element's padding; inner radius stays concentric */
+  --glass-inner-radius: max(6px, calc(var(--glass-radius) - var(--glass-pad)));   /* WWDC25: inner = outer − padding */
+
   position: relative;
   isolation: isolate;
   border-radius: var(--glass-radius);
+  transition: --glass-rim-angle 0.5s ease;
   background:
     var(--glass-noise),                                         /* 2.5% grain, as Fluent's acrylic (2%) */
     linear-gradient(160deg, var(--glass-fill-top), var(--glass-fill-bottom) 60%),
@@ -93,10 +101,10 @@
 .glass > * { position: relative; z-index: 2; }
 
 /* Thickness scale. Blur goes up with thickness; busy or moving backdrops want the thicker end. */
-.glass--clear   { --glass-blur: 16px; --glass-dim: rgb(10 10 18 / 0.10); --glass-fill-top: rgb(255 255 255 / 0.10); }
-.glass--thin    { --glass-blur: 24px; --glass-dim: rgb(10 10 18 / 0.20); }
-.glass--regular { --glass-blur: 32px; --glass-dim: rgb(10 10 18 / 0.30); --glass-contrast: 0.9; }
-.glass--thick   { --glass-blur: 44px; --glass-dim: rgb(10 10 18 / 0.50); --glass-sat: 160%; --glass-contrast: 0.8; }
+.glass--clear   { --glass-blur: 16px; --glass-dim: rgb(10 10 18 / 0.22); --glass-fill-top: rgb(255 255 255 / 0.10); }   /* Apple: clear needs a dimming layer and bold, bright content on it */
+.glass--thin    { --glass-blur: 24px; --glass-dim: rgb(10 10 18 / 0.30); --glass-contrast: 0.92; }
+.glass--regular { --glass-blur: 32px; --glass-dim: rgb(10 10 18 / 0.48); --glass-contrast: 0.85; }
+.glass--thick   { --glass-blur: 44px; --glass-dim: rgb(10 10 18 / 0.56); --glass-sat: 160%; --glass-contrast: 0.8; }
 
 /* Nearly solid: trust-critical dialogs (payments, deletes, signatures). Glass family, nothing competes. */
 .glass--solid   { --glass-blur: 20px; --glass-dim: rgb(18 18 26 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.06); --glass-fill-bottom: rgb(255 255 255 / 0.02); }
@@ -106,7 +114,7 @@
 .glass--light {
   --glass-fill-top: rgb(255 255 255 / 0.55);
   --glass-fill-bottom: rgb(255 255 255 / 0.25);
-  --glass-dim: rgb(255 255 255 / 0.15);
+  --glass-dim: rgb(255 255 255 / 0.45);      /* light glass over a mixed scene needs real white, or it greys */
   --glass-bright: 1.1;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.9),
@@ -115,12 +123,18 @@
     0 30px 60px -24px rgb(20 20 60 / 0.25);
 }
 
-/* Text on glass: near-solid primary, translucent white secondary (vibrancy), never a mid grey. */
-.glass .glass-label     { color: rgb(255 255 255 / 0.96); }
-.glass .glass-secondary { color: rgb(255 255 255 / 0.68); }
-.glass .glass-tertiary  { color: rgb(255 255 255 / 0.45); }
+/* Text on glass: near-solid primary, translucent white secondary (vibrancy), never a mid grey.
+   Values calibrated with scripts/glass-contrast.mjs over a bright light (demo.html). A faint halo
+   follows Harrison & Vicente (CHI '96): a contrasting outline made 75-90% transparent menus read like
+   50% ones. Tertiary is for large or non-essential text only. */
+.glass .glass-label     { color: rgb(255 255 255 / 0.97); }
+.glass .glass-secondary { color: rgb(255 255 255 / 0.82); }
+.glass .glass-tertiary  { color: rgb(255 255 255 / 0.70); }
+.glass :is(.glass-label, .glass-secondary, .glass-tertiary) { text-shadow: 0 0 1px rgb(0 0 0 / 0.3), 0 1px 10px rgb(0 0 0 / 0.22); }
+.glass--light :is(.glass-label, .glass-secondary, .glass-tertiary) { text-shadow: 0 0 1px rgb(255 255 255 / 0.5); }
 .glass--light .glass-label     { color: rgb(10 12 20 / 0.92); }
-.glass--light .glass-secondary { color: rgb(10 12 20 / 0.6); }
+.glass--light .glass-secondary { color: rgb(10 12 20 / 0.78); }
+.glass--light .glass-tertiary  { color: rgb(10 12 20 / 0.7); }
 
 /* Tinted level: legibility first. Same material, far more opaque, brightness range clamped. */
 .glass.glass--tinted,

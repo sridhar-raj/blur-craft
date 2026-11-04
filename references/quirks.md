@@ -63,6 +63,16 @@ loaded or before layout settled, or sized with `getBoundingClientRect()` under a
 on ResizeObserver and `document.fonts.ready`, and size from `offsetWidth`/`offsetHeight` (the asset does
 both). 
 
+## Checking Safari: Playwright's WebKit can't show backdrop-filter
+
+Playwright's WebKit build (headless *and* headed, tested on WebKit 27.2) never paints `backdrop-filter`
+in screenshots, even a bare `blur(10px)`; `filter: blur()` paints fine. A screenshot from it shows every
+glass surface as see-through and looks like a broken material. It isn't. Use it only to confirm the CSS
+parses (read `getComputedStyle(el).backdropFilter` and the `::before` mask; glass.css parses identically in
+WebKit and Chromium), and check the look in real Safari. In WebKit `matchMedia("(prefers-reduced-transparency:
+no-preference)")` is false because the query is unsupported, which matches the research: only
+`prefers-contrast` reaches Safari users.
+
 ## Screenshots at deviceScaleFactor 2
 
 Headless Chromium at `deviceScaleFactor: 2` can leave the lower part of a large backdrop-filtered element
@@ -80,6 +90,13 @@ tinted level inside `@media (prefers-contrast: more)`. The asset's tinted rules 
 A `backdrop-filter` on a hidden hover button inside every card (43 album covers, say) is 43 invisible
 elements each paying for a blur. Put the `backdrop-filter` in the `:hover`/`:focus-visible` rule only,
 not on the resting state.
+
+## Safari: toolbar tint and the extra layer
+
+- Safari 26 samples a fixed or sticky element at the top edge to tint its own toolbar (WebKit 301756).
+  A fully transparent glass nav gives it nothing sensible to sample: give the bar a real fill colour.
+- A backdrop-filter makes WebKit add a full-screen compositing layer unless the document element has an
+  opaque background (WebKit 271340). Set `html { background: <colour> }` on pages with glass.
 
 ## Clipped glows
 
