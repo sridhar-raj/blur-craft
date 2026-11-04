@@ -11,8 +11,8 @@ surfaces, and scripts that check the result.
 ![Harbor Radio, the example built with blur-craft](examples/harbor-radio.png)
 
 **Before / after, one link:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/)
-opens the example twice, side by side with a draggable divider: typical glass on the left, blur-craft on the
-right, scrolling together. The example itself also has a switch at the top. *Before* swaps the glass for the typical
+opens the example twice with a before/after slider: move across the page and the line follows, typical glass on
+the left, blur-craft on the right, scrolling together. The example itself also has a switch at the top. *Before* swaps the glass for the typical
 tutorial recipe (flat 15% white, 16px blur, white border); *After* is blur-craft. Same page, same words:
 
 ![Before: typical glass, text washes out. After: blur-craft, readable and lit](examples/before-after.png)
@@ -30,7 +30,7 @@ passes the skill's own contrast check (every line, three states, desktop and pho
 
 Also: **[the playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface
 with thickness, tint, tone and rim controls) and **[the browser check](https://sridhar-raj.github.io/blur-craft/assets/browser-check.html)**: the
-Tabula hero from the OriginKit posts as a split view (a typical Tailwind-style glass build vs blur-craft, in
+Tabula hero from the OriginKit posts behind the same before/after slider (a typical Tailwind-style glass build vs blur-craft, in
 whatever browser you open it in), then ten surfaces each written a different way with a per-browser table.
 On Safari for macOS Sonoma the typical side is expected to lose its blur; blur-craft's keeps it.
 

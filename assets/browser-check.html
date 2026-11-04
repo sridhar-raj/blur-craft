@@ -14,28 +14,36 @@
   .split { position: relative; height: 100vh; min-height: 680px; overflow: hidden; }
   .split iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
   #typical { clip-path: inset(0 calc(100% - var(--x)) 0 0); z-index: 2; }
-  .divider { position: absolute; top: 0; bottom: 0; left: var(--x); width: 0; z-index: 5; }
-  .divider::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25); }
-  .handle { position: absolute; top: 50%; left: 0; translate: -50% -50%; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; color: #120c24; font-weight: 700; cursor: ew-resize; box-shadow: 0 6px 20px rgb(0 0 0 / 0.4); touch-action: none; }
-  .handle:focus-visible { outline: 3px solid #c9b2ff; outline-offset: 3px; }
-  .tag { position: absolute; top: 84px; z-index: 6; padding: 8px 12px; border-radius: 10px; background: #fff; color: #120c24; font-weight: 600; font-size: 14px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); max-width: min(44vw, 320px); pointer-events: none; }
-  .tag span { display: block; font-weight: 400; color: #5a5468; font-size: 12px; margin-top: 2px; }
-  .tag.left { left: 12px; } .tag.right { right: 12px; text-align: right; }
-  .verdict { position: absolute; left: 50%; translate: -50% 0; bottom: 16px; z-index: 6; background: #fff; color: #120c24; border-radius: 12px; padding: 10px 14px; font-size: 13px; max-width: min(720px, calc(100% - 24px)); box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); }
+
+  .cmp-line { position: absolute; top: 0; bottom: 0; left: var(--x); width: 0; z-index: 7; pointer-events: none; }
+  .cmp-line::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1.5px; width: 3px; background: #fff; box-shadow: 0 0 6px rgb(0 0 0 / 0.35); }
+  .cmp-knob { position: absolute; top: 50%; left: 0; translate: -50% -50%; width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 2px 10px rgb(0 0 0 / 0.35); }
+  .cmp-chev { position: absolute; top: 50%; translate: 0 -50%; color: #fff; font: 600 22px/1 -apple-system, sans-serif; text-shadow: 0 1px 6px rgb(0 0 0 / 0.5); }
+  .cmp-chev.l { right: 26px; } .cmp-chev.r { left: 26px; }
+  .cmp-capture { position: absolute; inset: 0; z-index: 6; cursor: ew-resize; touch-action: pan-y; }
+  .cmp-capture[hidden] { display: none; }
+  .cmp-label { position: absolute; top: calc(50% - 48px); white-space: nowrap; padding: 5px 10px; border-radius: 6px; background: rgb(0 0 0 / 0.55); color: #fff; font: 600 12px -apple-system, sans-serif; letter-spacing: 0.02em; pointer-events: none; }
+  .cmp-label.l { right: 12px; } .cmp-label.r { left: 12px; }
+  @media (max-width: 700px) { .cmp-label small { display: none; } }
+  .cmp-label small { font-weight: 400; opacity: 0.85; margin-left: 6px; }
+  .cmp-tools { position: absolute; right: 16px; bottom: 16px; z-index: 8; display: flex; gap: 8px; }
+  .cmp-tools button, .cmp-tools a { background: #fff; color: #120e18; border: 0; border-radius: 999px; padding: 8px 13px; font: 600 12px -apple-system, sans-serif; text-decoration: none; cursor: pointer; box-shadow: 0 4px 14px rgb(0 0 0 / 0.35); }
+  .cmp-tools button:focus-visible, .cmp-tools a:focus-visible { outline: 3px solid #c9b2ff; outline-offset: 2px; }
+  .verdict { position: absolute; left: 16px; bottom: 16px; z-index: 8; pointer-events: none; background: #fff; color: #120c24; border-radius: 12px; padding: 10px 14px; font-size: 13px; max-width: min(620px, calc(100% - 220px)); box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); }
   .verdict b { font-weight: 650; }
   .tests { padding: 40px max(16px, 4vw) 24px; max-width: 1400px; margin: 0 auto; }
   .tests h2 { margin: 0 0 6px; font-size: 26px; } .tests p { margin: 0 0 18px; color: #c9c3dd; max-width: 80ch; }
   #tests { width: 100%; border: 0; display: block; border-radius: 12px; height: 100vh; }
-  @media (max-width: 700px) { .tag span { display: none; } .tag { top: 70px; } }
 </style>
 </head>
 <body>
 <section class="split" aria-label="Typical glass vs blur-craft, in this browser">
   <iframe id="craft" src="check-hero.html?mode=craft&embed" title="blur-craft"></iframe>
   <iframe id="typical" src="check-hero.html?mode=typical&embed" title="Typical glass build"></iframe>
-  <div class="tag left">Typical build<span>Tailwind-style: flat 15% white, blur written through var()</span></div>
-  <div class="tag right">blur-craft<span>literal filters, measured material, WebGL Liquid Glass</span></div>
-  <div class="divider"><button class="handle" id="handle" aria-label="Move the divider (left and right arrow keys)">⇆</button></div>
+
+  <div class="cmp-capture" id="cmpCapture" role="slider" tabindex="0" aria-label="Compare: move left and right" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
+  <div class="cmp-line"><span class="cmp-chev l">‹</span><span class="cmp-knob"></span><span class="cmp-chev r">›</span><span class="cmp-label l">TYPICAL BUILD<small>Tailwind-style, blur via var()</small></span><span class="cmp-label r">BLUR-CRAFT<small>literal filters, measured material</small></span></div>
+  <div class="cmp-tools"><button id="cmpInteract" aria-pressed="false">Interact with the page</button></div>
   <p class="verdict" id="verdict"></p>
 </section>
 
@@ -46,12 +54,38 @@
 </section>
 
 <script>
-  const root = document.documentElement;
-  let x = 50; const set = (v) => { x = Math.max(0, Math.min(100, v)); root.style.setProperty("--x", x + "%"); };
-  const handle = document.getElementById("handle");
-  handle.addEventListener("pointerdown", (e) => handle.setPointerCapture(e.pointerId));
-  handle.addEventListener("pointermove", (e) => { if (handle.hasPointerCapture(e.pointerId)) set((e.clientX / innerWidth) * 100); });
-  handle.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") set(x - 5); if (e.key === "ArrowRight") set(x + 5); });
+
+  // Compare slider: the line follows the pointer (mouse hover, touch drag), arrow keys move it, and the
+  // capture layer forwards scrolling to both live pages so they stay together.
+  (() => {
+    const root = document.documentElement, cap = document.getElementById("cmpCapture"), box = cap.parentElement;
+    let x = 50;
+    const set = (v) => { x = Math.max(0, Math.min(100, v)); root.style.setProperty("--x", x + "%"); cap.setAttribute("aria-valuenow", String(Math.round(x))); };
+    const fromEvent = (e) => { const r = box.getBoundingClientRect(); set(((e.clientX - r.left) / r.width) * 100); };
+    cap.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" || e.buttons) fromEvent(e); });
+    cap.addEventListener("pointerdown", fromEvent);
+    cap.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") { set(x - 4); e.preventDefault(); } if (e.key === "ArrowRight") { set(x + 4); e.preventDefault(); } });
+    const frames = [...box.querySelectorAll("iframe")];
+    let y = 0;
+    cap.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const max = Math.max(...frames.map((f) => { try { return f.contentDocument.documentElement.scrollHeight - f.clientHeight; } catch { return 99999; } }));
+      y = Math.max(0, Math.min(max, y + e.deltaY));
+      for (const f of frames) f.contentWindow.postMessage({ bcScroll: y }, "*");
+    }, { passive: false });
+    addEventListener("message", (e) => {            // a page scrolled itself (keyboard, interact mode): follow
+      if (typeof e.data?.bcScroll !== "number") return;
+      y = e.data.bcScroll;
+      for (const f of frames) if (f.contentWindow !== e.source) f.contentWindow.postMessage({ bcScroll: y }, "*");
+    });
+    const toggle = document.getElementById("cmpInteract");
+    toggle?.addEventListener("click", () => {
+      const on = cap.hidden = !cap.hidden;
+      toggle.textContent = on ? "Back to comparing" : "Interact with the page";
+      toggle.setAttribute("aria-pressed", String(on));
+    });
+    window.__cmpSet = set;
+  })();
 
   // What this comparison means in the browser you're using.
   const ua = navigator.userAgent, isSafari = /Safari\//.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua);
