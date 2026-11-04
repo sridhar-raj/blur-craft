@@ -20,6 +20,25 @@ from WWDC25 and how to match a brief's register. SKILL.md has the short version.
  are handled by glass.css: forced colours turn glass into a solid
 `Canvas` surface with a system edge, and print turns it into a plain bordered box.
 
+## Big panels over a mixed backdrop: grade the dim, don't whiten it
+
+When one large panel spans a bright area and a dark one (a sign-in across a horizon, with sky behind the
+heading and grass behind the form), a single dim strong enough for the bright part makes the whole panel
+heavy. Switching to light glass with dark ink fixes the contrast but turns the panel into a milky white sheet
+that no longer reads as glass. Instead, keep dark glass with white text and grade the dim with the backdrop.
+`--glass-dim` is the bottom background layer, so it accepts a gradient. Tint it with the scene's own colour,
+not grey:
+
+```css
+.signin { --glass-dim: linear-gradient(180deg, rgb(26 40 20 / .74), rgb(26 40 20 / .6) 40%, rgb(26 40 20 / .5) 62%); }
+```
+
+Measured on the Esquisse sign-in in `assets/check-login.html`, the heaviest dim sits where the sky is brightest.
+Inputs on it are recessed (`rgb(8 14 6 / .16)`), not lightened, because a white-washed field drops small
+labels such as "Show" below 4.5:1 once the blur is off. The result is 4.97:1 in every state at four sizes, against
+1.69:1 for the usual 15%-white recipe. Re-run `glass-contrast.mjs` after changing the stops: the gradient
+is tied to the panel's height, and on a phone the layout moves the text.
+
 ## Two levels, like iOS 26.1
 
  Apple added Clear/Tinted after the Liquid Glass legibility backlash. The

@@ -50,12 +50,13 @@
   .m-typical .show { color: #fff; }
   .m-typical .submit { background: rgba(255, 255, 255, 0.3); color: #fff; border: 1px solid rgba(255, 255, 255, 0.4); }
 
-  /* ---------- craft: blur-craft's material. Light glass over the sky (dark ink), dark glass on the painting ---------- */
-  .m-craft .form-side { --glass-light: 255 246 220; }
-  .m-craft .field input { border: 1px solid rgb(29 32 51 / 0.14); background: rgb(255 255 255 / 0.72); color: #1d2033; }
-  .m-craft .field input::placeholder { color: #55535c; }
-  .m-craft .show { color: #2f3b84; }
-  .m-craft .submit { background: #1d2033; color: #fff; }
+  /* ---------- craft: blur-craft's material, dark glass tinted with the lawn's own green (not grey), white text.
+     The dim is the lightest that keeps every line readable over the bright sky; the scene's light lights the rim. ---------- */
+  .m-craft .form-side { --glass-light: 236 240 200; --glass-dim: linear-gradient(180deg, rgb(26 40 20 / 0.74) 0%, rgb(26 40 20 / 0.6) 40%, rgb(26 40 20 / 0.5) 62%); --glass-fill-top: rgb(255 255 255 / 0.10); color: #fff; }
+  .m-craft .field input { border: 1px solid rgb(255 255 255 / 0.28); background: rgb(8 14 6 / 0.16); color: #fff; }
+  .m-craft .field input::placeholder { color: rgb(255 255 255 / 0.82); }
+  .m-craft .show { color: #fff; }
+  .m-craft .submit { background: #fff; color: #1d2033; }
   .m-craft .caption { --glass-light: 255 214 160; color: #fff; }
 
   @media (max-width: 760px) {
@@ -71,7 +72,7 @@
       <img src="check-login-study.jpg" alt="Georges Seurat, Study for La Grande Jatte, 1884">
       <figcaption class="caption glassy" data-craft="glass glass--thick"><span class="glass-label">Georges Seurat</span><em class="glass-label">Study for La Grande Jatte, 1884</em></figcaption>
     </figure>
-    <section class="form-side glassy" data-craft="glass glass--thick glass--light">
+    <section class="form-side glassy" data-craft="glass glass--regular">
       <a class="back glass-label" href="#">‹ Back</a>
       <div class="head">
         <p class="glass-label">Log in to Esquisse</p>
@@ -81,9 +82,9 @@
         <label class="field"><span class="sr">Email</span><input type="email" placeholder="Email" autocomplete="off"></label>
         <label class="field"><span class="sr">Password</span><input type="password" placeholder="Password" autocomplete="off"><button type="button" class="show">Show</button></label>
         <button class="submit">Log in</button>
-        <p class="alt glass-secondary">New to Esquisse? <a href="#">Create an account</a></p>
+        <p class="alt glass-label">New to Esquisse? <a href="#">Create an account</a></p>
       </form>
-      <footer class="foot"><b class="glass-label">esquisse</b><span class="glass-secondary">Art history, one study at a time.</span></footer>
+      <footer class="foot"><b class="glass-label">esquisse</b><span class="glass-label">Art history, one study at a time.</span></footer>
     </section>
   </main>
 </div>
