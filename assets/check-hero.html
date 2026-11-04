@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tabula hero · blur-craft check</title>
+<link rel="stylesheet" href="glass.css">
+<style>
+  /* blur-audit: ignore-file (several elements use broken techniques on purpose: that's the test) */
+  /* A real hero (the Tabula section from the OriginKit X posts, on its own Caustic Weave wallpaper), where
+     every glass element is built with a different technique. Open it in the browser you need to check:
+     each numbered surface either frosts the stripes behind it or shows them sharp. */
+  :root { --ink: #f4f1fb; }
+  * { box-sizing: border-box; }
+  html { background: #07051a; }
+  body { margin: 0; color: var(--ink); font: 15px/1.5 -apple-system, "Segoe UI", Inter, sans-serif; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+  .hero { position: relative; height: 100vh; min-height: 760px; overflow: hidden; isolation: isolate; }
+  #wall { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: -1; }
+
+  /* ---------- the techniques under test (literal values unless the label says var) ---------- */
+  .t-literal  { backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); }
+  .t-tailwind { --tw-backdrop-blur: blur(12px); --tw-backdrop-saturate: saturate(150%);
+                -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,); backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,); }
+  .t-unpref   { backdrop-filter: blur(16px) saturate(160%); }
+  .t-prefix-first { -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); }
+  .t-prefixed { -webkit-backdrop-filter: blur(24px) saturate(170%); }
+  .t-var      { --f: blur(24px) saturate(170%); backdrop-filter: var(--f); -webkit-backdrop-filter: var(--f); }
+  .t-root     { backdrop-filter: blur(24px) saturate(170%); -webkit-backdrop-filter: blur(24px) saturate(170%); }
+  .fading-parent { opacity: 0.99; }   /* a framework fade left a parent at <1: the backdrop root trap */
+  .tint { background: rgb(14 10 32 / 0.42); border: 1px solid rgb(255 255 255 / 0.16); }
+
+  /* ---------- the Tabula hero layout ---------- */
+  .nav { position: absolute; top: 22px; left: 50%; translate: -50% 0; display: flex; align-items: center; gap: 22px; height: 48px; padding: 0 8px 0 18px; border-radius: 999px; }
+  .logo { display: flex; align-items: center; gap: 9px; font-weight: 650; }
+  .logo i { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #ff6b9a, #7b4dff); }
+  .nav a { color: inherit; text-decoration: none; font-size: 14px; opacity: 0.92; }
+  .nav .dl { background: #fff; color: #120c24; border-radius: 999px; padding: 7px 14px; font-weight: 600; font-size: 14px; }
+
+  .pill { position: absolute; top: 116px; left: 50%; translate: -50% 0; padding: 6px 14px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
+  .headline { position: absolute; top: 160px; left: 0; right: 0; text-align: center; padding: 0 16px; }
+  .headline h1 { margin: 0; font: 700 clamp(40px, 5.4vw, 76px)/1.04 -apple-system, "Segoe UI", sans-serif; letter-spacing: -0.03em; text-shadow: 0 2px 24px rgb(0 0 0 / 0.4); }
+  .headline h1 em { font-style: normal; color: #d9c8ff; }
+  .headline p { margin: 14px auto 0; max-width: 46ch; color: rgb(244 241 251 / 0.9); text-shadow: 0 1px 10px rgb(0 0 0 / 0.5); }
+  .ctas { margin-top: 20px; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .ctas .primary { background: #fff; color: #120c24; border-radius: 999px; padding: 11px 20px; font-weight: 600; }
+  .chip { border-radius: 999px; padding: 9px 14px; font-size: 13px; }
+
+  .editor { position: absolute; left: 50%; translate: -50% 0; bottom: -40px; width: min(860px, calc(100% - 32px)); height: 300px; padding: 14px 18px; display: grid; grid-template-rows: auto 1fr; gap: 12px; --glass-radius: 18px; }
+  .editor .bar { display: flex; gap: 7px; align-items: center; font-size: 12px; }
+  .editor .bar i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; } .editor .bar i:nth-child(2) { background: #febc2e; } .editor .bar i:nth-child(3) { background: #28c840; }
+  .editor h2 { margin: 0 0 6px; font-size: 22px; }
+  .editor p { margin: 0; max-width: 60ch; }
+
+  .versions { position: absolute; left: 4vw; top: 46%; width: 230px; padding: 14px; border-radius: 16px; display: grid; gap: 6px; font-size: 13px; }
+  .versions b { font-size: 12px; letter-spacing: 0.04em; opacity: 0.8; }
+  .toast { position: absolute; right: 4vw; top: 40%; padding: 12px 16px; border-radius: 14px; display: flex; gap: 10px; align-items: center; font-size: 14px; }
+  .toast i { width: 9px; height: 9px; border-radius: 50%; background: #7dffb1; }
+  .shortcuts { position: absolute; right: 4vw; top: 58%; width: 240px; padding: 14px; border-radius: 16px; font-size: 13px; display: grid; gap: 6px; }
+  .shortcuts kbd { font: 12px ui-monospace, Menlo, monospace; opacity: 0.85; float: right; }
+  .mic { position: absolute; left: 4vw; top: 74%; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+  .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; pointer-events: none; z-index: 1;
+          backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+          mask-image: linear-gradient(transparent, #000 70%); -webkit-mask-image: linear-gradient(transparent, #000 70%); }
+
+  /* numbered markers */
+  .n { position: absolute; z-index: 5; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #120c24; font: 700 12px/22px -apple-system, sans-serif; text-align: center; box-shadow: 0 2px 8px rgb(0 0 0 / 0.4); pointer-events: none; }
+  .hide-labels .n { display: none; }
+
+  /* legend */
+  .legend { padding: 40px max(16px, 5vw) 64px; display: grid; gap: 16px; max-width: 1200px; margin: 0 auto; }
+  .legend h2 { margin: 0; font-size: 24px; } .legend p { margin: 0; color: #c9c3dd; max-width: 80ch; }
+  .legend table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  .legend th, .legend td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #2a2440; vertical-align: top; }
+  .legend th { color: #a49cc0; font-weight: 500; }
+  .legend code { font: 12px ui-monospace, Menlo, monospace; color: #ffd2e6; }
+  .soft { color: #9dffb8; } .sharp { color: #ffb4b4; } .maybe { color: #ffe08a; }
+  .toolbar { position: fixed; right: 16px; bottom: 16px; z-index: 20; display: flex; gap: 8px; }
+  .toolbar button { background: #fff; color: #120c24; border-radius: 999px; padding: 9px 14px; font-weight: 600; font-size: 13px; }
+  @media (max-width: 860px) { .versions, .shortcuts, .toast { display: none; } .nav a:not(.dl) { display: none; } .editor { height: 240px; } }
+
+  /* ---------- modes: ?mode=tests (numbered techniques, default) · typical · craft; &embed hides chrome ---------- */
+  .typical { background: rgba(255, 255, 255, 0.15) !important; border: 1px solid rgba(255, 255, 255, 0.3) !important;
+             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1) !important; outline: none !important;
+             --tw-backdrop-blur: blur(16px);   /* the way a Tailwind v4 build writes it: through var() */
+             -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,) !important;
+             backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,) !important; }
+  .typical::before, .typical::after, .typical > canvas { display: none !important; }
+  .typical, .typical * { color: #fff; text-shadow: none !important; }
+  html:not(.m-tests) .n, html:not(.m-tests) .legend, html.embed .toolbar { display: none !important; }
+  html:not(.m-tests) .fading-parent { opacity: 1; }
+  html.embed .legend { display: none !important; }
+</style>
+</head>
+<body>
+<section class="hero" id="hero">
+  <canvas id="wall" aria-hidden="true"></canvas>
+
+  <nav class="nav t-literal tint" aria-label="Tabula">
+    <span class="logo"><i aria-hidden="true"></i>Tabula</span>
+    <a href="#">Features</a><a href="#">Versions</a><a href="#">Pricing</a><a href="#">Changelog</a>
+    <a class="dl" href="#">Download</a>
+  </nav><span class="n" style="top:16px;left:calc(50% - 300px)">1</span>
+
+  <span class="pill t-tailwind tint">Tabula 3 is here for macOS</span><span class="n" style="top:108px;left:calc(50% - 120px)">2</span>
+
+  <div class="headline">
+    <h1>Write like it shipped<br><em>with your Mac.</em></h1>
+    <p>A native writing app with versions, folders and Auto Save built in. Every command one shortcut away.</p>
+    <div class="ctas">
+      <button class="primary">Download for Mac</button>
+      <span class="chip t-unpref tint">Free for 14 days</span>
+      <span class="chip t-prefix-first tint">v3.0 · What's new</span>
+    </div>
+  </div>
+  <span class="n" id="n3" style="top:0;left:0">3</span><span class="n" id="n4" style="top:0;left:0">4</span>
+
+  <aside class="versions t-prefixed tint" aria-label="Versions"><b>VERSIONS</b><span>Launch notes · now</span><span>Draft 4 · 12 min ago</span><span>Draft 3 · yesterday</span></aside>
+  <span class="n" style="top:calc(46% - 10px);left:calc(4vw - 10px)">5</span>
+
+  <div class="toast t-var tint" role="status"><i aria-hidden="true"></i>Saved to iCloud</div>
+  <span class="n" style="top:calc(40% - 10px);right:calc(4vw - 10px)">6</span>
+
+  <div class="fading-parent"><div class="shortcuts t-root tint"><span>New note <kbd>⌘N</kbd></span><span>Search <kbd>⌘K</kbd></span><span>Version history <kbd>⌥⌘H</kbd></span></div></div>
+  <span class="n" style="top:calc(58% - 10px);right:calc(4vw - 10px)">7</span>
+
+  <button class="mic glass glass--clear" id="mic" aria-label="Dictate">🎙</button>
+  <span class="n" style="top:calc(74% - 10px);left:calc(4vw - 10px)">8</span>
+
+  <article class="editor glass glass--regular" aria-label="Editor">
+    <div class="bar glass-secondary"><i></i><i></i><i></i><span style="margin-left:8px">Launch notes — Why Tabula feels native</span></div>
+    <div><h2 class="glass-label">Why Tabula feels native</h2><p class="glass-secondary">The best tools disappear. You open the app and you are already writing; versions save as you go, and every command is one shortcut away.</p></div>
+  </article>
+  <span class="n" style="bottom:250px;left:calc(50% - 440px)">9</span>
+
+  <div class="fade" aria-hidden="true"></div><span class="n" style="bottom:20px;right:24px">10</span>
+</section>
+
+<section class="legend">
+  <h2>What you should see</h2>
+  <p>This is the Tabula hero from the OriginKit X posts, rebuilt over its own Caustic Weave wallpaper. Each numbered surface uses one way of writing glass. <strong>Frosted</strong> means the stripes behind it go soft; <strong>sharp</strong> means you can still see crisp stripes through it, so that technique doesn't blur in this browser.</p>
+  <table>
+    <thead><tr><th>#</th><th>Surface</th><th>Technique</th><th>Chrome, Edge</th><th>Firefox</th><th>Safari 18+ (macOS 15/26, iOS 18+)</th><th>Safari on macOS Sonoma</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Nav bar</td><td>literal, unprefixed then <code>-webkit-</code> (blur-craft)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
+      <tr><td>2</td><td>"Tabula 3" pill</td><td>Tailwind v4's <code>var()</code> chain</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="sharp">sharp (WebKit 297620)</td></tr>
+      <tr><td>3</td><td>"Free for 14 days" chip</td><td>unprefixed only</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="sharp">reported sharp</td></tr>
+      <tr><td>4</td><td>"What's new" chip</td><td>both, <code>-webkit-</code> first (Autoprefixer order)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">unknown: compare with 1</td></tr>
+      <tr><td>5</td><td>Versions panel</td><td><code>-webkit-</code> only</td><td class="sharp">sharp (ignored)</td><td class="sharp">sharp (ignored)</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>6</td><td>"Saved" toast</td><td><code>var()</code> holding the whole filter</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="sharp">sharp (WebKit 297620)</td></tr>
+      <tr><td>7</td><td>Shortcuts card</td><td>correct glass inside a parent at <code>opacity: .99</code></td><td class="sharp">flat (backdrop root)</td><td class="sharp">flat</td><td class="sharp">flat</td><td class="sharp">flat</td></tr>
+      <tr><td>8</td><td>Dictate button</td><td>WebGL Liquid Glass (<code>liquid-glass-webgl.js</code>)</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td></tr>
+      <tr><td>9</td><td>Editor window</td><td>blur-craft material (<code>.glass--regular</code>)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
+      <tr><td>10</td><td>Bottom edge</td><td>masked blur (progressive)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="maybe">unprefixed mask: check</td></tr>
+    </tbody>
+  </table>
+  <p>Anything that doesn't match the table is a finding: note the number, the browser and its version (Safari's user agent always says macOS 10_15_7, so check  → About This Mac for the real macOS version).</p>
+  <p class="ua" id="ua" style="font:12px ui-monospace,Menlo,monospace;color:#8f88aa"></p>
+</section>
+
+<div class="toolbar"><button id="labels">Hide labels</button></div>
+
+<script type="module">
+  import { mountWebGLGlass } from "./liquid-glass-webgl.js";
+  // The wallpaper drawn into a canvas with cover-crop, so the WebGL lens can sample exactly what's on screen.
+  const wall = document.getElementById("wall"), hero = document.getElementById("hero");
+  const img = new Image(); img.src = "check-backdrop.jpg";
+  let stopLens = null;
+  function paint() {
+    const dpr = Math.min(2, devicePixelRatio || 1), W = hero.clientWidth, H = hero.clientHeight;
+    wall.width = Math.round(W * dpr); wall.height = Math.round(H * dpr);
+    const ctx = wall.getContext("2d"), s = Math.max(wall.width / img.width, wall.height / img.height);
+    ctx.drawImage(img, (wall.width - img.width * s) / 2, (wall.height - img.height * s) / 2, img.width * s, img.height * s);
+    if (window.__checkMode === "typical") return;
+    if (stopLens) stopLens.refresh(); else stopLens = mountWebGLGlass(document.getElementById("mic"), wall, { blur: 3, bezel: 18, strength: 30, aberration: 0.8 });
+  }
+  img.decode().then(paint); addEventListener("resize", () => img.complete && paint());
+
+  // markers for the CTA chips follow their elements
+  const place = () => {
+    for (const [sel, id] of [[".t-unpref", "n3"], [".t-prefix-first", "n4"]]) {
+      const el = document.querySelector(sel); if (!el) continue;   // typical/craft modes restyle these
+      const r = el.getBoundingClientRect(), h = hero.getBoundingClientRect();
+      Object.assign(document.getElementById(id).style, { top: `${r.top - h.top - 10}px`, left: `${r.left - h.left - 10}px` });
+    }
+  };
+  place(); addEventListener("resize", place); document.fonts?.ready.then(place);
+
+  document.getElementById("labels").addEventListener("click", (e) => {
+    const hidden = document.body.classList.toggle("hide-labels");
+    e.currentTarget.textContent = hidden ? "Show labels" : "Hide labels";
+  });
+  document.getElementById("ua").textContent = navigator.userAgent;
+
+  // Modes. typical = every surface as a usual Tailwind build ships it (flat 15% white, var()-built blur);
+  // craft = every surface on blur-craft's material; tests = one technique per surface (the table).
+  const q = new URLSearchParams(location.search), mode = q.get("mode") || "tests";
+  document.documentElement.classList.add("m-" + mode);
+  if (q.has("embed")) document.documentElement.classList.add("embed");
+  const surfaces = [".nav", ".pill", ".chip", ".versions", ".toast", ".shortcuts", ".editor", ".mic"].flatMap((s) => [...document.querySelectorAll(s)]);
+  const strip = (el) => el.classList.remove("t-literal", "t-tailwind", "t-unpref", "t-prefix-first", "t-prefixed", "t-var", "t-root", "tint", "glass", "glass--regular", "glass--clear", "glass--thin", "glass--thick");
+  if (mode === "typical") for (const el of surfaces) { strip(el); el.classList.add("typical"); }
+  if (mode === "craft") for (const el of surfaces) {
+    const keep = el.classList.contains("mic"); strip(el);
+    el.classList.add("glass", keep ? "glass--clear" : el.classList.contains("editor") ? "glass--regular" : "glass--thick");
+    el.style.setProperty("--glass-light", "255 170 120");
+  }
+  window.__checkMode = mode;
+
+  // Keep split halves scrolled together (same protocol as the example).
+  if (q.has("embed") && parent !== window) {
+    let target = -1;
+    addEventListener("scroll", () => { if (Math.abs(scrollY - target) < 2) return; target = -1; parent.postMessage({ bcScroll: scrollY }, "*"); }, { passive: true });
+    addEventListener("message", (e) => { if (e.source === parent && typeof e.data?.bcScroll === "number") { target = e.data.bcScroll; scrollTo(0, target); } });
+  }
+</script>
+</body>
+</html>

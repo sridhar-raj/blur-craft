@@ -146,6 +146,7 @@
   .compare button { padding: 8px 14px; border-radius: 999px; font-weight: 600; }
   .compare button[aria-pressed="true"] { background: #120e18; color: #fff; }
   .compare output { padding: 0 10px 0 6px; font-variant-numeric: tabular-nums; color: #5a5468; white-space: nowrap; }
+  html.embed .compare { display: none; }   /* inside the split view, the page's own switch is hidden */
   @media (max-width: 760px) { .compare { top: auto; bottom: 96px; } .compare output { display: none; } }
 </style>
 </head>
@@ -418,7 +419,17 @@ function setMode(m) {
 }
 $("mBefore").addEventListener("click", () => setMode("before"));
 $("mAfter").addEventListener("click", () => setMode("after"));
-setMode(new URLSearchParams(location.search).get("mode") === "before" ? "before" : "after");
+const params = new URLSearchParams(location.search);
+setMode(params.get("mode") === "before" ? "before" : "after");
+
+// Embedded in the split view (/?compare): keep both halves scrolled to the same place.
+if (params.has("embed") && window.parent !== window) {
+  root.classList.add("embed");
+  // Echo guard by position, not a flag: a scroll request to where we already are fires no scroll event.
+  let target = -1;
+  addEventListener("scroll", () => { if (Math.abs(scrollY - target) < 2) return; target = -1; parent.postMessage({ bcScroll: scrollY }, "*"); }, { passive: true });
+  addEventListener("message", (e) => { if (e.source === parent && typeof e.data?.bcScroll === "number") { target = e.data.bcScroll; scrollTo(0, target); } });
+}
 
 // ---------- Settings: tinted level + device tier ----------
 function closeSettings() { $("settings").hidden = true; $("openSettings").setAttribute("aria-expanded", "false"); }

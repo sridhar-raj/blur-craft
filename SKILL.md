@@ -232,8 +232,9 @@ Run all of these before calling glass done:
 - `assets/glass.css`: the material: layers, thickness scale, tinted level, light tone, text, fallbacks.
 - `assets/surfaces.css`: sticky bar, dock, menu, veil + dialog, toast, sheet.
 - `assets/demo.html`: live playground of every surface with controls (also the calibration page).
-- `assets/browser-check.html`: the Tabula hero from the OriginKit posts with ten glass surfaces, each
-  written a different way, and a table of what each browser should show. Open it in the browser to check.
+- `assets/browser-check.html`: open it in the browser to check. A split view of the Tabula hero (from the
+  OriginKit posts): a typical Tailwind-style glass build vs blur-craft, then ten surfaces each written a
+  different way with a per-browser table (`check-hero.html` is the hero page it embeds).
 - `assets/Glass.tsx`, `Glass.vue`, `Glass.svelte`: components for React (Framer Motion), Vue 3 and Svelte 5
   (`thickness`, `tone`, `light`, `liquid`, `tinted`, `neutral`, and `sheen` for interactive glass only).
 - `assets/liquid-glass.ts` / `.js`: Liquid Glass refraction of any content (Chromium).
