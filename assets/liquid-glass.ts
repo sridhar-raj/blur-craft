@@ -19,6 +19,10 @@ export type LiquidOptions = {
   blur?: number;       // frosting on top of the refraction. It REPLACES the material's blur: 0-3 = clear
                        // liquid glass, 12-20 = frosted (lower reads as noise over busy content)
   saturate?: number;   // percent
+  aberration?: number; // 0-2: colour fringing at the rim (red bends least, blue most), as real lenses do.
+                       // 0 = off (default). 0.6-1 reads as optical; above 1.5 looks like a glitch effect.
+  clamp?: boolean;     // limit the backdrop's brightness range (Fluent's luminosity layer, tested CSS version):
+                       // highlights and shadows behind text can't break legibility. Default true.
   radius?: number;     // corner radius in px; defaults to the element's computed radius
 };
 
@@ -78,7 +82,7 @@ let counter = 0;
 export function mountLiquidGlass(el: HTMLElement, opts: LiquidOptions = {}): string | null {
   if (!supportsLiquidGlass()) return null;
   if (matchMedia("(prefers-reduced-transparency: reduce)").matches) return null;
-  const { bezel = 22, strength = 38, blur = 14, saturate = 170 } = opts;
+  const { bezel = 22, strength = 38, blur = 14, saturate = 170, aberration = 0, clamp = true } = opts;
   // Layout size, not getBoundingClientRect(): a scale transform on the element or an ancestor would shrink
   // the map, and any part of the element outside the filter region renders with no filter at all
   // (it shows the content behind it sharp).
@@ -101,12 +105,26 @@ export function mountLiquidGlass(el: HTMLElement, opts: LiquidOptions = {}): str
             color-interpolation-filters="sRGB">
       <feImage href="${displacementMap(w, h, Math.min(r, w / 2, h / 2), bezel)}" x="0" y="0"
                width="${w}" height="${h}" result="map" preserveAspectRatio="none"/>
+      ${aberration > 0 ? (() => {
+        // Chromatic aberration (after rdev/liquid-glass-react): displace each channel by a slightly
+        // different amount and recombine. The map is neutral away from the rim, so fringes appear only there.
+        const ch = (name: string, k: number, m: string) => `
+      <feDisplacementMap in="SourceGraphic" in2="map" scale="${strength * (1 + k * aberration)}"
+                         xChannelSelector="R" yChannelSelector="G" result="d${name}"/>
+      <feColorMatrix in="d${name}" type="matrix" values="${m}" result="${name}"/>`;
+        return ch("r", 0, "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0")
+          + ch("g", 0.08, "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0")
+          + ch("b", 0.16, "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0") + `
+      <feBlend in="r" in2="g" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="b" mode="screen"/>`;
+      })() : `
       <feDisplacementMap in="SourceGraphic" in2="map" scale="${strength}"
-                         xChannelSelector="R" yChannelSelector="G"/>
+                         xChannelSelector="R" yChannelSelector="G"/>`}
     </filter>`;
   document.body.appendChild(svg);
 
-  const value = `url(#${id}) blur(${blur}px) saturate(${saturate}%)`;
+  // Spec order: each function takes the previous one's output, so url() refracts the sharp backdrop first.
+  const value = `url(#${id}) blur(${blur}px) saturate(${saturate}%)${clamp ? " contrast(0.8) brightness(0.92)" : ""}`;
   el.style.setProperty("backdrop-filter", value);
   el.style.setProperty("-webkit-backdrop-filter", value);
   return id;

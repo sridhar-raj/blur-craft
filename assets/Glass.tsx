@@ -17,6 +17,8 @@ type Props = {
   light?: string;
   /** Edge refraction (Chromium). true for defaults, or options. */
   liquid?: boolean | LiquidOptions;
+  /** The more opaque, higher-contrast level (iOS 26.1 "Tinted"). Also automatic on prefers-contrast: more. */
+  tinted?: boolean;
   /** Sheen follows the pointer. Off for reduced motion automatically. */
   sheen?: boolean;
   className?: string;
@@ -24,7 +26,7 @@ type Props = {
 };
 
 export function Glass({
-  children, thickness = "regular", tone = "dark", light, liquid = false, sheen = true, className = "", style,
+  children, thickness = "regular", tone = "dark", light, liquid = false, tinted = false, sheen = true, className = "", style,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
@@ -47,7 +49,7 @@ export function Glass({
   return (
     <motion.div
       ref={ref}
-      className={`glass glass--${thickness}${tone === "light" ? " glass--light" : ""} ${className}`}
+      className={`glass glass--${thickness}${tone === "light" ? " glass--light" : ""}${tinted ? " glass--tinted" : ""} ${className}`}
       style={{
         ...style,
         ...(light ? ({ "--glass-light": light } as CSSProperties) : null),

@@ -95,7 +95,7 @@ The rim bends the scene behind it like a lens (Apple's Liquid Glass). Chromium a
 displacement map through `backdrop-filter`; every other browser keeps the frosted material.
 
 ```tsx
-<Glass thickness="clear" liquid={{ bezel: 26, strength: 40, blur: 2 }} className="bc-dock">   {/* clear dock */}…</Glass>
+<Glass thickness="clear" liquid={{ bezel: 26, strength: 40, blur: 2, aberration: 0.8 }} className="bc-dock">   {/* clear dock */}…</Glass>
 ```
 
 Or without React: `mountLiquidGlass(el, { bezel: 26, strength: 40, blur: 2 })` from
@@ -109,6 +109,9 @@ Or without React: `mountLiquidGlass(el, { bezel: 26, strength: 40, blur: 2 })` f
 - Refraction shows where the rim crosses detail. Place the glass so its edge overlaps a horizon, lines,
   type or a component, not only smooth sky.
 - `strength` 30–50. Above ~60 the content tears at the rim.
+- `aberration` 0.6–1 adds a prism fringe at the rim. It's off by default; use it on the one hero element.
+- `clamp` (default on) appends `contrast(0.8) brightness(0.92)`, so a white stripe behind the glass can't
+  blow out the text.
 - Use it on one hero element. The map is rebuilt on every resize.
 
 ## 1c. Extended-backdrop sticky bar

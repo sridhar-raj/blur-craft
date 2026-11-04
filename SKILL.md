@@ -85,6 +85,29 @@ Add `glass--light` to any of them for light glass over light scenes.
 Apple's rule for clear glass over bright content: add a ~35% dark dimming layer. That's the dim value
 above; raise it until the text passes.
 
+**Calibrated presets by surface.** These are the values respected products actually ship (their CSS
+and source, read for this skill), so start here rather than inventing numbers:
+
+| Surface | Production reference | Start from |
+|---|---|---|
+| Sticky nav bar | Apple.com: `saturate(180%) blur(20px)` over 80% fill, 92%/88% fill without blur. Linear: `blur(20px)` over `#0b0b0bcc` | `thin` + `--glass-blur: 20px`, fill .8 for text-heavy bars; extended backdrop (recipe 1c) |
+| Menu, popover, command bar | Linear `blur(32px)` over 90% fill; Raycast window `blur(36px)` over `#0009` with a 0.5px top highlight | `thick`, radius 12–16px |
+| Floating panel or dock over art | Raycast action panel `blur(48px)`; Apple Liquid Glass (clear) | `regular` or `clear` + Liquid Glass |
+| Dialog scrim (focus veil) | Material 3: scrim at 32%. Fluent Smoke: 30% black. Raycast: 60% black + `blur(2px)` | veil 30–35% + `blur(4–6px)` |
+| Hover chip on an image | Linear `blur(8px)` over `#ffffff29` | `clear`, backdrop only on `:hover` |
+
+**Two levels, like iOS 26.1.** After Liquid Glass shipped, readers struggled with text over photos
+(NN/g, October 2025) and Apple added a Clear/Tinted switch: Tinted "increases opacity and adds more
+contrast". `glass.css` has the same two levels. The tinted level turns on automatically for
+`prefers-contrast: more` and `prefers-reduced-transparency`, and can be offered as a user setting with
+`<html data-glass="tinted">`. **Safari ignores `prefers-reduced-transparency`**, so on iPhone and Mac
+`prefers-contrast` is the signal that gets through.
+
+**The brightness clamp.** Microsoft's Acrylic adds a "luminosity" layer that lets the backdrop's colour
+through but blocks sharp light and dark (a white stripe, a shadow) behind text. The browser version that
+works is `contrast(.7–.9)` in the backdrop filter (`--glass-contrast`, on by default for `regular` and
+`thick`). A `mix-blend-mode: luminosity` child was tested and washes glass grey, so don't use it.
+
 **Where glass belongs:** on the functional layer (navigation, toolbars, players, docks, sheets, popovers)
 floating over content. Apple's HIG keeps it out of the content layer itself. Don't make every card in a
 grid glass. One hero glass surface plus thinner supporting glass reads as designed. Six equal glass
@@ -114,7 +137,10 @@ panel:
   lens, as in Apple's Liquid Glass. It works in Chromium and falls back to frosted glass elsewhere. Use it
   on one hero control (a player, a dock, a big button), over a detailed backdrop where the bending
   shows: lines, type, a photo. Never on a dialog above a focus veil: the veil has already blurred away
-  the detail the refraction would bend, so it costs a filter and shows nothing.
+  the detail the refraction would bend, so it costs a filter and shows nothing. `aberration: 0.6–1`
+  adds the prism fringe at the rim (red bends least, blue most) that sells it as optics. Safari and
+  Firefox don't run SVG backdrop filters (WebKit bug 245510, in review), so they get the frosted
+  material, which is why the material has to look finished on its own.
 - **Extended backdrop** for sticky bars (Comeau): the blur samples content *below* the bar too, so
   colour glows into the glass before content scrolls under it. That's the difference between a real
   frosted bar and a fake one.
@@ -141,8 +167,11 @@ Then:
    set `--glass-light` to the scene's colour.
 3. **Is it the most beautiful object in the frame?** Glass should be the hero, not a container. If the
    background outshines it, make the glass bigger or the backdrop calmer elsewhere.
-4. **Is every word crisp and readable?** Primary text near-solid white; if any text sits on a bright
-   patch, go one step thicker.
+4. **Is every word crisp and readable?** Measure the worst case, as WCAG's failure F83 does for text on
+   images: find the brightest patch the backdrop can put behind light text (darkest for dark text),
+   composite the glass over it, and check 4.5:1 for body text, 3:1 for large text. If it fails, go a
+   thickness up or turn on `--glass-contrast`. Never put text-bearing glass over other text (the worst
+   Liquid Glass failures were search bars over email previews). Controls on glass keep 44px targets.
 5. **Does it still look right in the fallback?** Emulate reduced transparency (Playwright's context option
    doesn't cover it; use CDP: `const cdp = await page.context().newCDPSession(page); await
    cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value:
@@ -157,8 +186,13 @@ running, `… --url <page url>` for blurred area and frame rate.
 
 Design for the look first, then check these. They keep a section at 60fps without changing how it looks:
 
-- Animate opacity and transform of blurred layers, not the blur radius. The exceptions are short reveals
-  and the 2px crossfade.
+- Animate opacity and transform of blurred layers, not the blur radius, for anything long or looping.
+  Short one-off moves are fine: Apple.com animates its menu curtain's `backdrop-filter` from `blur(0)` to
+  `blur(20px)` over 320ms. Reveals (≤ 600ms) and the 2px crossfade also qualify.
+- Never blur two stacked surfaces at once. Apple's nav drops its own `backdrop-filter` while a flyout is
+  open and hands the blur to the flyout.
+- A sticky or fixed blur re-runs on every scroll frame (it costs nothing at rest). Keep large ones to one
+  per screen, and bake any big blurred image beneath it (recipe 8).
 - Glass over a live WebGL component re-blurs every frame. Fine for a player or a panel. If the glass has
   to cover most of the frame, blur a still of the art instead.
 - `filter: blur()` on big glows: prefer a `radial-gradient` when the shape is round.
@@ -175,6 +209,11 @@ Design for the look first, then check these. They keep a section at 60fps withou
 - Light blur (under ~14px) on a big panel with text over busy content: the detail shows through as
   noise. Go thicker. (Clear liquid glass with little text is the exception: there the bending is the point.)
 - Random blurred blobs unrelated to the product's colours. Light behind glass should come from the scene.
+- Glass panes edge to edge: Fluent warns they leave a visible seam. Leave a gap or merge them into one.
+- Accent-coloured text or links on glass (Fluent): the backdrop shifts the hue. Use white or ink, and put
+  colour in a solid chip.
+- Glass inside glass. If a child needs its own blur, put the parent's blur on a `::before` layer
+  (`inset: 0; z-index: -1; border-radius: inherit`), as Raycast does, so the parent isn't a backdrop root.
 
 ## Working with other skills and libraries
 

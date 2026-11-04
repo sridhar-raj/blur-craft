@@ -28,9 +28,9 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 | Path | What it is |
 |---|---|
 | `SKILL.md` | The method: compose the light behind the glass, build the material, choose thickness and register, five look-checks |
-| `assets/glass.css` | The glass material: five layers (saturated blur, gradient fill, lit gradient rim, specular sheen, depth), a thickness scale (`clear`, `thin`, `regular`, `thick`, `solid`), light and dark tones, vibrancy text, fallbacks |
+| `assets/glass.css` | The glass material: five layers (saturated blur, gradient fill, lit gradient rim, specular sheen, depth) plus 2.5% grain and a brightness clamp; a thickness scale (`clear`, `thin`, `regular`, `thick`, `solid`); light and dark tones; a tinted level for `prefers-contrast` (which, unlike `prefers-reduced-transparency`, reaches Safari); vibrancy text; fallbacks |
 | `assets/Glass.tsx` | React + Framer Motion wrapper with a sheen that follows the pointer and an optional `liquid` prop |
-| `assets/liquid-glass.ts` | Liquid Glass edge refraction: an SVG displacement map applied through `backdrop-filter` (Chromium), with a frosted fallback elsewhere |
+| `assets/liquid-glass.ts` | Liquid Glass edge refraction (SVG displacement map through `backdrop-filter`, Chromium) with optional chromatic aberration; frosted fallback elsewhere |
 | `references/recipes.md` | Code for light-behind-glass, extended-backdrop sticky bars, progressive blur, focus veils, blur reveals, blur-bridged crossfades, glows, depth of field, motion blur, ambient art backdrops, locked content, grain |
 | `references/research.md` | The sources behind every number, and what an earlier version got wrong |
 | `references/quirks.md` | Browser traps: the backdrop root, Safari prefixes, clipped glows, banding, WebGL, video capture |
@@ -39,6 +39,10 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 ![Old single-tint recipe vs the glass material](examples/material-old-vs-new.png)
 
 ![Liquid Glass refraction: the rim bends the grid like a lens](examples/liquid-glass-refraction.png)
+
+![Liquid Glass with chromatic aberration at the rim](examples/liquid-glass-aberration.png)
+
+![Default, tinted (iOS 26.1-style, for prefers-contrast) and light glass](examples/glass-default-tinted-light.png)
 
 ## How it was built
 
@@ -51,6 +55,10 @@ research and re-tested until the skill version won:
 - [Nielsen Norman Group: Glassmorphism](https://www.nngroup.com/articles/glassmorphism/)
 - [kube.io: Liquid Glass in the browser](https://kube.io/blog/liquid-glass-css-svg)
 - [Emil Kowalski: design engineering skills](https://github.com/emilkowalski/skills)
+- [Microsoft WinUI Acrylic source](https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/Acrylic) (blur 30, 2% noise, the luminosity layer)
+- The production CSS of Apple.com, Linear and Raycast (nav bars, menus, panels), read for calibrated presets
+- [NN/g: Liquid Glass Is Cracked](https://www.nngroup.com/articles/liquid-glass/) and Apple's iOS 26.1 Clear/Tinted fix
+- [CSS Filter Effects 2 spec](https://drafts.csswg.org/filter-effects-2/), [rdev/liquid-glass-react](https://github.com/rdev/liquid-glass-react) (chromatic aberration), WebKit bugs 245510 and 279115
 
 **Live examples:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/) shows three
 briefs (a meditation hero, a music app, a banking dashboard), each built with and without the skill, side by
@@ -61,7 +69,7 @@ side and interactive. Open in Chrome to see the refraction.
 ```html
 <link rel="stylesheet" href="assets/glass.css">
 
-<div class="glass glass--regular" style="--glass-light: 255 200 160; --glass-rim-angle: 40deg">
+<div class="glass glass--regular" style="--glass-light: 255 200 160; --glass-rim-angle: 45deg">
   <p class="glass-tertiary">Now playing</p>
   <h3 class="glass-label">Evening wind-down</h3>
   <p class="glass-secondary">12 min · Guided</p>

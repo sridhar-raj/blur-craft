@@ -86,6 +86,65 @@ https://github.com/emilkowalski/skills
 **In the skill:** recipe 0 (light behind the glass), the rim and sheen layers of `glass.css`, recipe 10
 (grain).
 
+## Microsoft Fluent Acrylic (WinUI source code)
+https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/Acrylic
+
+- Constants in `AcrylicBrush.h`: blur 30, noise opacity 2%, default tint white at 80%.
+- Current pipeline (`AcrylicBrush.cpp`): an opaque fallback under the backdrop, then Gaussian blur 30,
+  then a **luminosity blend** with a solid colour, then a colour blend with the tint, then 2% tiled noise.
+- The luminosity layer "takes the color (Hue and Saturation) values from our blurred backdrop, but gets
+  the lightness (Luminosity) value from a solid color layer… to reduce contrast", added because shadows
+  showed through as "a dark blur".
+- Shipped dark in-app acrylic: tint `#2C2C2C`, tint opacity 0.15, luminosity opacity 0.96. Smoke (modal
+  scrim) is `#4D000000` (30% black).
+- Docs: acrylic goes solid with transparency off, in Battery Saver and on low-end hardware. Don't put
+  panes edge to edge (seam). Don't put accent-coloured text on acrylic.
+- **Tested here:** a `mix-blend-mode: luminosity` child over a `backdrop-filter` washes the glass grey in
+  Chromium, so the luminosity layer can't be reproduced that way. `contrast(.7–.9)` in the backdrop
+  filter gives the same "colour through, sharp light/dark blocked" result (`--glass-contrast`).
+
+## Production CSS (read from the shipped stylesheets, November 2026)
+
+- **Apple.com global nav:** `saturate(180%) blur(20px)` over `rgba(250,250,252,.8)` / `rgba(22,22,23,.8)`;
+  92%/88% without blur support. The flyout curtain animates `backdrop-filter` from `blur(0)` to
+  `blur(20px)` over 320ms. While a flyout is open the nav drops its own blur.
+- **Linear:** header `blur(20px)` over `#0b0b0bcc` with `isolation: isolate`; menus `blur(32px)` over 90%
+  fill, `1px #ffffff14` border, radius 14px; glass variant `blur(24px)` over `#ffffff1a`.
+- **Raycast:** window `blur(36px)` over `#0009`, `inset 0 .5px #ffffff4d` top highlight; panels
+  `blur(48px)`; puts blur on `::before { z-index: -1 }` so children can have their own blur.
+- **Material 3:** dialog scrim at 32%. **Android window blur:** 80px "frosted glass", 20px blur-behind,
+  dim 0.1 with blur and 0.4 without, avoid radii above 150px.
+- Pattern: nav bars ≈ 20px blur + 180% saturation over 80% fill; dark product menus 24–48px over 60–90%
+  fill; marketing overlays 2–5px over a heavy scrim.
+
+## Liquid Glass on the web, advanced
+- **Filter order (CSS Filter Effects 2 spec):** "The first filter function or reference uses the Backdrop
+  Root Image as input. Each later step uses the previous output." So `url(#refract) blur()` bends the
+  sharp backdrop and then softens it. https://drafts.csswg.org/filter-effects-2/
+- **Chromatic aberration** (rdev/liquid-glass-react): three `feDisplacementMap` passes at slightly
+  different scales, channels isolated with `feColorMatrix`, recombined with `feBlend mode="screen"`.
+  https://github.com/rdev/liquid-glass-react
+- **Safari:** `backdrop-filter: url()` paints nothing (WebKit bug 245510; patches in review as of
+  September 2026). backdrop-filter with `mask-composite: exclude` on the same element failed in Safari
+  17.6 (bug 279115), which is why the rim lives on a pseudo-element.
+
+## Accessibility and the Liquid Glass backlash
+- `prefers-reduced-transparency`: Chromium 118+, Firefox behind a flag, **not Safari** (WebKit 175497).
+  `prefers-contrast` works in Chrome 96, Firefox 101 and Safari 14.1.
+  https://web-platform-dx.github.io/web-features-explorer/features/prefers-reduced-transparency
+- WCAG has no translucency rule. Failure F83 says to test text over images against the lightest (or
+  darkest) area behind it. APCA was pulled from WCAG 3 drafts; WCAG 2 ratios stay normative.
+  https://www.w3.org/WAI/WCAG22/Techniques/failures/F83
+- NN/g, "Liquid Glass Is Cracked, and Usability Suffers in iOS 26" (October 2025): text over photos,
+  Mail's search bar over previews, controls fading into the background, small targets.
+  https://www.nngroup.com/articles/liquid-glass/
+- iOS 26.1 added Clear/Tinted Liquid Glass; Tinted "increases opacity and adds more contrast".
+  https://tidbits.com/2025/10/21/ios-26-1-to-add-optional-opacity-to-liquid-glass/
+
+**In the skill:** the calibrated presets table, `--glass-contrast`, the tinted level and its media
+queries, the 2.5% noise layer, `aberration`, the worst-case contrast check, and the tells about seams,
+accent text and glass in glass.
+
 ## What the first version of this skill got wrong (and why it lost an A/B test)
 
 The first version capped glass at 12–24px, demanded a 45%+ flat tint, limited each screen to one small
