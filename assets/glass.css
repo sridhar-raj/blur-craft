@@ -25,12 +25,7 @@
 @property --glass-rim-angle { syntax: "<angle>"; inherits: true; initial-value: 135deg; }
 
 .glass {
-  --glass-blur: 30px;
-  --glass-sat: 180%;
-  --glass-bright: 0.96;                     /* dark glass: never lift a bright backdrop behind white text */
-  --glass-contrast: 1;                      /* < 1 limits the backdrop's brightness range: Fluent's luminosity layer,
-                                               in the CSS form that works in browsers (a mix-blend child does not) */
-  --glass-fill-top: rgb(255 255 255 / 0.16);
+  --glass-fill-top: rgb(255 255 255 / 0.12);   /* lower than it looks right at first: white fill sits behind white text */
   --glass-fill-bottom: rgb(255 255 255 / 0.04);
   --glass-dim: rgb(10 10 18 / 0.28);        /* dimming under the fill; Apple uses ~35% over bright content */
   --glass-light: 255 255 255;               /* r g b of the scene's light */
@@ -51,9 +46,10 @@
   background:
     var(--glass-noise),                                         /* 2.5% grain, as Fluent's acrylic (2%) */
     linear-gradient(160deg, var(--glass-fill-top), var(--glass-fill-bottom) 60%),
+    var(--glass-tint-layer, linear-gradient(transparent, transparent)),   /* tinted level adds opacity on top, never replaces */
     var(--glass-dim);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright)) contrast(var(--glass-contrast));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright)) contrast(var(--glass-contrast));
+  /* backdrop-filter is set per thickness below, as LITERAL values: Safari 18/26 on macOS Sonoma renders no
+     blur when the filter is composed from var() (WebKit bug 297620, open). Never build it from variables. */
   box-shadow:
     inset 0 1px 0 rgb(var(--glass-light) / 0.35),          /* top specular line */
     inset 0 -1px 0 rgb(255 255 255 / 0.04),
@@ -101,21 +97,60 @@
 .glass > * { position: relative; z-index: 2; }
 
 /* Thickness scale. Blur goes up with thickness; busy or moving backdrops want the thicker end. */
-.glass--clear   { --glass-blur: 16px; --glass-dim: rgb(10 10 18 / 0.22); --glass-fill-top: rgb(255 255 255 / 0.10); }   /* Apple: clear needs a dimming layer and bold, bright content on it */
-.glass--thin    { --glass-blur: 24px; --glass-dim: rgb(10 10 18 / 0.30); --glass-contrast: 0.92; }
-.glass--regular { --glass-blur: 32px; --glass-dim: rgb(10 10 18 / 0.48); --glass-contrast: 0.85; }
-.glass--thick   { --glass-blur: 44px; --glass-dim: rgb(10 10 18 / 0.56); --glass-sat: 160%; --glass-contrast: 0.8; }
+.glass--clear   { --glass-dim: rgb(10 10 18 / 0.22); --glass-fill-top: rgb(255 255 255 / 0.10); }   /* Apple: clear needs a dimming layer and bold, bright content on it */
+.glass--thin    { --glass-dim: rgb(10 10 18 / 0.30); }
+.glass--regular { --glass-dim: rgb(10 10 18 / 0.48); }
+.glass--thick   { --glass-dim: rgb(10 10 18 / 0.56); }
+
+/* Neutral: colour-critical apps (photo and video editors, design tools, colour pickers). The glass must not
+   recolour the picture next to it, so no saturation boost and no tone shift; legibility comes from the dim. */
+.glass--neutral { --glass-light: 255 255 255; }
 
 /* Nearly solid: trust-critical dialogs (payments, deletes, signatures). Glass family, nothing competes. */
-.glass--solid   { --glass-blur: 20px; --glass-dim: rgb(18 18 26 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.06); --glass-fill-bottom: rgb(255 255 255 / 0.02); }
+.glass--solid   { --glass-dim: rgb(18 18 26 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.06); --glass-fill-bottom: rgb(255 255 255 / 0.02); }
 .glass--solid.glass--light { --glass-dim: rgb(255 255 255 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.6); --glass-fill-bottom: rgb(255 255 255 / 0.4); }
+
+
+/* ---- Backdrop filters: literal per thickness × tone (see the Sonoma note at the top of .glass) ----
+   dark: brightness .96 (never lift a bright backdrop behind white text); light: 1.08.
+   contrast < 1 is the working CSS form of Fluent's luminosity layer (colour through, harsh light and
+   dark blocked); a mix-blend-mode child does not work in browsers. Solid uses 4px: above ~85% fill the
+   radius barely shows (Arc ships 3px under 85%), so a big blur there only costs frames.
+   neutral (colour-critical apps): blur only, no saturation or tone change. */
+.glass { -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); }
+.glass.glass--light { -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); }
+.glass.glass--neutral { -webkit-backdrop-filter: blur(32px); backdrop-filter: blur(32px); }
+.glass--clear { -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(0.96); backdrop-filter: blur(16px) saturate(180%) brightness(0.96); }
+.glass--light.glass--clear { -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08); backdrop-filter: blur(16px) saturate(180%) brightness(1.08); }
+.glass--neutral.glass--clear { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.glass--thin { -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(0.96) contrast(0.92); backdrop-filter: blur(24px) saturate(180%) brightness(0.96) contrast(0.92); }
+.glass--light.glass--thin { -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.08) contrast(0.92); backdrop-filter: blur(24px) saturate(180%) brightness(1.08) contrast(0.92); }
+.glass--neutral.glass--thin { -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
+.glass--regular { -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); }
+.glass--light.glass--regular { -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); }
+.glass--neutral.glass--regular { -webkit-backdrop-filter: blur(32px); backdrop-filter: blur(32px); }
+.glass--thick { -webkit-backdrop-filter: blur(44px) saturate(160%) brightness(0.96) contrast(0.8); backdrop-filter: blur(44px) saturate(160%) brightness(0.96) contrast(0.8); }
+.glass--light.glass--thick { -webkit-backdrop-filter: blur(44px) saturate(160%) brightness(1.08) contrast(0.8); backdrop-filter: blur(44px) saturate(160%) brightness(1.08) contrast(0.8); }
+.glass--neutral.glass--thick { -webkit-backdrop-filter: blur(44px); backdrop-filter: blur(44px); }
+.glass--solid { -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(0.96); backdrop-filter: blur(4px) saturate(140%) brightness(0.96); }
+.glass--light.glass--solid { -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(1.08); backdrop-filter: blur(4px) saturate(140%) brightness(1.08); }
+.glass--neutral.glass--solid { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+
+/* Device tiers (assets/glass-tier.js sets <html data-glass-tier>): "lite" keeps a small blur and no
+   extras; "flat" drops the blur and leans on the dim, as Android and Fluent do on weak hardware. */
+:root[data-glass-tier="lite"] .glass.glass { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+:root[data-glass-tier="flat"] .glass.glass {
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.55), rgb(14 14 20 / 0.55));
+}
+:root[data-glass-tier="flat"] .glass.glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.6), rgb(250 250 252 / 0.6)); }
+
 
 /* Light glass (over light scenes). */
 .glass--light {
   --glass-fill-top: rgb(255 255 255 / 0.55);
   --glass-fill-bottom: rgb(255 255 255 / 0.25);
   --glass-dim: rgb(255 255 255 / 0.45);      /* light glass over a mixed scene needs real white, or it greys */
-  --glass-bright: 1.1;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.9),
     inset 0 0 24px rgb(255 255 255 / 0.25),
@@ -136,17 +171,18 @@
 .glass--light .glass-secondary { color: rgb(10 12 20 / 0.78); }
 .glass--light .glass-tertiary  { color: rgb(10 12 20 / 0.7); }
 
-/* Tinted level: legibility first. Same material, far more opaque, brightness range clamped. */
+/* Tinted level: legibility first. It adds a 60% layer OVER the surface's own dim (combined alpha
+   1 − (1 − dim)(1 − 0.6)), so it only ever raises opacity: a component that already set a darker dim
+   gets darker still, never lighter. Brightness range clamped harder too. */
 .glass.glass--tinted,
-:root[data-glass="tinted"] .glass.glass {   /* doubled class: beats a component rule that sets --glass-dim */
-  --glass-dim: rgb(14 14 20 / 0.78);
-  --glass-contrast: 0.7;
+:root[data-glass="tinted"] .glass.glass {
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.6), rgb(14 14 20 / 0.6));
 }
 .glass.glass--tinted.glass--light,
-:root[data-glass="tinted"] .glass.glass--light { --glass-dim: rgb(250 250 252 / 0.86); --glass-fill-top: rgb(255 255 255 / 0.6); }
+:root[data-glass="tinted"] .glass.glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.7), rgb(250 250 252 / 0.7)); }
 @media (prefers-contrast: more) {
-  .glass.glass { --glass-dim: rgb(14 14 20 / 0.82); --glass-contrast: 0.7; }
-  .glass.glass--light { --glass-dim: rgb(250 250 252 / 0.9); }
+  .glass.glass { --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.65), rgb(14 14 20 / 0.65)); }
+  .glass.glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.75), rgb(250 250 252 / 0.75)); }
   .glass .glass-secondary, .glass .glass-tertiary { color: rgb(255 255 255 / 0.85); }
   .glass--light .glass-secondary, .glass--light .glass-tertiary { color: rgb(10 12 20 / 0.8); }
   .glass::before { --glass-rim-hot: 1; }

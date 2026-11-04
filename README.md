@@ -34,6 +34,7 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 | `assets/surfaces.css` | Ready-made surfaces on the material: sticky nav (extended backdrop, optional glass-on-scroll in pure CSS), dock, menu, veil + dialog, toast, sheet |
 | `assets/demo.html` | Live playground of every surface with controls; also the page the material was calibrated on |
 | `assets/adaptive-tone.js` | Light/dark flip for small glass from the luminance behind it, with hysteresis (Apple's WWDC25 rule: small elements flip, panels don't) |
+| `assets/glass-tier.js` | Full / lite / flat glass by device: memory, Save-Data, a frame-rate probe (iOS Low Power Mode caps at 30fps) and Compute Pressure |
 | `assets/Glass.tsx` | React + Framer Motion wrapper with a sheen that follows the pointer and an optional `liquid` prop |
 | `assets/liquid-glass.ts` | Liquid Glass edge refraction (SVG displacement map through `backdrop-filter`, Chromium) with optional chromatic aberration; frosted fallback elsewhere |
 | `references/recipes.md` | Code for light-behind-glass, extended-backdrop sticky bars, progressive blur, focus veils, blur reveals, blur-bridged crossfades, glows, depth of field, motion blur, ambient art backdrops, locked content, grain |
@@ -51,6 +52,8 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 ![Default, tinted (iOS 26.1-style, for prefers-contrast) and light glass](examples/glass-default-tinted-light.png)
 
 ![Liquid Glass: frosted (rim frosted too) and clear (the bend shows)](examples/liquid-glass-frosted-vs-clear.png)
+
+![Glass shapes merging with a liquid neck, from one glass layer cut by a goo mask](examples/glass-merge.png)
 
 ## How it was built
 
@@ -70,9 +73,15 @@ research and re-tested until the skill version won:
 - [NN/g: Liquid Glass Is Cracked](https://www.nngroup.com/articles/liquid-glass/) and Apple's iOS 26.1 Clear/Tinted fix
 - [CSS Filter Effects 2 spec](https://drafts.csswg.org/filter-effects-2/), [rdev/liquid-glass-react](https://github.com/rdev/liquid-glass-react) (chromatic aberration), WebKit bugs 245510 and 279115
 
-**Live examples:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/) shows four
-briefs (a meditation hero, a music app, a banking dashboard, a hotel booking page), each built with and without the skill, side by
+**Live examples:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/) shows five
+briefs (a meditation hero, a music app, a banking dashboard, a hotel booking page, a photo editor), each built with and without the skill, side by
 side and interactive. Open in Chrome to see the refraction.
+
+## Important: Safari on macOS Sonoma
+
+Safari 18 and 26 on macOS Sonoma render **no blur** when `backdrop-filter` is built from CSS variables
+(WebKit bug 297620, open), and Tailwind v4's `backdrop-blur-*` is built that way. This skill writes literal
+filters and its audit flags `var()` inside `backdrop-filter`.
 
 ## Quick start without an agent
 

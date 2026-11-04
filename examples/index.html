@@ -87,6 +87,19 @@
     </div>
     <p class="verdict">The skill wins on atmosphere with readability measured, not guessed. This test also found that Chromium leaves Liquid Glass's rim unblurred when the blur is in the CSS chain; the asset now frosts inside the SVG filter.</p>
   </section>
+  <section>
+    <h2>5. Lumen: photo editor chrome over a photo</h2>
+    <p class="brief">"The editing screen of a photo app: a large photo with a toolbar, tool rail, Adjust panel and filmstrip floating over it. Premium and professional, and every control must stay readable whatever the photo looks like."</p>
+    <div class="pair">
+      <div class="col"><h3>Without the skill <a href="editor-without.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="editor-without.html" loading="lazy" title="Editor without the skill"></iframe></div>
+        <ul><li>Dark tinted glass with a brightness cut; vivid scene</li><li>Its author estimated ~6:1 contrast. Measured with the blur off (iOS Low Power Mode): 6 lines fail, lowest 3.35:1</li></ul></div>
+      <div class="col"><h3>With the skill (v4) <a href="editor-with.html" target="_blank">open ↗</a></h3>
+        <div class="frame"><iframe src="editor-with.html" loading="lazy" title="Editor with the skill"></iframe></div>
+        <ul><li>Thick, low-saturation glass so the chrome doesn't recolour the photo; toolbar grouped by function, Export the one solid primary</li><li>Measured on the worst frame pushed +2 EV: lowest 5.44:1 normal, 4.88:1 blur off, 6.7:1 high contrast</li><li>Rim angle sampled from the photo around each panel</li></ul></div>
+    </div>
+    <p class="verdict">Visually close; the difference is proof. The skill's build passes on the brightest photo in every state, the other fails in Low Power conditions. This test also produced neutral glass, a tinted level that only adds opacity, and a faster dialog veil.</p>
+  </section>
 </div>
 <script>
   // Scale each 1600x900 page down to its frame.

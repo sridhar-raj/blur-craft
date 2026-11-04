@@ -193,6 +193,65 @@ over the brightest light, which matches Apple's guidance that clear glass is for
 over the four A/B example pages, the checker also failed small secondary text that agents had judged
 readable by eye, which is why it's now a required step.
 
+## Round 3: corrections, interaction, mobile, video, testing, award sites
+
+**Corrections to earlier rounds**
+- `var()` inside `backdrop-filter` **fails in Safari 18/26 on macOS Sonoma** (WebKit 297620, open; works on
+  macOS 15 and 26). An earlier note here said it worked, based only on a newer WebKit. Fixed: literal
+  filters everywhere. https://bugs.webkit.org/show_bug.cgi?id=297620
+- The "Chrome 142 lets overflow:hidden clip extended backdrops" claim couldn't be found in any release note
+  or CL: removed. Firefox did fix backdrop-filter ignoring a parent's `overflow: hidden` in 139.
+- Firefox 159 (2026-10-27) ships scroll-driven animations; `contrast-color()` is Chrome 147, Firefox 146,
+  Safari 26; `mix-blend-mode: plus-lighter` is Chrome 100, Firefox 99, Safari 9.1 (BCD).
+- `prefers-reduced-transparency` is still absent in Safari, even with iOS 27's Liquid Glass slider (Apple
+  retreated toward more diffusion and user control; the web can't read the setting).
+
+**Interaction and merging**
+- Apple's API: `Glass.interactive()`, `GlassEffectContainer(spacing:)` (shapes merge within the spacing;
+  samples use 40), `glassEffectUnion`, `.matchedGeometry` vs `.materialize` transitions. No published
+  durations or scales. https://developer.apple.com/documentation/swiftui/applying-liquid-glass-to-custom-views
+- Cursor.com (live bundle): `layoutId` morph at 0.34s `[0.32, 0.72, 0, 1]`, press = inset glow pulse;
+  light `blur(14px) saturate(1.45)` 42→20→10% white, dark `blur(18px) saturate(1.2)` 11→7→3.5% white.
+- Goo filter: Lucas Bebber, CSS-Tricks (`18 -7` alpha matrix). Tested for this skill as a mask *image* on
+  one glass layer: shapes 8px apart merge; an inline `mask: url(#id)` rendered nothing.
+- Aave, "Building Glass for the Web": regenerate displacement maps only on shape change, compute one
+  quadrant and mirror, a fresh filter id per update for Safari's cache, WebGL for glass over video.
+  https://aave.com/design/building-glass-for-the-web
+
+**Mobile, tiers, video**
+- `backdrop-filter` creates a containing block for fixed descendants (MDN).
+- iOS Low Power Mode throttles rAF to 30fps by design (WebKit 215745); `deviceMemory` and `saveData` are
+  Chromium-only; Compute Pressure is Chrome 125+. https://developer.chrome.com/docs/web-platform/compute-pressure
+- iOS 26 floating toolbar behaviour (scrims, sheets, safe-area): empirical spike,
+  https://stevenocchipinti.github.io/liquid-glass-spike
+- YouTube-style ambient glow: 10×6 canvas, `requestVideoFrameCallback`.
+  https://www.smashingmagazine.com/2023/07/recreating-youtube-ambient-mode-glow-effect/
+
+**Testing**
+- axe-core has no model of `backdrop-filter`; glass over images returns incomplete (`bgImage`,
+  `bgOverlap`). https://github.com/dequelabs/axe-core
+- Playwright snapshots: `stylePath` to freeze noise, `maxDiffPixelRatio` per region, per-OS baselines.
+
+**Award-level and production sites (live CSS, Nov 2026)**
+- Fluid Glass (Awwwards SOTD, March 2026): one blur (`2rem`) everywhere, two tints, glass only on cursor
+  and pill buttons over architecture photography.
+- Secret Level: `filter: url(#glass-distortion)` + `backdrop-filter: blur(8px) brightness(1.2)
+  saturate(1.2)`; turbulence + specular lighting + three displacement passes for aberration.
+- Arc: toasts at 85% black with a 3px blur (blur barely matters at that fill).
+- Failures: Framer cards and Dia's nav blur under opaque backgrounds; Tailwind v4 glass breaking on
+  Sonoma; many award sites do "glass" in WebGL, not CSS, and keep CSS glass for chrome.
+
+**In the skill:** literal filters, the var() and wasted-blur lints, glass-tier.js, recipes 4c, 8b, 11 and
+12, the containing-block and iOS toolbar quirks, the testing notes, and solid glass at 4px.
+
+## Photo-editor test (v4 → v5)
+A fresh build of a photo editor with v4 passed every check, and the no-skill baseline failed six lines
+in the blur-off state (lowest 3.35:1) despite its author estimating ~6:1. The v4 build exposed: a tinted
+level that could *lower* a component's dim (now an additive layer), a checker that checked nothing when
+phones drop the blur (now finds glass by class and warns on zero lines), a slow live veil over glass
+chrome (now `gs-veil--flat` + `.gs-modal-open`), no neutral glass for colour-critical apps
+(`glass--neutral`), and a white top fill strong enough to fail on bright photos (0.16 → 0.12).
+
 ## What the first version of this skill got wrong (and why it lost an A/B test)
 
 The first version capped glass at 12–24px, demanded a 45%+ flat tint, limited each screen to one small

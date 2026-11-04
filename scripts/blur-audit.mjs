@@ -95,19 +95,38 @@ function staticAudit(target) {
           const nested = (before.match(/\{/g) || []).length - (before.match(/\}/g) || []).length > 0;
           const helper = /mask(-image)?\s*:/.test(body);
           const off = /backdrop-filter\s*:\s*none/.test(body);
-          if (!nested && !helper && !off) surfaces.add(sel.split(/[\s:>+~]/)[0]);
+          // A rule that only sets the filter (a thickness/tone variant) is not a separate surface.
+          const filterOnly = !/(^|[^-])background(-color|-image)?\s*:/.test(body);
+          if (!nested && !helper && !off && !filterOnly) surfaces.add(sel.split(/[\s:>+~]/)[0]);
         }
         if (unpref && !pref)
           add(BUILD_PREFIX ? "WARN" : "FAIL", at, BUILD_PREFIX
             ? `${sel}: no -webkit-backdrop-filter in source. This project's build (${BUILD_PREFIX}) adds it, but a copy pasted into a project without it gets no blur in Safari before 18.`
             : `${sel}: backdrop-filter without -webkit-backdrop-filter. Safari before 18 shows no blur.`);
         const bd = /backdrop-filter\s*:\s*([^;]+)/.exec(body);
+        if (bd && /var\(/.test(bd[1]))
+          add("WARN", at, `${sel}: backdrop-filter built from var(). Safari 18/26 on macOS Sonoma renders no blur then (WebKit 297620, open). Write literal values and switch variants by class.`);
+        {
+          // Wasted blur: an opaque (or ≥ 85%) fill hides the frosting it pays for (Framer, Dia ship this).
+          const bg = /(^|[^-])background(-color)?\s*:\s*([^;]+)/.exec(body);
+          const r0 = bd && px(bd[1]);
+          if (bg && r0 && r0 > 4) {
+            const v = bg[3].trim();
+            let a = null;
+            const m = /rgba?\([^)]*?(?:,|\/)\s*([\d.]+%?)\s*\)/.exec(v);
+            if (m) a = m[1].endsWith("%") ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
+            else if (/^#([0-9a-f]{8})$/i.test(v)) a = parseInt(v.slice(7, 9), 16) / 255;
+            else if (/^(#[0-9a-f]{3}|#[0-9a-f]{6}|white|black|rgb\([^/,]*\))$/i.test(v)) a = 1;
+            if (a != null && a >= 0.85)
+              add("WARN", at, `${sel}: ${r0}px backdrop blur under a ${Math.round(a * 100)}% fill. Above ~85% the frosting can't be seen; drop the blur to ≤ 4px (or none) and save the GPU.`);
+          }
+        }
         const r = bd && px(bd[1]);
         if (r && r > 60) add("WARN", at, `${sel}: backdrop blur ${r}px. Past ~60px glass loses the colour shapes that make it read as glass; 24-44px is the premium range.`);
-        const panel = bd && r && r >= 8 && !masked.has(lastClass(sel)) && !/(^|[^-])mask(-image)?\s*:|-webkit-mask/.test(body) && !/var\(--glass/.test(body);
+        const panel = bd && r && r >= 8 && /(^|[^-])background(-color|-image)?\s*:/.test(body) && !masked.has(lastClass(sel)) && !/(^|[^-])mask(-image)?\s*:|-webkit-mask/.test(body) && !/var\(--glass/.test(body);
         if (panel && r < 16 && !/@supports|prefers-reduced/.test(selector))
           add("INFO", at, `${sel}: light ${r}px backdrop blur. Over busy or moving content detail shows through as noise; NN/g and Apple use heavier blur (24-44px) for panels with text.`);
-        if (panel && !/saturate/.test(bd[1]))
+        if (panel && !/saturate/.test(bd[1]) && !/neutral/.test(sel))
           add("INFO", at, `${sel}: glass without saturate(). Blur greys colour out; saturate(160-180%) keeps the scene vivid through the glass.`);
         if (panel && !/gradient/.test(body) && !/@supports|prefers-reduced|:hover|:focus|:active/.test(selector))
           add("INFO", at, `${sel}: single flat tint on glass. A gradient fill and a lit gradient rim (assets/glass.css) are what make it read as glass, not plastic.`);
@@ -144,7 +163,11 @@ function staticAudit(target) {
           add("WARN", `${rel}:${lineOf(src, m.index)}`, "maskImage on a backdrop layer without WebkitMaskImage (Safari).");
       }
       const tw = src.match(/\bbackdrop-blur(-\w+)?\b/g);
-      if (tw) { anyBackdrop = true; tw.forEach((t, i) => surfaces.add(`${rel}:tw${i}`)); }
+      if (tw) {
+        anyBackdrop = true; tw.forEach((t, i) => surfaces.add(`${rel}:tw${i}`));
+        if (tw.some((t) => !/\[/.test(t)))
+          add("INFO", rel, "Tailwind v4 compiles backdrop-blur-* through var(), which renders no blur in Safari 18/26 on macOS Sonoma (WebKit 297620). Use arbitrary values (backdrop-blur-[16px]) or a literal CSS rule for glass that must frost there.");
+      }
       // Framer Motion blur that animates (initial/animate/variants) but is never cleared.
       // A reveal ends at blur(0px)/blur(0); a static style blur never does.
       const animated = [...src.matchAll(/filter\s*:\s*[`"']blur\(/g)];
@@ -160,9 +183,19 @@ function staticAudit(target) {
     }
   }
 
+  // Markup that uses a shared glass class (class="glass …" / className="glass …") is one surface per use,
+  // even though the CSS has a single .glass rule.
+  for (const f of list.filter((f) => /\.(html|tsx|jsx)$/.test(f))) {
+    const raw = readFileSync(f, "utf8");
+    let i = 0;
+    for (const m of raw.matchAll(/class(?:Name)?=["'`{][^"'`}]*?(?:^|[\s"'`{])glass(?=[\s"'`}])[^"'`}]*["'`}]/g))
+      surfaces.add(`${relative(process.cwd(), f)}:markup${i++}:${m.index}`);
+  }
+  // The shared rule itself isn't a surface once its uses are counted.
+  if ([...surfaces].some((k) => k.includes(":markup"))) for (const k of [...surfaces]) if (/^\.[\w-]*glass$/.test(k)) surfaces.delete(k);
   glass = surfaces.size;
   const where = relative(process.cwd(), target) || target;
-  if (glass > 4) add("WARN", where, `${glass} distinct glass surfaces (${[...surfaces].slice(0, 6).join(", ")}). One hero glass plus thinner supporting glass reads as designed; more than four starts to read as a glass template.`);
+  if (glass > 6) add("INFO", where, `${glass} glass surfaces in the code (some may never be visible together; run --url for what's on screen). One hero glass plus thinner supporting glass reads as designed; more than six on one page starts to read as a glass template, and costs frames (Apple: limit simultaneous glass effects). A playground or editor with toolbar, rail, panel and strip is the upper end.`);
   if (anyBackdrop && !hasSupports) add("INFO", where, "no @supports fallback for backdrop-filter. Without support, glass shows a see-through tint; add an opaque fallback.");
   if (anyBackdrop && !hasReducedT) add("INFO", where, "no prefers-reduced-transparency rule. Viewers who reduce transparency still get glass.");
   if (!anyBackdrop && !out.length) add("INFO", where, "no backdrop blur found.");

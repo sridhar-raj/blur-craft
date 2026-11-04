@@ -16,12 +16,16 @@ The crossfade is the same with 2px and 200ms. Keep `filter: none` at the end, as
 3. Focus veil
 4. Blur reveal
 4b. Blur-bridged crossfade
+4c. Glass morph and press (Cursor's production values)
 5. Glow
 6. Depth of field
 7. Velocity motion blur
 8. Art backdrop
+8b. Ambient glow from video
 9. Locked content
 10. Grain
+11. Merging glass shapes (Liquid Glass merge)
+12. Tinting glass with colour
 
 ---
 
@@ -323,6 +327,29 @@ import { AnimatePresence, motion } from "framer-motion";
 - 2px is enough. More reads as a loading glitch. Duration matches the fade (150–250ms).
 - Works best on icons and short labels. For whole panels, scale 0.97 plus 2px blur.
 
+## 4c. Glass morph and press
+
+Cursor.com's glass (live CSS, Nov 2026) morphs one glass shape into another with a Framer Motion
+`layoutId` and answers a press with an inner glow, not a scale:
+
+```tsx
+<motion.div layoutId="glass-pill" className="glass glass--thin"
+  transition={{ layout: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }} />
+```
+
+```css
+@keyframes bc-press { 50% { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.52), inset 0 0 12px rgb(255 255 255 / 0.24); } }
+.bc-glass-button:active { animation: bc-press 0.22s ease-out; }
+@media (hover: hover) { .bc-glass-button:hover { --glass-fill-top: rgb(255 255 255 / 0.18); } }
+```
+
+- Morph between shapes that are near each other (`layoutId`); for far-apart ones, fade the glass in and
+  out instead (Apple's `.materialize` vs `.matchedGeometry`).
+- Animate the glass element itself: a fading *parent* turns into a backdrop root and blanks the glass.
+- Cursor's measured materials: light `blur(14px) saturate(1.45)` with a 42% → 20% → 10% white gradient and
+  a `#ffffff6b` border; dark `blur(18px) saturate(1.2)` with 11% → 7% → 3.5% white. Dark glass carries a
+  quarter of the white and less saturation.
+
 ## 5. Glow
 
 Light has no edge. Draw it with a gradient whenever the shape is round or elliptical, and use a real
@@ -485,6 +512,34 @@ export async function bakeAmbient(src: string, size = 96): Promise<string> {
 - Only fall back to `filter: blur()` on the image when nothing fixed or sticky with a backdrop-filter sits
   over it.
 
+## 8b. Ambient glow from video
+
+A full blur over a playing video is the most expensive glass there is (and blocks the hardware video
+overlay). YouTube's ambient mode samples instead: draw the frame into a tiny canvas and let CSS scale it up.
+
+```html
+<div class="bc-video"><canvas class="bc-video__glow" width="10" height="6" aria-hidden="true"></canvas><video src="…" playsinline></video></div>
+```
+
+```css
+.bc-video { position: relative; }
+.bc-video__glow { position: absolute; inset: -12%; width: 124%; height: 124%; opacity: 0.45; filter: blur(24px); z-index: -1; }
+@media (prefers-reduced-motion: reduce) { .bc-video__glow { display: none; } }
+```
+
+```js
+const ctx = glow.getContext("2d");
+const draw = () => ctx.drawImage(video, 0, 0, 10, 6);
+video.addEventListener("loadeddata", draw); video.addEventListener("seeked", draw);
+let n = 0;
+const onFrame = () => { if (++n % 4 === 0) draw(); video.requestVideoFrameCallback(onFrame); };  // every 4th frame
+video.addEventListener("play", () => video.requestVideoFrameCallback(onFrame));
+```
+
+- `requestVideoFrameCallback`: Chrome 83, Safari 15.4, Firefox 132. The filter is on a 10×6 canvas, so it
+  costs almost nothing.
+- Controls over the video need a rim and highlight, not just a tint (Cursor's player: 50% black + 20px).
+
 ## 9. Locked content
 
 Shows that something is there (a report, a code, a premium template) without letting it be read.
@@ -533,3 +588,55 @@ faint noise layer hides the banding and makes the light feel photographic.
 - Static grain only. Animated grain over a whole frame doubles the video size and distracts.
 - `mix-blend-mode` makes the layer a backdrop root, so don't put glass inside the grained element. Put
   the grain on a sibling above it.
+
+
+## 11. Merging glass shapes (Liquid Glass merge)
+
+Apple's glass shapes merge with a liquid neck when they come close (`GlassEffectContainer(spacing:)`). On
+the web: **one** full-screen glass layer, cut by a mask that is a goo-filtered SVG. The shapes merge in the
+mask; the blur is a single surface. Tested in Chromium: two pills 8px apart join with a neck, 20px apart
+stay separate.
+
+```css
+.bc-goo-glass {
+  position: fixed; inset: 0; pointer-events: none;
+  -webkit-backdrop-filter: blur(18px) saturate(170%) brightness(0.96);   /* literal (Sonoma) */
+  backdrop-filter: blur(18px) saturate(170%) brightness(0.96);
+  background: rgb(10 10 18 / 0.25);
+  -webkit-mask: var(--goo-mask) 0 0 / 100% 100% no-repeat;
+  mask: var(--goo-mask) 0 0 / 100% 100% no-repeat;
+}
+```
+
+```js
+// Rebuild the mask when the shapes change (not every pointer move). Shapes in viewport pixels.
+function setGooMask(el, shapes, spread = 10) {
+  const w = innerWidth, h = innerHeight;
+  const body = shapes.map((s) => s.r
+    ? `<circle cx="${s.x}" cy="${s.y}" r="${s.r}"/>`
+    : `<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.h / 2}"/>`).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><filter id="g" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${spread}"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 18 -7"/></filter></defs><g filter="url(#g)">${body}</g></svg>`;
+  el.style.setProperty("--goo-mask", `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+}
+```
+
+- `spread` ≈ half the distance at which shapes should start merging (Apple's samples: spacing 40 → 20).
+  The matrix `18 -7` is Lucas Bebber's goo; `19 -9` is firmer.
+- Use a mask *image*. An inline `mask: url(#svgMask)` with a filter inside rendered no glass at all in the
+  same test, and a `filter: url(#goo)` on a *parent* of glass blobs makes that parent a backdrop root, so
+  the page behind disappears.
+- Put the content (icons, labels) in normal elements above, positioned over the shapes.
+
+## 12. Tinting glass with colour
+
+- Structural glass carries almost no chroma: keep tints at OKLCH chroma ~0.03–0.05. Material 3 moved to
+  near-neutral tone-based surfaces for the same reason. Save real colour for the one primary action
+  (Apple: tint only primary elements; colour belongs in the content layer).
+- Derive tints from the brand colour with relative colour syntax rather than mixing with `transparent`:
+  `background: oklch(from var(--accent) l c h / 0.12);`
+- When mixing, use `oklab` (Chrome's default, no hue drift): `color-mix(in oklab, var(--accent) 12%, var(--glass-base))`.
+  Hue keywords only work in cylindrical spaces (`oklch`), and mixing two vivid hues in `oklch` can pass
+  through a third.
+- Text colour on a *known* tint: `contrast-color(var(--tint))` (Chrome 147, Firefox 146, Safari 26), or
+  Lea Verou's threshold `oklch(from var(--tint) clamp(0, (0.623 - l) * infinity, 1) 0 h)` (approximation;
+  0.623 is WCAG-safe). Neither can see the pixels *behind* glass: for that, use adaptive-tone.js.

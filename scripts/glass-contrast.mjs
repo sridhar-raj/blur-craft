@@ -47,9 +47,15 @@ for (const state of ["normal", "tint-only", "contrast"]) {
 
   // 1. Collect line boxes and text colours.
   const lines = await page.evaluate((allText) => {
+    // Glass = anything with a backdrop-filter, OR anything with a glass class (phones often drop the blur
+    // but keep the translucent fill, and that text still needs checking). Hidden surfaces don't count.
     const surfaces = [...document.querySelectorAll("body *")].filter((el) => {
       const cs = getComputedStyle(el);
-      return (cs.backdropFilter && cs.backdropFilter !== "none") || (cs.webkitBackdropFilter && cs.webkitBackdropFilter !== "none");
+      const r = el.getBoundingClientRect();
+      if (cs.display === "none" || cs.visibility === "hidden" || !r.width || !r.height || el.closest("[hidden]")) return false;
+      const blurred = (cs.backdropFilter && cs.backdropFilter !== "none") || (cs.webkitBackdropFilter && cs.webkitBackdropFilter !== "none");
+      const classed = typeof el.className === "string" && /(^|\s)[\w-]*glass(\s|$|--)/.test(el.className);
+      return blurred || classed;
     });
     const roots = allText ? [document.body] : surfaces;
     const out = [];
@@ -111,6 +117,7 @@ for (const state of ["normal", "tint-only", "contrast"]) {
   const bad = results.filter((r) => r.worst < r.need);
   failed += bad.length;
   const min = results.length ? Math.min(...results.map((r) => r.worst)) : null;
+  if (!results.length) { failed += 1; console.log(`\n== ${state}: WARNING: checked 0 lines. No visible glass text found; nothing was verified. Use --all-text, or check the page/width.`); await page.close(); continue; }
   console.log(`\n== ${state}: ${lines.surfaces} glass surface(s), ${results.length} line(s), lowest ${min ?? "-"}:1, ${bad.length} below threshold`);
   for (const r of results.sort((a, b) => a.worst - b.worst).slice(0, bad.length ? bad.length + 3 : 5))
     console.log(`${r.worst < r.need ? "FAIL" : "ok  "}  ${String(r.worst).padStart(5)}:1 (needs ${r.need})  "${r.text}"  at ${r.x},${r.y}`);
@@ -118,5 +125,5 @@ for (const state of ["normal", "tint-only", "contrast"]) {
 }
 
 await browser.close();
-console.log(failed ? `\n${failed} line(s) fail. Raise --glass-dim, go a thickness up, or move the text off the bright patch.` : "\nAll text on glass passes in every state.");
+console.log(failed ? `\n${failed} problem(s): failing lines, or a state where nothing could be checked. Raise --glass-dim, go a thickness up, or move the text off the bright patch.` : "\nAll text on glass passes in every state.");
 process.exitCode = failed ? 1 : 0;

@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumen Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===================================================================================================
+   blur-craft glass material (assets/glass.css, inlined)
+   =================================================================================================== */
+@property --glass-rim-angle { syntax: "<angle>"; inherits: true; initial-value: 135deg; }
+
+.glass {
+  --glass-blur: 30px;
+  --glass-sat: 180%;
+  --glass-bright: 0.96;
+  --glass-contrast: 1;
+  --glass-fill-top: rgb(255 255 255 / 0.16);
+  --glass-fill-bottom: rgb(255 255 255 / 0.04);
+  --glass-dim: rgb(10 10 18 / 0.28);
+  --glass-light: 255 255 255;
+  --glass-radius: 28px;
+  --glass-rim-angle: 135deg;
+  --glass-rim-hot: 0.6;
+  --glass-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.05'/></svg>");
+  --mx: 30%;
+  --my: 0%;
+  --glass-pad: 20px;
+  --glass-inner-radius: max(6px, calc(var(--glass-radius) - var(--glass-pad)));
+
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--glass-radius);
+  transition: --glass-rim-angle 0.5s ease;
+  background:
+    var(--glass-noise),
+    linear-gradient(160deg, var(--glass-fill-top), var(--glass-fill-bottom) 60%),
+    var(--glass-dim);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright)) contrast(var(--glass-contrast));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright)) contrast(var(--glass-contrast));
+  box-shadow:
+    inset 0 1px 0 rgb(var(--glass-light) / 0.35),
+    inset 0 -1px 0 rgb(255 255 255 / 0.04),
+    inset 0 0 32px rgb(var(--glass-light) / 0.06),
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 30px 60px -20px rgb(0 0 0 / 0.55);
+}
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--glass-rim-angle),
+    rgb(var(--glass-light) / var(--glass-rim-hot)),
+    rgb(var(--glass-light) / 0.12) 35%,
+    rgb(255 255 255 / 0.04) 60%,
+    rgb(var(--glass-light) / 0.22)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at var(--mx) var(--my), rgb(var(--glass-light) / 0.14), transparent 55%);
+  transition: background-position 0.2s;
+}
+.glass > * { position: relative; z-index: 2; }
+
+.glass--clear   { --glass-blur: 16px; --glass-dim: rgb(10 10 18 / 0.22); --glass-fill-top: rgb(255 255 255 / 0.10); }
+.glass--thin    { --glass-blur: 24px; --glass-dim: rgb(10 10 18 / 0.30); --glass-contrast: 0.92; }
+.glass--regular { --glass-blur: 32px; --glass-dim: rgb(10 10 18 / 0.48); --glass-contrast: 0.85; }
+.glass--thick   { --glass-blur: 44px; --glass-dim: rgb(10 10 18 / 0.56); --glass-sat: 160%; --glass-contrast: 0.8; }
+.glass--solid   { --glass-blur: 20px; --glass-dim: rgb(18 18 26 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.06); --glass-fill-bottom: rgb(255 255 255 / 0.02); }
+
+.glass .glass-label     { color: rgb(255 255 255 / 0.97); }
+.glass .glass-secondary { color: rgb(255 255 255 / 0.82); }
+.glass .glass-tertiary  { color: rgb(255 255 255 / 0.70); }
+.glass :is(.glass-label, .glass-secondary, .glass-tertiary) { text-shadow: 0 0 1px rgb(0 0 0 / 0.3), 0 1px 10px rgb(0 0 0 / 0.22); }
+
+.glass.glass--tinted,
+:root[data-glass="tinted"] .glass.glass { --glass-dim: rgb(14 14 20 / 0.78); --glass-contrast: 0.7; }
+@media (prefers-contrast: more) {
+  .glass.glass { --glass-dim: rgb(14 14 20 / 0.82); --glass-contrast: 0.7; }
+  .glass .glass-secondary, .glass .glass-tertiary { color: rgb(255 255 255 / 0.85); }
+  .glass::before { --glass-rim-hot: 1; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: linear-gradient(160deg, rgb(48 48 62 / 0.96), rgb(22 22 30 / 0.97)); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background: rgb(22 22 30 / 0.97); }
+}
+
+/* ---------- blur-craft surfaces (assets/surfaces.css, the parts used here) ---------- */
+.gs-menu {
+  --glass-radius: 14px; --glass-blur: 32px; --glass-dim: rgb(10 10 14 / 0.86); --glass-contrast: 0.85;
+  display: grid; padding: 6px; min-width: 220px;
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.3), 0 0 0 0.5px rgb(0 0 0 / 0.8), 0 16px 40px -8px rgb(0 0 0 / 0.6);
+}
+.gs-veil {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgb(8 8 12 / 0.32);
+  -webkit-backdrop-filter: blur(6px) saturate(0.9);
+  backdrop-filter: blur(6px) saturate(0.9);
+}
+.gs-dialog {
+  --glass-radius: 24px;
+  position: fixed; z-index: 91; inset: 0; margin: auto;
+  width: min(440px, calc(100vw - 32px)); height: fit-content; max-height: calc(100dvh - 32px);
+  overflow: auto; padding: 24px;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .gs-veil { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(8 8 12 / 0.6); }
+}
+.gs-toast { --glass-radius: 16px; display: flex; align-items: center; gap: 12px; padding: 12px 16px; max-width: 360px; }
+
+/* ===================================================================================================
+   Lumen editor
+   =================================================================================================== */
+:root {
+  --ground: #060609;
+  --ui: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --primary: #f4eee3;          /* the one tinted thing: Export */
+  --primary-ink: #15120d;
+  --gap: 16px;
+}
+* { box-sizing: border-box; }
+html { background: var(--ground); }   /* opaque html: Safari skips an extra compositing layer */
+html, body { margin: 0; height: 100%; }
+body {
+  overflow: hidden; background: var(--ground); color: #fff;
+  font: 13px/1.4 var(--ui); letter-spacing: -0.003em;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+/* The photo */
+.stage { position: fixed; inset: 0; }
+#photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.crop {
+  position: absolute; inset: 96px 360px 140px 104px; pointer-events: none;
+  border: 1px solid rgb(255 255 255 / 0.9);
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.45);
+  background:
+    linear-gradient(90deg, transparent calc(33.33% - .5px), rgb(255 255 255 / .35) 0 calc(33.33% + .5px), transparent 0 calc(66.66% - .5px), rgb(255 255 255 / .35) 0 calc(66.66% + .5px), transparent 0),
+    linear-gradient(transparent calc(33.33% - .5px), rgb(255 255 255 / .35) 0 calc(33.33% + .5px), transparent 0 calc(66.66% - .5px), rgb(255 255 255 / .35) 0 calc(66.66% + .5px), transparent 0);
+}
+.crop::before, .crop::after { content: ""; position: absolute; width: 22px; height: 22px; border: 3px solid #fff; }
+.crop::before { left: -3px; top: -3px; border-right: 0; border-bottom: 0; }
+.crop::after { right: -3px; bottom: -3px; border-left: 0; border-top: 0; }
+.crop[hidden] { display: none; }
+
+/* Shared material settings for the editor's chrome. Neutral glass: a photo editor can't let its
+   chrome re-saturate the picture around it, so saturation is held lower than the asset's default. */
+.lm { --glass-sat: 130%; position: absolute; z-index: 10; }
+/* Calibrated with glass-contrast.mjs on the worst photo in the roll (0407, daylight, pushed to +2 EV, blur off):
+   a softer white fill at the top and ~72% dim keep 4.5:1 there. */
+.lm, .grp, .dlg, .toast { --glass-fill-top: rgb(255 255 255 / 0.11); }
+
+/* Top bar: grouped by function (WWDC25), primary action in its own container */
+.topbar { position: absolute; z-index: 10; top: var(--gap); left: var(--gap); right: var(--gap); display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.topbar > * { pointer-events: auto; }
+.grp { position: relative; display: flex; align-items: center; gap: 2px; padding: 4px; --glass-radius: 16px; --glass-pad: 4px; --glass-dim: rgb(12 12 16 / 0.72); --glass-sat: 130%; }
+.ib { width: 44px; height: 44px; border-radius: var(--glass-inner-radius); display: grid; place-items: center; color: rgb(255 255 255 / 0.95); transition: background .15s; }
+.ib:hover { background: rgb(255 255 255 / 0.1); }
+.ib:active { background: rgb(255 255 255 / 0.16); }
+.ib:disabled { color: rgb(255 255 255 / 0.4); cursor: default; background: none; }
+.ib[aria-pressed="true"] { background: rgb(255 255 255 / 0.16); }
+.file { display: grid; padding: 0 14px 0 6px; line-height: 1.2; min-width: 0; }
+.file__name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file__meta { font-size: 12px; white-space: nowrap; }
+.sep { width: 1px; height: 24px; background: rgb(255 255 255 / 0.14); margin: 0 4px; }
+.zoom { padding: 0 12px; height: 44px; display: grid; place-items: center; border-radius: var(--glass-inner-radius); font-size: 12px; }
+.zoom:hover { background: rgb(255 255 255 / 0.1); }
+.spacer { flex: 1; }
+.export {
+  height: 52px; padding: 0 22px 0 18px; border-radius: 16px; display: flex; align-items: center; gap: 8px;
+  background: var(--primary); color: var(--primary-ink); font-weight: 600; font-size: 14px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .8), 0 1px 2px rgb(0 0 0 / .3), 0 18px 40px -16px rgb(0 0 0 / .6);
+  transition: transform .15s, background .15s;
+}
+.export:hover { background: #fff; }
+.export:active { transform: scale(.98); }
+.export svg.i { width: 18px; height: 18px; }
+
+/* Left tool rail */
+.rail { left: var(--gap); top: 50%; translate: 0 -50%; display: grid; gap: 4px; padding: 6px; --glass-radius: 20px; --glass-pad: 6px; --glass-dim: rgb(12 12 16 / 0.64); }
+.rail .ib { color: rgb(255 255 255 / 0.9); }
+.rail .ib[aria-pressed="true"] { background: rgb(255 255 255 / 0.95); color: #0d0d12; }
+.rail hr { border: 0; height: 1px; margin: 4px 8px; background: rgb(255 255 255 / 0.14); }
+.tip {
+  position: absolute; left: calc(100% + 12px); top: 50%; translate: 0 -50%;
+  white-space: nowrap; padding: 6px 8px 6px 10px; border-radius: 8px; display: flex; gap: 10px; align-items: center;
+  background: rgb(14 14 18 / 0.96); color: #fff; font-size: 12px; font-weight: 500;
+  box-shadow: 0 0 0 .5px rgb(255 255 255 / .12), 0 8px 24px -6px rgb(0 0 0 / .6);
+  visibility: hidden; opacity: 0; transition: opacity .12s, visibility 0s .12s; pointer-events: none;
+}
+.tip kbd { font: 500 11px var(--mono); color: rgb(255 255 255 / .75); padding: 1px 5px; border-radius: 4px; background: rgb(255 255 255 / .1); }
+.ib:hover .tip, .ib:focus-visible .tip { visibility: visible; opacity: 1; transition-delay: .25s, 0s; }
+
+/* Right Adjust panel: thick, text-heavy */
+.panel {
+  right: var(--gap); top: calc(var(--gap) + 52px + 12px); width: 316px; padding: 16px 18px 18px;
+  --glass-radius: 24px; --glass-pad: 16px; --glass-dim: rgb(12 12 16 / 0.72);
+  max-height: calc(100dvh - 96px - var(--gap)); overflow: auto; scrollbar-width: none;
+}
+.panel[hidden] { display: none; }
+.panel__head { display: flex; align-items: center; gap: 6px; margin: -2px -6px 12px 0; }
+.panel__title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.panel__head .spacer { flex: 1; }
+.chip { height: 32px; padding: 0 11px; border-radius: 10px; font-size: 12px; font-weight: 500; background: rgb(255 255 255 / 0.08); transition: background .15s; }
+.chip:hover { background: rgb(255 255 255 / 0.15); }
+.histo { position: relative; height: 84px; border-radius: var(--glass-inner-radius); background: rgb(0 0 0 / 0.28); box-shadow: inset 0 0 0 .5px rgb(255 255 255 / .08); overflow: hidden; }
+.histo canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.exif { display: flex; justify-content: space-between; font-size: 11px; margin: 8px 2px 4px; }
+.sect { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; margin: 18px 0 2px; }
+.row { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 8px; padding-top: 6px; }
+.row label { font-size: 13px; font-weight: 500; cursor: default; user-select: none; }
+.row output { font-size: 12px; min-width: 48px; text-align: right; padding: 2px 0; }
+.row output.is-zero { opacity: .8; }
+.row input { grid-column: 1 / -1; }
+
+.rng { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; margin: 0; background: transparent; cursor: pointer; --lo: 50%; --hi: 50%; --track: rgb(255 255 255 / 0.16); }
+.rng:focus-visible { outline-offset: 0; border-radius: 6px; }
+.rng::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px;
+  background:
+    linear-gradient(90deg, transparent calc(50% - .5px), rgb(255 255 255 / .5) 0 calc(50% + .5px), transparent 0) center / 100% 9px no-repeat,
+    linear-gradient(90deg, transparent var(--lo), rgb(255 255 255 / .95) var(--lo) var(--hi), transparent var(--hi)),
+    var(--track);
+}
+.rng::-moz-range-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent var(--lo), rgb(255 255 255 / .95) var(--lo) var(--hi), transparent var(--hi)), var(--track);
+}
+.rng::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; margin-top: -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .35), 0 2px 6px rgb(0 0 0 / .45); transition: transform .12s; }
+.rng::-moz-range-thumb { width: 15px; height: 15px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .35), 0 2px 6px rgb(0 0 0 / .45); }
+.rng:active::-webkit-slider-thumb { transform: scale(1.15); }
+.rng--temp { --track: linear-gradient(90deg, rgb(110 170 255 / .7), rgb(255 255 255 / .2) 50%, rgb(255 190 110 / .75)); }
+.panel__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgb(255 255 255 / 0.1); font-size: 12px; }
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #8be0a4; margin-right: 6px; vertical-align: 1px; }
+
+/* Bottom filmstrip */
+.film {
+  left: 50%; bottom: var(--gap); translate: -50% 0; display: flex; gap: 6px; padding: 8px; max-width: calc(100vw - 2 * var(--gap));
+  --glass-radius: 20px; --glass-pad: 8px; --glass-dim: rgb(12 12 16 / 0.72);
+  overflow-x: auto; scrollbar-width: none;
+}
+.thumb { flex: none; display: grid; gap: 5px; justify-items: center; padding: 4px; border-radius: var(--glass-inner-radius); transition: background .15s; }
+.thumb:hover { background: rgb(255 255 255 / 0.08); }
+.thumb canvas { display: block; width: 88px; height: 50px; border-radius: 6px; box-shadow: 0 0 0 1px rgb(255 255 255 / .1); }
+.thumb span { font-size: 11px; }
+.thumb[aria-current="true"] canvas { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgb(0 0 0 / .5); }
+.thumb[aria-current="true"] span { color: #fff; font-weight: 500; }
+.thumb .edited[hidden] { display: none; }
+.thumb .edited { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-left: 4px; vertical-align: 2px; }
+
+/* Export dialog + toast */
+.gs-veil[hidden], .gs-dialog[hidden], .toast[hidden] { display: none; }
+.dlg { --glass-dim: rgb(14 14 18 / 0.78); --glass-sat: 130%; display: grid; gap: 14px; }
+.dlg h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.dlg p { margin: -8px 0 0; font-size: 13px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; border-radius: 12px; background: rgb(0 0 0 / 0.3); }
+.seg button { min-height: 40px; border-radius: 9px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: rgb(255 255 255 / 0.95); color: #0d0d12; }
+.field { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+.field .rng { grid-column: 1 / -1; }
+.dlg__actions { display: flex; gap: 10px; margin-top: 4px; }
+.dlg__actions button { flex: 1; min-height: 46px; border-radius: 12px; font-weight: 600; }
+.btn-ghost { background: rgb(255 255 255 / 0.1); }
+.btn-ghost:hover { background: rgb(255 255 255 / 0.16); }
+.btn-primary { background: var(--primary); color: var(--primary-ink); }
+/* While the veil is up it frosts everything under it, so the chrome drops its own blur
+   (never two stacked blurs; Apple's nav does the same under a flyout). */
+body.is-modal :is(.lm, .grp) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Baked veil (recipe 8): a live full-screen 6px blur re-ran on every pointer move (60 -> 41 fps measured),
+   so the veil is the photo drawn small and scaled up, under the same 32% scrim. */
+.gs-veil.is-baked { -webkit-backdrop-filter: none; backdrop-filter: none; background: none; }
+.gs-veil.is-baked canvas { position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(.9); }
+.gs-veil.is-baked::after { content: ""; position: absolute; inset: 0; background: rgb(8 8 12 / 0.42); }
+.toast { position: fixed; z-index: 95; left: 50%; bottom: 118px; translate: -50% 0; --glass-dim: rgb(12 12 16 / 0.72); --glass-sat: 130%; }
+.toast svg.i { color: #8be0a4; }
+
+/* Phone: chrome reflows around the photo; more than a few glass panels, so the blur goes and the
+   translucent fill stays (blur-craft §4). */
+@media (max-width: 600px) {
+  :root { --gap: 12px; }
+  /* doubled class: the tinted level (.glass.glass, 82%) must not make this lighter */
+  .glass.glass { -webkit-backdrop-filter: none; backdrop-filter: none; --glass-dim: rgb(14 14 18 / 0.86); }
+  .file__meta, .zoom, .sep--z, #compare { display: none; }
+  .file { padding-right: 8px; }
+  .export { height: 52px; padding: 0 16px; }
+  .export svg.i { display: none; }
+  .topbar { gap: 8px; }
+  .film { top: calc(var(--gap) + 52px + 8px); bottom: auto; left: var(--gap); right: var(--gap); translate: none; max-width: none; padding: 6px; }
+  .thumb { padding: 2px; }
+  .thumb canvas { width: 64px; height: 36px; }
+  .rail { top: auto; translate: none; left: 50%; translate: -50% 0; bottom: calc(var(--panel-h, 300px) + var(--gap) + 10px); display: flex; }
+  .rail hr { width: 1px; height: 24px; margin: auto 4px; }
+  .tip { display: none; }
+  .panel { left: var(--gap); right: var(--gap); top: auto; bottom: var(--gap); width: auto; max-height: 46dvh; padding: 12px 16px 14px; }
+  .histo, .exif, .panel__foot { display: none; }
+  .sect { margin-top: 8px; }
+  .row { padding-top: 2px; }
+  .toast { bottom: auto; top: 140px; width: max-content; max-width: calc(100vw - 24px); }
+  .crop { inset: 140px 16px 380px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 0s !important; } }
+</style>
+</head>
+<body>
+<main class="stage" aria-label="Lumen editor">
+  <canvas id="photo" role="img" aria-label="Photo DSC_0412: a neon-lit street at night after rain"></canvas>
+  <div class="crop" id="crop" hidden></div>
+
+  <header class="topbar">
+    <div class="grp glass glass--thick" id="g-file">
+      <button class="ib" aria-label="Back to library"><svg class="i" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button>
+      <div class="file">
+        <span class="file__name glass-label" id="fname">DSC_0412.jpg</span>
+        <span class="file__meta glass-secondary num" id="fmeta">6016 × 3384 · 24.3 MB</span>
+      </div>
+    </div>
+    <div class="grp glass glass--thick" id="g-hist">
+      <button class="ib" id="undo" aria-label="Undo" disabled><svg class="i" viewBox="0 0 24 24"><path d="M9 7.5 5 11.5l4 4"/><path d="M5.5 11.5H14a5 5 0 0 1 0 10h-2"/></svg></button>
+      <button class="ib" id="redo" aria-label="Redo" disabled><svg class="i" viewBox="0 0 24 24"><path d="m15 7.5 4 4-4 4"/><path d="M18.5 11.5H10a5 5 0 0 0 0 10h2"/></svg></button>
+      <span class="sep sep--z"></span>
+      <button class="ib" id="compare" aria-label="Hold to compare with original" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M12 3v18"/><path d="M12 5h6a2.5 2.5 0 0 1 2.5 2.5v9A2.5 2.5 0 0 1 18 19h-6z" fill="currentColor" stroke="none" opacity=".35"/></svg></button>
+      <button class="zoom glass-label num" id="zoom" aria-label="Zoom: fit to screen">Fit</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="export" id="export"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M5 14v3.5A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5V14"/></svg>Export</button>
+  </header>
+
+  <nav class="lm rail glass glass--thick" aria-label="Tools" id="rail">
+    <button class="ib" data-tool="crop" aria-pressed="false" aria-label="Crop"><svg class="i" viewBox="0 0 24 24"><path d="M6.5 3v13.5a1 1 0 0 0 1 1H21"/><path d="M3 6.5h13.5a1 1 0 0 1 1 1V21"/></svg><span class="tip">Crop &amp; rotate <kbd>C</kbd></span></button>
+    <button class="ib" data-tool="adjust" aria-pressed="true" aria-label="Adjust"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg><span class="tip">Adjust <kbd>A</kbd></span></button>
+    <button class="ib" data-tool="filters" aria-pressed="false" aria-label="Filters"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4.5"/><circle cx="8.5" cy="14.5" r="4.5"/><circle cx="15.5" cy="14.5" r="4.5"/></svg><span class="tip">Filters <kbd>F</kbd></span></button>
+    <button class="ib" data-tool="retouch" aria-pressed="false" aria-label="Retouch"><svg class="i" viewBox="0 0 24 24"><path d="m14.5 4.5 5 5L9 20H4v-5z"/><path d="m12 7 5 5"/><path d="M19 15.5v4M17 17.5h4"/></svg><span class="tip">Retouch <kbd>R</kbd></span></button>
+    <hr>
+    <button class="ib" data-tool="text" aria-pressed="false" aria-label="Text"><svg class="i" viewBox="0 0 24 24"><path d="M5 6.5V5h14v1.5M12 5v14M9 19h6"/></svg><span class="tip">Text <kbd>T</kbd></span></button>
+  </nav>
+
+  <aside class="lm panel glass glass--thick" id="panel" aria-labelledby="ptitle">
+    <div class="panel__head">
+      <h2 class="panel__title glass-label" id="ptitle">Adjust</h2>
+      <span class="spacer"></span>
+      <button class="chip glass-label" id="auto">Auto</button>
+      <button class="chip glass-label" id="reset">Reset</button>
+    </div>
+    <div class="histo" aria-hidden="true"><canvas id="histo" width="560" height="168"></canvas></div>
+    <div class="exif glass-secondary num"><span>ISO 3200</span><span>35 mm</span><span>ƒ/1.8</span><span>1/60 s</span></div>
+    <div id="sliders"></div>
+    <div class="panel__foot">
+      <span class="glass-secondary"><span class="dot"></span>Saved · non-destructive</span>
+      <span class="glass-secondary num" id="editCount">5 edits</span>
+    </div>
+  </aside>
+
+  <div class="lm film glass glass--thick" id="film" role="listbox" aria-label="Roll: Shinjuku, 3 Nov"></div>
+</main>
+
+<div class="gs-veil is-baked" id="veil" hidden><canvas id="veilArt"></canvas></div>
+<div class="gs-dialog glass glass--thick dlg" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dtitle" hidden tabindex="-1">
+  <h2 class="glass-label" id="dtitle">Export DSC_0412</h2>
+  <p class="glass-secondary">Your adjustments are baked into the copy. The original stays untouched.</p>
+  <div class="seg" role="group" aria-label="Format">
+    <button class="glass-label" aria-pressed="true" data-fmt="jpeg">JPEG</button>
+    <button class="glass-label" aria-pressed="false" data-fmt="png">PNG</button>
+    <button class="glass-label" aria-pressed="false" data-fmt="webp">WebP</button>
+  </div>
+  <div class="field">
+    <label class="glass-label" for="quality">Quality</label><output class="glass-label num" id="qout">90</output>
+    <input class="rng" id="quality" type="range" min="40" max="100" step="1" value="90">
+  </div>
+  <div class="field"><span class="glass-label">Size</span><span class="glass-secondary num" id="dsize">2000 × 1125 px</span></div>
+  <div class="dlg__actions"><button class="btn-ghost glass-label" id="cancel">Cancel</button><button class="btn-primary" id="doExport">Export copy</button></div>
+</div>
+<div class="gs-toast glass glass--thick toast" id="toast" role="status" hidden>
+  <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>
+  <span class="glass-label" id="toastText">Exported</span>
+</div>
+
+<script>
+/* ==================================================================================================
+   1. The photo: a rain-soaked neon street, painted procedurally (one-point perspective)
+   ================================================================================================== */
+const SW = 1600, SH = 900;                 // scene units
+const rng = (seed) => { let s = (seed * 2654435761) >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; };
+const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mixc = (a, b, t) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(",")})`; };
+const rgba = (h, a) => { const [r, g, b] = hex(h); return `rgba(${r},${g},${b},${a})`; };
+
+function drawScene(ctx, w, h, p) {
+  const R = rng(p.seed), day = p.day || 0, night = 1 - day, N = p.neon;
+  const vx = SW / 2 + (p.vx || 0), vy = 400, F = 800, camH = p.camH || 1.55;
+  const P = (X, Y, Z) => [vx + (X / Z) * F, vy - ((Y - camH) / Z) * F];
+  const lights = [];
+  ctx.save();
+  ctx.scale(w / SW, h / SH);
+
+  // Sky + city haze
+  let g = ctx.createLinearGradient(0, 0, 0, vy + 30);
+  g.addColorStop(0, mixc("#04050b", "#8ea0b4", day));
+  g.addColorStop(0.55, mixc("#140b24", "#c3ccd6", day));
+  g.addColorStop(1, mixc("#4a1840", "#e6e9ec", day));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, SW, vy + 40);
+  g = ctx.createRadialGradient(vx, vy, 0, vx, vy, 520);
+  g.addColorStop(0, rgba(N[0], 0.55 * night)); g.addColorStop(0.5, rgba(N[3], 0.18 * night)); g.addColorStop(1, rgba(N[3], 0));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, SW, vy + 40);
+
+  // Distant skyline at the end of the street
+  for (let X = -40; X < 40;) {
+    const bw = 2 + R() * 5, bh = 6 + R() * 34, Z = 120;
+    const [x0, y0] = P(X, bh, Z), [x1, y1] = P(X + bw, 0, Z);
+    ctx.fillStyle = mixc("#0d0b18", "#a3adb8", day * 0.9 + 0.05 * R());
+    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    for (let k = 0; k < bh * 1.4; k++) if (R() < 0.35 * night) {
+      ctx.fillStyle = R() < 0.7 ? "rgba(255,200,140,.55)" : "rgba(170,220,255,.5)";
+      ctx.fillRect(x0 + R() * (x1 - x0), y0 + R() * (y1 - y0), 1.4, 1.4);
+    }
+    X += bw + R() * 0.6;
+  }
+
+  // Ground: wet asphalt reflecting the sky glow
+  g = ctx.createLinearGradient(0, vy, 0, SH);
+  g.addColorStop(0, mixc("#3a1534", "#d6dbe0", day));
+  g.addColorStop(0.18, mixc("#120a18", "#8f979f", day));
+  g.addColorStop(1, mixc("#040407", "#4f565d", day));
+  ctx.fillStyle = g; ctx.fillRect(0, vy - 1, SW, SH - vy + 1);
+  // sidewalks
+  for (const s of [-1, 1]) {
+    const a = P(s * 4.2, 0, 1.2), b = P(s * 4.2, 0, 120), c = P(s * 7, 0, 120), d = P(s * 7, 0, 1.2);
+    ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d); ctx.closePath();
+    ctx.fillStyle = mixc("#0b0a10", "#6e757c", day); ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = mixc("#2a2030", "#b8bec4", day); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+  }
+  // lane dashes and a crosswalk
+  ctx.fillStyle = mixc("#5a5060", "#e8eaec", day);
+  for (let Z = 3; Z < 110; Z += 5) {
+    const a = P(-0.08, 0, Z), b = P(0.08, 0, Z), c = P(0.08, 0, Z + 2.2), d = P(-0.08, 0, Z + 2.2);
+    ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d); ctx.fill();
+  }
+  for (let X = -3.8; X < 3.8; X += 0.9) {
+    const a = P(X, 0, 9.5), b = P(X + 0.45, 0, 9.5), c = P(X + 0.45, 0, 11.5), d = P(X, 0, 11.5);
+    ctx.globalAlpha = 0.2; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Buildings along both sides
+  const signs = [];
+  for (const side of [-1, 1]) {
+    const X = side < 0 ? -7 : 7;
+    const segs = [];
+    for (let Z = 1.1; Z < 110;) { const len = 5 + R() * 11; segs.push({ z0: Z, z1: Z + len, ht: 8 + R() * 22, tone: R() }); Z += len; }
+    for (const s of segs.reverse()) {
+      const q = [P(X, 0, s.z0), P(X, s.ht, s.z0), P(X, s.ht, s.z1), P(X, 0, s.z1)];
+      const fg = ctx.createLinearGradient(0, q[1][1], 0, q[0][1]);
+      fg.addColorStop(0, mixc(s.tone < 0.5 ? "#0e0c16" : "#14101a", s.tone < 0.5 ? "#9aa1a8" : "#b4aca2", day));
+      fg.addColorStop(1, mixc("#07060b", "#6f747a", day));
+      ctx.beginPath(); q.forEach((pt, i) => (i ? ctx.lineTo(...pt) : ctx.moveTo(...pt))); ctx.closePath();
+      ctx.fillStyle = fg; ctx.fill();
+      // cornice
+      ctx.strokeStyle = mixc("#2a2236", "#d8d4cc", day); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(...q[1]); ctx.lineTo(...q[2]); ctx.stroke();
+      // the near edge of the block (a vertical seam)
+      ctx.strokeStyle = mixc("#1d1726", "#565b61", day); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(...q[0]); ctx.lineTo(...q[1]); ctx.stroke();
+      // windows
+      for (let Y = 4.4; Y < s.ht - 1.6; Y += 3.1) for (let z = Math.max(s.z0 + 0.6, 3.2); z < s.z1 - 1; z += 1.7) {
+        const a = P(X, Y + 1.5, z), b = P(X, Y + 1.5, z + 0.95), c = P(X, Y, z + 0.95), d = P(X, Y, z);
+        const lit = R() < 0.3 * night + 0.02, near = Math.min(1, 9 / z);
+        ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d); ctx.closePath();
+        if (lit) {
+          const warm = R() < 0.72, al = (0.35 + R() * 0.4) * (1 - 0.45 * near);
+          const wg = ctx.createLinearGradient(0, a[1], 0, d[1]);
+          wg.addColorStop(0, warm ? `rgba(255,${170 + R() * 40 | 0},${100 + R() * 40 | 0},${al})` : `rgba(140,200,255,${al})`);
+          wg.addColorStop(1, warm ? `rgba(255,225,180,${al * 1.2})` : `rgba(200,235,255,${al * 1.2})`);
+          ctx.fillStyle = wg;
+        } else ctx.fillStyle = mixc("#0a0910", "#4d5863", day * (0.7 + 0.3 * R()));
+        ctx.fill();
+        if (z < 14) { ctx.strokeStyle = mixc("#050408", "#3a3f45", day); ctx.lineWidth = Math.max(1, 0.08 * F / z); ctx.stroke(); }
+      }
+      // ground-floor storefront glow
+      if (R() < 0.8 && s.z0 > 2.6) {
+        const z0 = s.z0 + 0.4, z1 = Math.min(s.z1 - 0.4, z0 + 3 + R() * 5);
+        const col = N[(R() * N.length) | 0];
+        const a = P(X, 3, z0), b = P(X, 3, z1), c = P(X, 0.1, z1), d = P(X, 0.1, z0);
+        const sg = ctx.createLinearGradient(0, a[1], 0, d[1]);
+        sg.addColorStop(0, rgba(col, 0.15 + 0.35 * night)); sg.addColorStop(0.7, `rgba(40,20,40,${0.5 * night})`); sg.addColorStop(1, `rgba(255,225,190,${0.1 + 0.4 * night})`);
+        ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d); ctx.closePath();
+        ctx.fillStyle = day > 0.6 ? mixc("#202830", "#3a454f", R()) : sg; ctx.fill();
+        // mullions and a door
+        ctx.strokeStyle = mixc("#07060a", "#1c2126", day); ctx.lineWidth = Math.max(1, 0.1 * F / z0);
+        for (let z = z0 + 1.1; z < z1 - 0.3; z += 1.1) { ctx.beginPath(); ctx.moveTo(...P(X, 3, z)); ctx.lineTo(...P(X, 0.1, z)); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(...P(X, 2.2, z0)); ctx.lineTo(...P(X, 2.2, z1)); ctx.stroke();
+        // awning
+        const e = P(X - side * 1.2, 3.4, z0), f = P(X - side * 1.2, 3.4, z1);
+        ctx.beginPath(); ctx.moveTo(...P(X, 3.6, z0)); ctx.lineTo(...e); ctx.lineTo(...f); ctx.lineTo(...P(X, 3.6, z1)); ctx.closePath();
+        ctx.fillStyle = mixc("#120c18", "#7a4a3a", day * 0.8); ctx.fill();
+        ctx.strokeStyle = rgba(col, 0.9 * night + 0.1); ctx.lineWidth = Math.max(0.8, 18 / z0); ctx.beginPath(); ctx.moveTo(...e); ctx.lineTo(...f); ctx.stroke();
+        lights.push({ X: X - side * 0.2, Y: 1.6, Z: (z0 + z1) / 2, w: Math.min(60, Math.abs(b[0] - a[0]) * 0.4), col, a: 0.35 * night + 0.05 });
+      }
+      if (R() < 0.75 && s.z0 > 3 && s.z0 < 45) signs.push({ X: X - side * 1.4, Z: s.z0 + 0.6 + R() * 2, Y: 4.5 + R() * 4, side });
+    }
+  }
+
+  // Street lamps
+  const lamps = [];
+  for (const side of [-1, 1]) for (let Z = 7 + (side > 0 ? 6 : 0); Z < 90; Z += 14) lamps.push({ side, Z });
+  lamps.sort((a, b) => b.Z - a.Z);
+  for (const l of lamps) {
+    const X = l.side * 4.7, s = F / l.Z;
+    const base = P(X, 0, l.Z), top = P(X, 5.6, l.Z), head = P(X - l.side * 1.3, 5.5, l.Z);
+    ctx.strokeStyle = mixc("#0a0a10", "#3b4046", day); ctx.lineWidth = Math.max(1, 0.14 * s);
+    ctx.beginPath(); ctx.moveTo(...base); ctx.lineTo(...top); ctx.lineTo(...head); ctx.stroke();
+    if (night > 0.3) {
+      const rg = ctx.createRadialGradient(head[0], head[1], 0, head[0], head[1], 2.4 * s);
+      rg.addColorStop(0, `rgba(255,236,200,${0.95 * night})`); rg.addColorStop(0.08, `rgba(255,205,150,${0.55 * night})`); rg.addColorStop(1, "rgba(255,170,110,0)");
+      ctx.fillStyle = rg; ctx.fillRect(head[0] - 2.4 * s, head[1] - 2.4 * s, 4.8 * s, 4.8 * s);
+      lights.push({ X: X - l.side * 1.3, Y: 5.5, Z: l.Z, w: 0.35 * s, col: "#ffd6a0", a: 0.45 * night });
+    }
+  }
+
+  // Cars far down the street: tail lights left lane, headlights right lane
+  for (const [X, Z, col] of [[-2.1, 26, "#ff2d3a"], [-1.9, 44, "#ff3b3b"], [-2.2, 70, "#ff4433"], [2.2, 19, "#fff1d6"], [2, 58, "#fff1d6"]]) {
+    const s = F / Z;
+    const body1 = P(X - 0.9, 1.35, Z), body2 = P(X + 0.9, 0.2, Z);
+    ctx.fillStyle = mixc("#0b0a10", "#2c3136", day); ctx.fillRect(body1[0], body1[1], body2[0] - body1[0], body2[1] - body1[1]);
+    for (const dx of [-0.7, 0.7]) {
+      const [x, y] = P(X + dx, 0.75, Z);
+      const rg = ctx.createRadialGradient(x, y, 0, x, y, 0.9 * s);
+      rg.addColorStop(0, rgba(col, 0.95)); rg.addColorStop(0.15, rgba(col, 0.5 * (0.4 + 0.6 * night))); rg.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = rg; ctx.fillRect(x - s, y - s, 2 * s, 2 * s);
+      lights.push({ X: X + dx, Y: 0.75, Z, w: 0.16 * s, col, a: 0.7 });
+    }
+  }
+
+  // Blade signs: frontal planes, so the neon reads straight on
+  const WORDS = ["BAR", "HOTEL", "RAMEN", "24H", "KISSA", "JAZZ", "DINER", "KARAOKE", "ROOMS", "SAKE"];
+  signs.sort((a, b) => b.Z - a.Z);
+  for (const sg of signs) {
+    const word = WORDS[(R() * WORDS.length) | 0], col = N[(R() * N.length) | 0];
+    const s = F / sg.Z, letters = word.length, hgt = 0.62 * letters + 0.5;
+    const [x, y] = P(sg.X, sg.Y + hgt, sg.Z), bw = 0.95 * s, bh = hgt * s;
+    // bracket
+    ctx.strokeStyle = mixc("#15121c", "#4a4f55", day); ctx.lineWidth = Math.max(1, 0.06 * s);
+    ctx.beginPath(); ctx.moveTo(x + bw / 2, y + 0.2 * s); ctx.lineTo(P(sg.X + sg.side * 1.4, sg.Y + hgt, sg.Z)[0], y + 0.2 * s); ctx.stroke();
+    ctx.fillStyle = mixc("#0b0910", "#2a2e33", day); ctx.fillRect(x, y, bw, bh);
+    ctx.save();
+    ctx.shadowColor = rgba(col, night); ctx.shadowBlur = 0.9 * s * night;
+    ctx.strokeStyle = rgba(col, 0.35 + 0.65 * night); ctx.lineWidth = Math.max(1, 0.06 * s);
+    ctx.strokeRect(x + 0.08 * s, y + 0.08 * s, bw - 0.16 * s, bh - 0.16 * s);
+    ctx.font = `600 ${0.5 * s}px "Geist", "Helvetica Neue", Arial, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (let k = 0; k < letters; k++) {
+      const ly = y + (0.5 + 0.62 * k) * s;
+      ctx.fillStyle = rgba(col, 0.35 + 0.65 * night); ctx.fillText(word[k], x + bw / 2, ly);
+      if (night > 0.5) { ctx.shadowBlur = 0.2 * s; ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fillText(word[k], x + bw / 2, ly); ctx.shadowBlur = 0.9 * s * night; }
+    }
+    ctx.restore();
+    // halo around the sign
+    if (night > 0.2) {
+      const cx = x + bw / 2, cy = y + bh / 2, rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, bh * 0.9);
+      rg.addColorStop(0, rgba(col, 0.22 * night)); rg.addColorStop(1, rgba(col, 0));
+      ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = rg; ctx.fillRect(cx - bh, cy - bh, 2 * bh, 2 * bh); ctx.globalCompositeOperation = "source-over";
+    }
+    lights.push({ X: sg.X, Y: sg.Y + hgt / 2, Z: sg.Z, w: bw * 0.8, h: bh, col, a: 0.6 * night + 0.04, sign: true });
+  }
+
+  // Reflections on the wet road: drawn small (that's the blur), stretched, and broken by ripples
+  const RS = 6, rc = document.createElement("canvas"); rc.width = SW / RS; rc.height = SH / RS;
+  const r = rc.getContext("2d"); r.scale(1 / RS, 1 / RS); r.globalCompositeOperation = "lighter";
+  for (const L of lights) {
+    const s = F / L.Z, [x] = P(L.X, 0, L.Z), yTop = vy + ((camH + 0.0) / L.Z) * F, yR = vy + ((L.Y + camH) / L.Z) * F;
+    const len = (yR - yTop) * 2.4 + 30, wid = Math.max(6, (L.w || 0.3 * s) * (L.sign ? 1 : 1.6));
+    const lg = r.createLinearGradient(0, yTop, 0, yTop + len);
+    lg.addColorStop(0, rgba(L.col, 0)); lg.addColorStop(0.2, rgba(L.col, 0.55 * L.a)); lg.addColorStop(1, rgba(L.col, 0));
+    r.fillStyle = lg; r.fillRect(x - wid / 2, yTop, wid, len);
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, vy + 2, SW, SH - vy); ctx.clip();
+  ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = 0.8;
+  ctx.imageSmoothingQuality = "high"; ctx.drawImage(rc, 0, 0, SW, SH);
+  ctx.globalAlpha = 1;
+  // sharp streak cores
+  for (const L of lights) {
+    if (L.w > 40) continue;
+    const [x] = P(L.X, 0, L.Z), y0 = vy + (camH / L.Z) * F, y1 = vy + ((L.Y + camH) / L.Z) * F * 1.7 + 20;
+    ctx.lineWidth = 0.8;
+    for (let yy = y0; yy < y1; yy += 2 + R() * 5) {
+      const ww = (L.w || 6) * (0.2 + R() * 0.6), jx = (R() - 0.5) * (L.w || 6) * 0.3;
+      ctx.strokeStyle = rgba(L.col, (0.15 + 0.25 * R()) * L.a * (1 - (yy - y0) / (y1 - y0)));
+      ctx.beginPath(); ctx.moveTo(x + jx - ww / 2, yy); ctx.lineTo(x + jx + ww / 2, yy); ctx.stroke();
+    }
+  }
+  ctx.globalCompositeOperation = "source-over";
+  // ripples that break the reflections
+  for (let k = 0; k < 520; k++) {
+    const y = vy + 6 + Math.pow(R(), 1.6) * (SH - vy), wv = 20 + R() * 160 * ((y - vy) / (SH - vy) + 0.1);
+    ctx.strokeStyle = `rgba(0,0,0,${0.12 + R() * 0.2})`; ctx.lineWidth = 0.6 + R() * 1.6 * ((y - vy) / (SH - vy));
+    const x = R() * SW; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + wv, y + (R() - 0.5)); ctx.stroke();
+  }
+  // puddle rings
+  for (let k = 0; k < 70 * (p.rain || 0.5); k++) {
+    const y = vy + 40 + R() * (SH - vy - 40), t = (y - vy) / (SH - vy), rx = 6 + t * 40 * R();
+    ctx.strokeStyle = `rgba(255,255,255,${0.05 + 0.08 * R()})`; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.ellipse(R() * SW, y, rx, rx * 0.18, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
+
+  // A figure with an umbrella, crossing on the wet crosswalk, rim-lit by the neon
+  {
+    const Z = 8.6, X = 0.9 + (p.fx || 0), s = F / Z, [bx, by] = P(X, 0, Z), rim = N[0];
+    ctx.save(); ctx.translate(bx, by); ctx.scale(s, s);
+    // reflection
+    ctx.save(); ctx.scale(1, -0.9); ctx.globalAlpha = 0.28; drawFigure(ctx, day, rim, 0.5); ctx.restore();
+    drawFigure(ctx, day, rim, 1);
+    ctx.restore();
+  }
+
+  // Haze over the street depth
+  g = ctx.createLinearGradient(0, vy - 160, 0, vy + 120);
+  g.addColorStop(0, rgba(N[3], 0)); g.addColorStop(0.55, rgba(N[0], 0.16 * night + 0.06)); g.addColorStop(1, rgba(N[3], 0));
+  ctx.fillStyle = g; ctx.fillRect(0, vy - 160, SW, 280);
+
+  // Rain
+  ctx.lineCap = "round";
+  for (let k = 0; k < 1500 * (p.rain || 0.5); k++) {
+    const x = R() * SW, y = R() * SH, l = 10 + R() * 34, a = 0.05 + R() * 0.16;
+    ctx.strokeStyle = day > 0.5 ? `rgba(255,255,255,${a * 0.9})` : `rgba(210,225,255,${a})`; ctx.lineWidth = 0.6 + R() * 0.8;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - l * 0.14, y + l); ctx.stroke();
+  }
+  // Out-of-focus drops on the lens
+  ctx.globalCompositeOperation = "lighter";
+  for (let k = 0; k < 16; k++) {
+    const edge = R() < 0.5, x = edge ? R() * 260 : SW - R() * 300, y = 520 + R() * 380, rad = 18 + R() * 46, col = N[(R() * N.length) | 0];
+    const rg = ctx.createRadialGradient(x, y, rad * 0.2, x, y, rad);
+    rg.addColorStop(0, rgba(col, 0.03 * night + 0.01)); rg.addColorStop(0.85, rgba(col, 0.08 * night + 0.02)); rg.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+
+  // Vignette and grain
+  g = ctx.createRadialGradient(SW / 2, SH * 0.48, SH * 0.25, SW / 2, SH * 0.5, SW * 0.68);
+  g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, `rgba(0,0,0,${0.55 - 0.35 * day})`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, SW, SH);
+  ctx.restore();
+  if (w > 400) {
+    const nc = document.createElement("canvas"); nc.width = nc.height = 160;
+    const nx = nc.getContext("2d"), id = nx.createImageData(160, 160);
+    for (let i = 0; i < id.data.length; i += 4) { const v = R() * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
+    nx.putImageData(id, 0, 0);
+    ctx.save(); ctx.globalAlpha = 0.06; ctx.globalCompositeOperation = "overlay"; ctx.fillStyle = ctx.createPattern(nc, "repeat"); ctx.fillRect(0, 0, w, h); ctx.restore();
+  }
+}
+
+function drawFigure(ctx, day, rim, alpha) {
+  // units: metres, origin at the feet, y up is negative
+  const body = day > 0.5 ? "#2a2d33" : "#08080c";
+  ctx.globalAlpha *= alpha;
+  ctx.fillStyle = body;
+  // legs
+  ctx.beginPath(); ctx.moveTo(-0.13, 0); ctx.lineTo(-0.05, -0.85); ctx.lineTo(0.05, -0.85); ctx.lineTo(0.2, -0.02); ctx.lineTo(0.12, 0); ctx.lineTo(0.02, -0.6); ctx.lineTo(-0.05, 0); ctx.closePath(); ctx.fill();
+  // coat
+  ctx.beginPath(); ctx.moveTo(-0.2, -0.78); ctx.quadraticCurveTo(-0.24, -1.2, -0.17, -1.42); ctx.quadraticCurveTo(0, -1.5, 0.17, -1.42); ctx.quadraticCurveTo(0.25, -1.1, 0.22, -0.76); ctx.closePath(); ctx.fill();
+  // head
+  ctx.beginPath(); ctx.arc(0, -1.56, 0.1, 0, Math.PI * 2); ctx.fill();
+  // umbrella shaft + canopy
+  ctx.strokeStyle = body; ctx.lineWidth = 0.02; ctx.beginPath(); ctx.moveTo(0.12, -1.2); ctx.lineTo(0.05, -2.02); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-0.58, -1.78); ctx.quadraticCurveTo(-0.5, -2.2, 0.05, -2.24); ctx.quadraticCurveTo(0.6, -2.2, 0.66, -1.76);
+  for (let k = 0; k < 6; k++) { const x0 = 0.66 - (k + 1) * 0.207; ctx.quadraticCurveTo(x0 + 0.1, -1.84, x0, -1.78); }
+  ctx.closePath(); ctx.fillStyle = day > 0.5 ? "#7a1f2b" : "#120a14"; ctx.fill();
+  // rim light from the signs (left), only at night
+  if (day < 0.6) {
+    ctx.strokeStyle = rgba(rim, 0.85); ctx.lineWidth = 0.022;
+    ctx.beginPath(); ctx.moveTo(-0.58, -1.78); ctx.quadraticCurveTo(-0.5, -2.2, 0.05, -2.24); ctx.stroke();
+    ctx.lineWidth = 0.016; ctx.beginPath(); ctx.moveTo(-0.2, -0.8); ctx.quadraticCurveTo(-0.24, -1.2, -0.17, -1.42); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, -1.56, 0.1, Math.PI * 0.75, Math.PI * 1.35); ctx.stroke();
+  }
+  ctx.globalAlpha /= alpha;
+}
+
+/* ==================================================================================================
+   2. The roll, the edit state and the render pipeline (per-channel LUT, so it stays fast)
+   ================================================================================================== */
+const ZERO = { exposure: 0, contrast: 0, highlights: 0, shadows: 0, temperature: 0 };
+const FRAMES = [
+  { id: "0405", seed: 11, day: 0.55, neon: ["#ff8a3d", "#59d0ff", "#ffd36b", "#ff5c8a"], vx: -70, rain: 0.3, fx: -1.6, mb: "21.8" },
+  { id: "0406", seed: 23, day: 0, neon: ["#ff3d9a", "#ff6ad5", "#7a5cff", "#ff3d6e"], vx: 110, rain: 0.9, fx: 0.6, mb: "25.1" },
+  { id: "0407", seed: 37, day: 1, neon: ["#ff6a3d", "#3dc2ff", "#ffd23d", "#ff3d6e"], vx: -20, rain: 0.6, fx: -0.4, mb: "19.6" },
+  { id: "0408", seed: 41, day: 0, neon: ["#29e3ff", "#3d8bff", "#9cffe9", "#5a4dff"], vx: -130, rain: 0.5, fx: 1.4, mb: "23.9" },
+  { id: "0409", seed: 53, day: 0.12, neon: ["#ffae3d", "#ff7a2d", "#ffd98a", "#ff4f3d"], vx: 40, rain: 0.4, fx: -2, mb: "22.4" },
+  { id: "0410", seed: 67, day: 0.32, neon: ["#6f8bff", "#38d9ff", "#c7a6ff", "#4a5bff"], vx: 70, rain: 0.7, fx: 0.2, mb: "24.0" },
+  { id: "0411", seed: 71, day: 0, neon: ["#ff3d8b", "#28e0ff", "#ffb03b", "#a26bff"], vx: 30, rain: 0.8, camH: 1.05, fx: 1.9, mb: "24.7" },
+  { id: "0412", seed: 7, day: 0, neon: ["#ff3d8b", "#28e0ff", "#ffb03b", "#a26bff"], vx: -40, rain: 0.7, fx: 0.7, mb: "24.3" },
+];
+const edits = Object.fromEntries(FRAMES.map((f) => [f.id, { ...ZERO }]));
+edits["0412"] = { exposure: 0.35, contrast: 12, highlights: -38, shadows: 24, temperature: -8 };
+
+const q = new URLSearchParams(location.search);
+let cur = FRAMES.findIndex((f) => f.id === q.get("frame")); if (cur < 0) cur = 7;
+if (q.get("exposure")) edits[FRAMES[cur].id].exposure = Number(q.get("exposure"));
+
+const BW = 2000, BH = 1125;
+const photo = document.getElementById("photo"); photo.width = BW; photo.height = BH;
+const pctx = photo.getContext("2d", { willReadFrequently: true });
+const base = Object.assign(document.createElement("canvas"), { width: BW, height: BH });
+const bctx = base.getContext("2d", { willReadFrequently: true });
+let baseData = null, outData = pctx.createImageData(BW, BH), comparing = false;
+
+const s2l = (v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+const l2s = (v) => (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055);
+const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+function buildLUT(a) {
+  const e = 2 ** a.exposure, c = a.contrast / 100, hi = a.highlights / 100, sh = a.shadows / 100, t = a.temperature / 100;
+  const gain = [1 + 0.16 * t, 1 + 0.02 * t, 1 - 0.2 * t];
+  return gain.map((gn) => {
+    const lut = new Uint8ClampedArray(256);
+    for (let i = 0; i < 256; i++) {
+      let v = l2s(Math.min(4, s2l(i / 255) * e * gn));
+      if (v > 0.82) v = 0.82 + 0.18 * Math.tanh((v - 0.82) / 0.18);                 // soft shoulder
+      v += hi * 0.34 * sstep(0.45, 1, v) * (hi < 0 ? v : 1 - v + 0.15);
+      v += sh * 0.32 * (1 - sstep(0, 0.6, v)) * (sh > 0 ? 1 - v * 0.8 : v + 0.08);
+      v = 0.46 + (v - 0.46) * (1 + c * 0.85);
+      lut[i] = Math.round(Math.min(1, Math.max(0, v)) * 255);
+    }
+    return lut;
+  });
+}
+let raf = 0;
+const schedule = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); };
+function render() {
+  if (!baseData) return;
+  const src = baseData.data;
+  if (comparing) { pctx.putImageData(baseData, 0, 0); drawHisto(src); return; }
+  const [lr, lg, lb] = buildLUT(edits[FRAMES[cur].id]), o = outData.data;
+  for (let i = 0; i < src.length; i += 4) { o[i] = lr[src[i]]; o[i + 1] = lg[src[i + 1]]; o[i + 2] = lb[src[i + 2]]; o[i + 3] = 255; }
+  pctx.putImageData(outData, 0, 0);
+  drawHisto(o);
+  aimLight();
+}
+
+const hc = document.getElementById("histo"), hx = hc.getContext("2d");
+function drawHisto(d) {
+  const bins = [new Float32Array(128), new Float32Array(128), new Float32Array(128)];
+  for (let i = 0; i < d.length; i += 4 * 7) { bins[0][d[i] >> 1]++; bins[1][d[i + 1] >> 1]++; bins[2][d[i + 2] >> 1]++; }
+  let max = 1; for (const b of bins) for (let k = 2; k < 126; k++) max = Math.max(max, b[k]);
+  hx.clearRect(0, 0, hc.width, hc.height);
+  // grid
+  hx.strokeStyle = "rgba(255,255,255,.07)"; hx.lineWidth = 1;
+  for (let k = 1; k < 4; k++) { const x = Math.round((hc.width * k) / 4) + 0.5; hx.beginPath(); hx.moveTo(x, 0); hx.lineTo(x, hc.height); hx.stroke(); }
+  hx.globalCompositeOperation = "lighter";
+  ["rgba(255,80,90,.55)", "rgba(80,230,140,.5)", "rgba(80,140,255,.6)"].forEach((col, c) => {
+    hx.beginPath(); hx.moveTo(0, hc.height);
+    for (let k = 0; k < 128; k++) hx.lineTo((k / 127) * hc.width, hc.height - Math.min(1, Math.sqrt(bins[c][k] / max)) * (hc.height - 6));
+    hx.lineTo(hc.width, hc.height); hx.closePath(); hx.fillStyle = col; hx.fill();
+  });
+  hx.globalCompositeOperation = "source-over";
+}
+
+/* Aim each glass surface's rim at the brightest light just outside it, and take the light's colour
+   (blur-craft §1). Re-run whenever the picture changes, so the rim follows whatever photo is open. */
+const small = Object.assign(document.createElement("canvas"), { width: 200, height: 113 });
+const sctx = small.getContext("2d", { willReadFrequently: true });
+const DIRS = [[-1, -1, 135], [0, -1, 180], [1, -1, 225], [1, 0, 270], [1, 1, 315], [0, 1, 0], [-1, 1, 45], [-1, 0, 90]];
+function aimLight() {
+  sctx.drawImage(photo, 0, 0, small.width, small.height);
+  const d = sctx.getImageData(0, 0, small.width, small.height).data;
+  const vw = innerWidth, vh = innerHeight, sc = Math.max(vw / BW, vh / BH), ox = (vw - BW * sc) / 2, oy = (vh - BH * sc) / 2;
+  const at = (x, y) => {
+    const ix = Math.round(((x - ox) / sc) * small.width / BW), iy = Math.round(((y - oy) / sc) * small.height / BH);
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const X = ix + dx, Y = iy + dy; if (X < 0 || Y < 0 || X >= small.width || Y >= small.height) continue;
+      const i = (Y * small.width + X) * 4; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+    }
+    return n ? [r / n, g / n, b / n] : [0, 0, 0];
+  };
+  for (const el of document.querySelectorAll(".glass")) {
+    if (el.hidden || !el.offsetWidth) continue;
+    const r = el.getBoundingClientRect(), cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2;
+    let best = null;
+    for (const [dx, dy, ang] of DIRS) {
+      const c = at(cx + dx * (r.width / 2 + 36), cy + dy * (r.height / 2 + 36));
+      const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+      if (!best || y > best.y) best = { y, c, ang };
+    }
+    const m = Math.max(1, ...best.c), col = best.c.map((v) => Math.round(255 * (0.55 + 0.45 * (v / m)))).join(" ");
+    el.style.setProperty("--glass-rim-angle", best.ang + "deg");
+    el.style.setProperty("--glass-light", col);
+    el.style.setProperty("--glass-rim-hot", (0.45 + Math.min(0.4, best.y / 255)).toFixed(2));
+  }
+}
+
+function loadFrame(i, animate) {
+  cur = i;
+  const f = FRAMES[i];
+  bctx.clearRect(0, 0, BW, BH);
+  drawScene(bctx, BW, BH, f);
+  baseData = bctx.getImageData(0, 0, BW, BH);
+  document.getElementById("fname").textContent = `DSC_${f.id}.jpg`;
+  document.getElementById("fmeta").textContent = `6016 × 3384 · ${f.mb} MB`;
+  document.getElementById("dtitle").textContent = `Export DSC_${f.id}`;
+  photo.setAttribute("aria-label", `Photo DSC_${f.id}`);
+  document.querySelectorAll(".thumb").forEach((t, k) => { t.setAttribute("aria-current", k === i); t.setAttribute("aria-selected", k === i); });
+  syncSliders();
+  render();
+  if (animate) photo.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: "cubic-bezier(.2,.8,.2,1)" });
+}
+
+/* ==================================================================================================
+   3. The controls
+   ================================================================================================== */
+const SL = [
+  { sect: "Light" },
+  { k: "exposure", label: "Exposure", min: -2, max: 2, step: 0.05, dp: 2 },
+  { k: "contrast", label: "Contrast", min: -100, max: 100, step: 1 },
+  { k: "highlights", label: "Highlights", min: -100, max: 100, step: 1 },
+  { k: "shadows", label: "Shadows", min: -100, max: 100, step: 1 },
+  { sect: "Colour" },
+  { k: "temperature", label: "Temperature", min: -100, max: 100, step: 1, temp: true },
+];
+const fmt = (v, dp) => (v === 0 ? (dp ? "0.00" : "0") : (v > 0 ? "+" : "−") + Math.abs(v).toFixed(dp || 0));
+const box = document.getElementById("sliders");
+for (const s of SL) {
+  if (s.sect) { box.insertAdjacentHTML("beforeend", `<div class="sect glass-secondary">${s.sect}</div>`); continue; }
+  box.insertAdjacentHTML("beforeend", `<div class="row">
+    <label class="glass-label" for="s-${s.k}" title="Double-click to reset">${s.label}</label>
+    <output class="glass-label num" id="o-${s.k}" for="s-${s.k}"></output>
+    <input class="rng${s.temp ? " rng--temp" : ""}" id="s-${s.k}" type="range" min="${s.min}" max="${s.max}" step="${s.step}">
+  </div>`);
+}
+const SLIDERS = SL.filter((s) => s.k);
+function paintSlider(s) {
+  const v = edits[FRAMES[cur].id][s.k], el = document.getElementById("s-" + s.k), out = document.getElementById("o-" + s.k);
+  const pct = ((v - s.min) / (s.max - s.min)) * 100;
+  el.style.setProperty("--lo", Math.min(50, pct) + "%"); el.style.setProperty("--hi", Math.max(50, pct) + "%");
+  out.textContent = fmt(v, s.dp); out.classList.toggle("is-zero", v === 0);
+  el.setAttribute("aria-valuetext", `${s.label} ${fmt(v, s.dp)}`);
+}
+function syncSliders() {
+  for (const s of SLIDERS) { document.getElementById("s-" + s.k).value = edits[FRAMES[cur].id][s.k]; paintSlider(s); }
+  const n = SLIDERS.filter((s) => edits[FRAMES[cur].id][s.k] !== 0).length;
+  document.getElementById("editCount").textContent = n ? `${n} edit${n > 1 ? "s" : ""}` : "Original";
+  document.querySelectorAll(".thumb").forEach((t, k) => t.querySelector(".edited").hidden = !Object.values(edits[FRAMES[k].id]).some(Boolean));
+}
+
+// Undo / redo over whole edit snapshots
+const hist = { past: [], future: [] };
+let before = null;
+const snap = () => ({ frame: cur, a: { ...edits[FRAMES[cur].id] } });
+function commit(prev) {
+  if (prev && JSON.stringify(prev.a) !== JSON.stringify(edits[FRAMES[prev.frame].id])) { hist.past.push(prev); hist.future = []; }
+  updHist();
+}
+function restore(st) { edits[FRAMES[st.frame].id] = { ...st.a }; if (st.frame !== cur) loadFrame(st.frame, true); else { syncSliders(); schedule(); } }
+function undo() { const st = hist.past.pop(); if (!st) return; hist.future.push({ frame: st.frame, a: { ...edits[FRAMES[st.frame].id] } }); restore(st); updHist(); }
+function redo() { const st = hist.future.pop(); if (!st) return; hist.past.push({ frame: st.frame, a: { ...edits[FRAMES[st.frame].id] } }); restore(st); updHist(); }
+function updHist() { document.getElementById("undo").disabled = !hist.past.length; document.getElementById("redo").disabled = !hist.future.length; }
+
+for (const s of SLIDERS) {
+  const el = document.getElementById("s-" + s.k);
+  el.addEventListener("pointerdown", () => (before = snap()));
+  el.addEventListener("keydown", () => { if (!before) before = snap(); });
+  el.addEventListener("input", () => { if (!before) before = snap(); edits[FRAMES[cur].id][s.k] = Number(el.value); paintSlider(s); schedule(); });
+  el.addEventListener("change", () => { commit(before); before = null; syncSliders(); });
+  el.closest(".row").querySelector("label").addEventListener("dblclick", () => { const p = snap(); edits[FRAMES[cur].id][s.k] = 0; syncSliders(); schedule(); commit(p); });
+}
+document.getElementById("undo").addEventListener("click", undo);
+document.getElementById("redo").addEventListener("click", redo);
+document.getElementById("reset").addEventListener("click", () => { const p = snap(); edits[FRAMES[cur].id] = { ...ZERO }; syncSliders(); schedule(); commit(p); });
+document.getElementById("auto").addEventListener("click", () => {
+  // Meter the original and pull the mean towards a mid-grey, recover highlights, open shadows.
+  const d = baseData.data; let sum = 0, n = 0, clip = 0;
+  for (let i = 0; i < d.length; i += 4 * 13) { const y = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; sum += y; n++; if (y > 245) clip++; }
+  const mean = sum / n / 255, p = snap();
+  Object.assign(edits[FRAMES[cur].id], {
+    exposure: Math.round(Math.max(-1.5, Math.min(1.5, Math.log2(0.36 / Math.max(0.02, mean)) * 0.5)) * 20) / 20,
+    contrast: 10, highlights: -Math.round(Math.min(60, 20 + (clip / n) * 4000)), shadows: Math.round(mean < 0.25 ? 35 : 15), temperature: edits[FRAMES[cur].id].temperature,
+  });
+  syncSliders(); schedule(); commit(p);
+});
+
+// Compare: hold the button, or hold backslash
+const cmp = document.getElementById("compare");
+const setCompare = (on) => { if (comparing === on) return; comparing = on; cmp.setAttribute("aria-pressed", on); schedule(); };
+cmp.addEventListener("pointerdown", () => setCompare(true));
+for (const ev of ["pointerup", "pointerleave", "pointercancel"]) cmp.addEventListener(ev, () => setCompare(false));
+
+// Tool rail
+const panel = document.getElementById("panel"), crop = document.getElementById("crop");
+function pickTool(name) {
+  document.querySelectorAll("[data-tool]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.tool === name));
+  const showPanel = name === "adjust";
+  if (showPanel && panel.hidden) { panel.hidden = false; panel.animate([{ opacity: 0, transform: "translateX(12px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" }); }
+  else if (!showPanel) panel.hidden = true;
+  crop.hidden = name !== "crop";
+  setPanelH();
+}
+document.querySelectorAll("[data-tool]").forEach((b) => b.addEventListener("click", () => pickTool(b.dataset.tool)));
+
+// Filmstrip
+const film = document.getElementById("film");
+FRAMES.forEach((f, i) => {
+  const b = document.createElement("button");
+  b.className = "thumb"; b.setAttribute("role", "option"); b.setAttribute("aria-label", `DSC_${f.id}`);
+  b.innerHTML = `<canvas width="176" height="100"></canvas><span class="glass-secondary num">${f.id}<span class="edited" hidden></span></span>`;
+  drawScene(b.querySelector("canvas").getContext("2d"), 176, 100, f);
+  b.addEventListener("click", () => { if (i !== cur) { hist.past.push(snap()); hist.future = []; updHist(); loadFrame(i, true); } });
+  film.appendChild(b);
+});
+
+// Keyboard
+addEventListener("keydown", (e) => {
+  if (!document.getElementById("dialog").hidden) { if (e.key === "Escape") closeDialog(); return; }
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (e.target.matches("input")) return;
+  if (e.key === "\\") { setCompare(true); return; }
+  const tool = { c: "crop", a: "adjust", f: "filters", r: "retouch", t: "text" }[e.key.toLowerCase()];
+  if (tool && !mod) pickTool(tool);
+  if (e.key === "ArrowRight" && cur < FRAMES.length - 1) loadFrame(cur + 1, true);
+  if (e.key === "ArrowLeft" && cur > 0) loadFrame(cur - 1, true);
+});
+addEventListener("keyup", (e) => { if (e.key === "\\") setCompare(false); });
+
+// Export dialog over a focus veil (siblings, never nested: backdrop root)
+const veil = document.getElementById("veil"), dialog = document.getElementById("dialog"), toast = document.getElementById("toast");
+let fmtSel = "jpeg";
+function bakeVeil() {
+  const c = document.getElementById("veilArt"), k = 14;
+  c.width = Math.ceil(innerWidth / k); c.height = Math.ceil(innerHeight / k);
+  const x = c.getContext("2d"), sc = Math.max(innerWidth / BW, innerHeight / BH);
+  x.imageSmoothingQuality = "high";
+  x.drawImage(photo, (innerWidth - BW * sc) / 2 / k, (innerHeight - BH * sc) / 2 / k, (BW * sc) / k, (BH * sc) / k);
+}
+function openDialog() {
+  bakeVeil();
+  veil.hidden = false; dialog.hidden = false; document.body.classList.add("is-modal");
+  veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)" });
+  dialog.animate([{ opacity: 0, transform: "translateY(8px) scale(.98)" }, { opacity: 1, transform: "none" }], { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" });
+  dialog.querySelector("[aria-pressed=true]").focus();
+}
+function closeDialog() { veil.hidden = true; dialog.hidden = true; document.body.classList.remove("is-modal"); document.getElementById("export").focus(); }
+document.getElementById("export").addEventListener("click", openDialog);
+document.getElementById("cancel").addEventListener("click", closeDialog);
+veil.addEventListener("click", closeDialog);
+dialog.querySelectorAll("[data-fmt]").forEach((b) => b.addEventListener("click", () => {
+  fmtSel = b.dataset.fmt; dialog.querySelectorAll("[data-fmt]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  document.getElementById("quality").disabled = fmtSel === "png";
+}));
+const qual = document.getElementById("quality");
+const paintQ = () => { const pct = ((qual.value - 40) / 60) * 100; qual.style.setProperty("--lo", "0%"); qual.style.setProperty("--hi", pct + "%"); document.getElementById("qout").textContent = qual.value; };
+qual.addEventListener("input", paintQ); paintQ();
+document.getElementById("doExport").addEventListener("click", () => {
+  const name = `DSC_${FRAMES[cur].id}-lumen.${fmtSel === "jpeg" ? "jpg" : fmtSel}`;
+  photo.toBlob((blob) => {
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: name });
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, "image/" + fmtSel, qual.value / 100);
+  closeDialog();
+  document.getElementById("toastText").textContent = `Exported ${name}`;
+  toast.hidden = false;
+  toast.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" });
+  clearTimeout(toast._t); toast._t = setTimeout(() => (toast.hidden = true), 3200);
+});
+
+// Pointer sheen on every glass surface
+addEventListener("pointermove", (e) => {
+  // Under the veil, a repaint below it makes the full-screen veil re-blur: only the dialog shines then.
+  const modal = document.body.classList.contains("is-modal");
+  for (const el of document.querySelectorAll(".glass")) {
+    if (el.hidden || (modal && el !== dialog)) continue;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+    el.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+  }
+}, { passive: true });
+
+// Phone layout: the rail sits on top of the panel
+function setPanelH() { document.documentElement.style.setProperty("--panel-h", (panel.hidden ? 0 : panel.offsetHeight) + "px"); }
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { setPanelH(); aimLight(); }, 120); });
+
+// Go
+loadFrame(cur, false);
+setPanelH();
+document.fonts?.ready.then(() => { loadFrame(cur, false); setPanelH(); });
+if (q.get("export")) openDialog();
+if (q.get("toast")) { document.getElementById("toastText").textContent = "Exported DSC_0412-lumen.jpg"; toast.hidden = false; }
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  // Arrival: each glass surface fades itself (never a parent: that would be a backdrop root)
+  document.querySelectorAll(".topbar > *, .rail, .panel, .film").forEach((el, i) =>
+    el.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: 80 + i * 50, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" }));
+}
+</script>
+</body>
+</html>

@@ -94,6 +94,8 @@
     <div class="row"><span>Tinted (iOS 26.1)</span><input id="tinted" type="checkbox"></div>
     <div class="row"><span>Light tone</span><input id="light" type="checkbox"></div>
     <div class="row"><span>Liquid Glass dock</span><input id="liquid" type="checkbox" checked></div>
+    <label>Device tier <span id="tierOut"></span>
+      <select id="tier"><option value="auto">auto (measured)</option><option>full</option><option>lite</option><option>flat</option></select></label>
   </aside>
 
   <div class="demo-menu gs-menu glass" role="menu" aria-label="Example menu">
@@ -129,6 +131,7 @@
 
 <script type="module">
   import { mountLiquidGlass } from "./liquid-glass.js";
+  import { applyGlassTier } from "./glass-tier.js";
   const $ = (id) => document.getElementById(id);
   const swatches = [...document.querySelectorAll(".glass")].filter((el) => !el.classList.contains("controls"));
   const dock = $("dock");
@@ -157,6 +160,18 @@
   for (const id of ["thickness", "angle", "tinted", "light", "liquid"]) $(id).addEventListener("input", apply);
   document.fonts?.ready.then(apply); apply();
 
+  // Device tier: measured after the glass is on screen; the select overrides it.
+  let measured = "full";
+  applyGlassTier().then((t) => { measured = t; setTier(); });   // re-apply: a forced tier must win
+  if (q.get("tier")) $("tier").value = q.get("tier");
+  const setTier = () => {
+    const v = $("tier").value, root = document.documentElement;
+    if (v === "auto") delete root.dataset.glassTierLock; else root.dataset.glassTierLock = "";
+    root.dataset.glassTier = v === "auto" ? measured : v;
+    $("tierOut").textContent = v === "auto" ? `(${measured})` : "";
+  };
+  $("tier").addEventListener("input", setTier); setTier();
+
   // Pointer sheen
   for (const el of swatches) el.addEventListener("pointermove", (e) => {
     const r = el.getBoundingClientRect();
@@ -165,8 +180,8 @@
   });
 
   // Dialog over a veil (siblings, so the dialog's glass isn't inside the veil's backdrop root)
-  const open = () => { $("veil").hidden = false; $("dialog").hidden = false; $("dialog").focus(); };
-  const close = () => { $("veil").hidden = true; $("dialog").hidden = true; $("open").focus(); };
+  const open = () => { document.documentElement.classList.add("gs-modal-open"); $("veil").hidden = false; $("dialog").hidden = false; $("dialog").focus(); };
+  const close = () => { document.documentElement.classList.remove("gs-modal-open"); $("veil").hidden = true; $("dialog").hidden = true; $("open").focus(); };
   $("open").addEventListener("click", open);
   for (const id of ["veil", "decline", "approve"]) $(id).addEventListener("click", close);
   addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("dialog").hidden) close(); });

@@ -74,9 +74,9 @@
 /* ---------- Menu / popover / command bar ---------- */
 .gs-menu {
   --glass-radius: 14px;
-  --glass-blur: 32px;
   --glass-dim: rgb(10 10 14 / 0.86);
-  --glass-contrast: 0.85;
+  -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85);   /* literal: Sonoma var() bug */
+  backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85);
   display: grid;
   padding: 6px;
   min-width: 220px;
@@ -85,7 +85,7 @@
     0 0 0 0.5px rgb(0 0 0 / 0.8),
     0 16px 40px -8px rgb(0 0 0 / 0.6);
 }
-.gs-menu.glass--light { --glass-dim: rgb(250 250 252 / 0.88); box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 16px 40px -8px rgb(20 20 40 / 0.25); }
+.gs-menu.glass--light { -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08); backdrop-filter: blur(32px) saturate(180%) brightness(1.08); --glass-dim: rgb(250 250 252 / 0.88); box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 16px 40px -8px rgb(20 20 40 / 0.25); }
 .gs-menu > * { padding: 8px 10px; border-radius: 8px; }
 .gs-menu.glass--light > :is(:hover, :focus-visible) { background: rgb(0 0 0 / 0.06); }
 .gs-menu > :is(:hover, :focus-visible) { background: rgb(255 255 255 / 0.08); outline: none; }
@@ -111,6 +111,19 @@
   overflow: auto;
   padding: 24px;
 }
+/* Flat veil: no live blur, a darker scrim (as Material, Primer and Polaris ship). Use it when several
+   glass surfaces sit under the dialog: a full-screen live blur over them measured 31fps on a test page,
+   60fps without. If the backdrop is an image or canvas, a baked blur (recipes.md, 8) keeps the look. */
+.gs-veil--flat { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(8 8 12 / 0.5); }
+
+/* While a dialog is open, the chrome underneath stops blurring (never two stacked live blurs) and goes
+   near-opaque instead. Toggle .gs-modal-open on <html> with the dialog. */
+.gs-modal-open .glass:not(.gs-dialog, .gs-sheet) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.7), rgb(14 14 20 / 0.7));
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .gs-veil { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(8 8 12 / 0.6); }
 }

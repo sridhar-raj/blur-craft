@@ -39,9 +39,8 @@ What this means in practice:
 
 ## Chrome and Firefox
 
-- Extended backdrops (recipe 1c): from Chrome 142, `overflow: hidden` on the bar trims the oversized
-  backdrop child after it has been blurred, so it can replace the mask. Older Chromium trims first,
-  leaving nothing to sample, so keep the mask for them.
+- Extended backdrops (recipe 1c): keep the mask-image technique in every engine. A claimed Chrome 142
+  fix that lets `overflow: hidden` clip after the blur couldn't be verified in any release note.
 - Firefox: `backdrop-filter` on a `position: sticky` element stops working when an ancestor has both
   `overflow` and `border-radius` (fixed in Nightly, September 2026). A brief flash of a sharper shape
   on scroll is fixed by `overscroll-behavior: none`.
@@ -73,6 +72,19 @@ WebKit and Chromium), and check the look in real Safari. In WebKit `matchMedia("
 no-preference)")` is false because the query is unsupported, which matches the research: only
 `prefers-contrast` reaches Safari users.
 
+## Never build backdrop-filter from var()
+
+Safari 18.x and 26.x **on macOS Sonoma** render no blur when `backdrop-filter` is composed from custom
+properties (`blur(var(--r))`, or `var()` holding the whole filter). It works on macOS 15 and 26, which is
+why it passes in Playwright's WebKit (27.2) and in newer Safari: an earlier version of this skill tested
+only there and wrongly concluded it was fine. WebKit bug 297620 (open, P2). Tailwind v4 compiles every
+`backdrop-blur-*` this way, so Tailwind glass loses its blur on those Macs too.
+
+`glass.css` therefore writes a literal filter per thickness × tone and switches variants by class. Set
+fills, dims and colours with variables freely; only the filter must be literal. `blur-audit.mjs` warns on
+`var()` inside `backdrop-filter`. (Related, and different: WebKit 289149 looked identical but was an
+ancestor with `will-change: opacity` making a backdrop root.)
+
 ## Screenshots at deviceScaleFactor 2
 
 Headless Chromium at `deviceScaleFactor: 2` can leave the lower part of a large backdrop-filtered element
@@ -97,6 +109,49 @@ not on the resting state.
   A fully transparent glass nav gives it nothing sensible to sample: give the bar a real fill colour.
 - A backdrop-filter makes WebKit add a full-screen compositing layer unless the document element has an
   opaque background (WebKit 271340). Set `html { background: <colour> }` on pages with glass.
+
+## backdrop-filter makes a containing block
+
+Like `transform` and `filter`, `backdrop-filter` makes the element the containing block for
+`position: fixed` descendants (MDN). A fixed menu, toast or dialog nested inside a glass nav positions
+against the nav, not the viewport. Portal overlays out of glass containers.
+
+## iOS 26 Safari's floating toolbar
+
+- A full-bleed scrim reaches under Safari's floating toolbar only when it's semi-transparent (not solid,
+  not a gradient) and empty, with the dialog as a sibling. A native `<dialog>::backdrop` stops at the
+  safe area. A bottom sheet fills the toolbar area only at `bottom: 0`.
+- `env(safe-area-inset-bottom)` doesn't include Safari's own UI; `dvh`/`svh`/`lvh` behave like `vh` there.
+  `window.innerHeight` does track the toolbar. (Empirical, from a published spike; Safari 26.1 fixed one
+  bottom-gap bug.)
+- iOS Low Power Mode throttles `requestAnimationFrame` to 30fps on purpose (WebKit 215745). That's the
+  signal `glass-tier.js` uses to go flat.
+- Pages can't read Apple's transparency settings: Safari has no `prefers-reduced-transparency`, even with
+  iOS 27's Liquid Glass slider. Use `prefers-contrast: more` and offer a site setting
+  (`data-glass="tinted"`).
+- `-apple-visual-effect: -apple-system-glass-material` is a private property for WKWebView apps with a
+  private preference. It does nothing on the web; ignore articles that recommend it.
+- `@supports (backdrop-filter: url(#x))` returns true in Safari, which then paints nothing. Detect the
+  engine for SVG backdrop filters (liquid-glass.js does).
+
+## Glass over video
+
+- Safari never hands `<video>` pixels to SVG filters, so SVG refraction over video fails there (use
+  WebGL if it must refract).
+- Glass over a playing video can stop the browser using a hardware video overlay, which costs power.
+  Prefer a small ambient canvas (recipes.md, 8b) to a live backdrop blur over the video.
+- Drop glass in fullscreen (`document.fullscreenElement`, iOS `webkitbeginfullscreen`) and stop canvas
+  loops on `visibilitychange`.
+
+## Testing tools that can't see glass
+
+- axe-core doesn't model `backdrop-filter`. Text on glass over an image comes back "incomplete"
+  (`bgImage`/`bgOverlap`), and glass over a flat colour is scored as if it weren't blurred. That's why
+  `glass-contrast.mjs` exists. Treat axe's incomplete results on glass as manual checks.
+- Chrome DevTools (Rendering tab) and Polypane 16 emulate `prefers-reduced-transparency`.
+- Visual regression: grain and the pointer sheen change every run. Freeze them with Playwright's
+  `stylePath` (`--glass-noise: none`, no sheen) and use `maxDiffPixelRatio` around 0.01 for glass regions
+  rather than loosening `threshold` globally. Keep baselines per OS and GPU.
 
 ## Clipped glows
 
