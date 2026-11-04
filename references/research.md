@@ -246,6 +246,34 @@ readable by eye, which is why it's now a required step.
 **In the skill:** literal filters, the var() and wasted-blur lints, glass-tier.js, recipes 4c, 8b, 11 and
 12, the containing-block and iOS toolbar quirks, the testing notes, and solid glass at 4px.
 
+## Round 4: forced colors, capture, Tailwind, theming, native, a same-design A/B
+
+- CSS Color Adjust 1: forced colours force background-color (alpha kept), strip box-shadow, text-shadow and
+  non-url background images; the spec doesn't mention backdrop-filter, and Chromium keeps it (measured).
+  https://www.w3.org/TR/css-color-adjust-1/ · Edge guidance:
+  https://blogs.windows.com/msedgedev/2020/09/17/styling-for-windows-high-contrast-with-new-standards-for-forced-colors/
+- Capture tools: html2canvas lists filters as unsupported (https://html2canvas.hertzen.com/features);
+  html-to-image #447; Satori renders backdrop blur as a black slab with resvg (measured); Chromium PDF drops
+  the blur (measured); Firefox Screenshots bug 1657997.
+- Tailwind 4.3.3 (compiled for this skill): `backdrop-blur-*`, arbitrary values included, emit a var()
+  chain; `@utility` with `--value(integer)` emits literals. Sonoma breakage reported in Tailwind discussion
+  #16019. https://github.com/tailwindlabs/tailwindcss/discussions/16019
+- `light-dark()` tokens registered as `<color>` freeze at the root scheme (Chrome 156 measured; WebKit
+  282057, Mozilla 1924562, CSSWG #13836).
+- A standing `view-transition-name` on an ancestor flattens child glass in Chrome 156 (measured; seen in
+  production, evesynapse PR #331).
+- Native: SwiftUI `glassEffect`/`GlassEffectContainer` (iOS 26), Flutter `BackdropGroup` +
+  `BackdropFilter.grouped` (3.29), Expo `BlurView` (`blurMethod`, `BlurTargetView` on Android), Haze for
+  Compose (`hazeSource`/`hazeEffect`). See native.md.
+- drei `MeshTransmissionMaterial` defaults, for the WebGL threshold (recipe 12a).
+
+**Same-design A/B (examples/same).** One fixed page; only the glass stylesheet changed. Without a skill:
+looked close to blur-craft's but failed one line with the blur off (3.66:1) and wrote the prefix first. A
+generic public glassmorphism skill (flat 15% white, white text): 7 lines failing in every state (1.35:1).
+With blur-craft: 5.69 / 4.54 / 7.32, all passing. All three blurred. The lesson recorded: on a fixed design,
+a capable model gets most of the *look* alone; the skill's value is legibility that survives the blur
+turning off, Safari safety and fallbacks, which no screenshot shows.
+
 ## Photo-editor test (v4 → v5)
 A fresh build of a photo editor with v4 passed every check, and the no-skill baseline failed six lines
 in the blur-off state (lowest 3.35:1) despite its author estimating ~6:1. The v4 build exposed: a tinted

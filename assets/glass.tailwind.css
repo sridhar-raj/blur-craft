@@ -1,0 +1,31 @@
+/* blur-craft for Tailwind CSS v4.
+ *
+ * Tailwind's own backdrop-blur-* / backdrop-saturate-* utilities (arbitrary values included) compile to a
+ * var() chain: -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,) …
+ * Safari 18 and 26 on macOS Sonoma render no blur for that (WebKit 297620; Tailwind discussion #16019).
+ * These utilities write LITERAL filters, unprefixed first, so they're safe there.
+ *
+ * Use:  @import "tailwindcss";  @import "./glass.css";  @import "./glass.tailwind.css";
+ *       <div class="glass glass--regular">…</div>                  the full material (recommended)
+ *       <div class="glass-blur-24 bg-black/50 rounded-3xl">…</div>  a quick literal blur in Tailwind style
+ * Or, for a one-off, Tailwind's arbitrary property utility also emits a literal:
+ *       class="[backdrop-filter:blur(16px)_saturate(180%)] [-webkit-backdrop-filter:blur(16px)_saturate(180%)]"
+ */
+
+/* glass-blur-{n}: blur(n px) + saturate(180%), literal. e.g. glass-blur-20 (Apple's nav), glass-blur-32. */
+@utility glass-blur-* {
+  backdrop-filter: blur(--value(integer)px) saturate(180%);
+  -webkit-backdrop-filter: blur(--value(integer)px) saturate(180%);
+}
+
+/* glass-neutral-blur-{n}: blur only, for colour-critical apps (photo/video/design editors). */
+@utility glass-neutral-blur-* {
+  backdrop-filter: blur(--value(integer)px);
+  -webkit-backdrop-filter: blur(--value(integer)px);
+}
+
+/* glass-none: drop the blur (e.g. at a breakpoint: max-md:glass-none) and keep the fill. */
+@utility glass-none {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

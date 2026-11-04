@@ -9,7 +9,7 @@ things Apple-grade glass gets right, gives it a drop-in material to build with, 
 
 ![Same brief, without the skill (top) and with it (bottom)](examples/stillwater-without-vs-with.png)
 
-**[Open the live playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface, with thickness, tint, tone and rim controls) · **[See the A/B examples](https://sridhar-raj.github.io/blur-craft/)**
+**[Open the live playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface, with thickness, tint, tone and rim controls) · **[See the A/B examples](https://sridhar-raj.github.io/blur-craft/)** · **[Same design, only the glass changes](https://sridhar-raj.github.io/blur-craft/examples/same/)**
 
 *Same brief, same model. Top: without the skill. Bottom: with it. The glass picks up the sunset behind
 it, the rim glows on the sun's side, and the horizon bends through the card's lower edge.*
@@ -34,6 +34,7 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 | `assets/surfaces.css` | Ready-made surfaces on the material: sticky nav (extended backdrop, optional glass-on-scroll in pure CSS), dock, menu, veil + dialog, toast, sheet |
 | `assets/demo.html` | Live playground of every surface with controls; also the page the material was calibrated on |
 | `assets/browser-check.html` | Ten side-by-side blur cases to check any browser by eye: [open it](https://sridhar-raj.github.io/blur-craft/assets/browser-check.html) in the browser you need to verify (e.g. Safari on macOS Sonoma) |
+| `assets/glass.tailwind.css` | Tailwind v4 utilities that compile to literal filters (`glass-blur-24`, `glass-neutral-blur-12`, `glass-none`); Tailwind's own `backdrop-blur-*` breaks on Sonoma Safari |
 | `assets/adaptive-tone.js` | Light/dark flip for small glass from the luminance behind it, with hysteresis (Apple's WWDC25 rule: small elements flip, panels don't) |
 | `assets/glass-tier.js` | Full / lite / flat glass by device: memory, Save-Data, a frame-rate probe (iOS Low Power Mode caps at 30fps) and Compute Pressure |
 | `assets/Glass.tsx` | React + Framer Motion wrapper with a sheen that follows the pointer and an optional `liquid` prop |
@@ -42,6 +43,8 @@ glows, depth, blur reveals, or a request to make something feel premium or "Appl
 | `references/research.md` | The sources behind every number, and what an earlier version got wrong |
 | `references/quirks.md` | Browser traps: the backdrop root, Safari prefixes, clipped glows, banding, WebGL, video capture |
 | `scripts/glass-contrast.mjs` | Worst-case contrast for every line of text on glass, in three states (normal, blur off as in Low Power Mode, prefers-contrast: more) |
+| `scripts/frost-check.mjs` | Measures whether each glass surface actually blurs (blur on vs off): catches backdrop roots, broken prefixes and stale maps |
+| `references/native.md` | SwiftUI, UIKit, Flutter, React Native (Expo) and Jetpack Compose equivalents |
 | `scripts/blur-audit.mjs` | Audit for CSS, TSX and HTML files, plus `--url` for a live check of blurred area and frame rate (uses Playwright if the project has it) |
 
 ![Old single-tint recipe vs the glass material](examples/material-old-vs-new.png)

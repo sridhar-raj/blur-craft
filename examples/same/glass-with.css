@@ -1,0 +1,182 @@
+/* Harbor Radio glass, adapted from blur-craft assets/glass.css (+ surfaces.css roles).
+ *
+ * Light: the low sun sits at ~62% across, just above the sea line, with the lighthouse lamp to the
+ * right and its reflection path on the water. Every rim points at it and picks up its warm colour.
+ *
+ *   .glass-nav     pill bar over the dusky sky            regular  (sun below → rim angle 0deg)
+ *   .glass-card    now-playing player over the glow      thick, darker dim (bright, detailed backdrop)
+ *   .glass-search  search over the sun's reflection      regular→thick dim (light from the right)
+ *   .glass-toast   toast over the dark water            regular  (sun up-left → 135deg)
+ *
+ * No `position` here: the fixed design positions every surface absolutely; the pseudo-element layers
+ * use that. Radii come from the fixed design too (pseudos inherit them).
+ * backdrop-filter values are LITERAL, unprefixed first and -webkit- last (Sonoma var() bug, WebKit 297620).
+ */
+
+@property --g-rim-angle { syntax: "<angle>"; inherits: true; initial-value: 135deg; }
+
+.glass-nav,
+.glass-card,
+.glass-search,
+.glass-toast {
+  --g-fill-top: rgb(255 255 255 / 0.12);
+  --g-fill-bottom: rgb(255 255 255 / 0.04);
+  --g-dim: rgb(12 9 22 / 0.48);
+  --g-light: 255 214 170;                 /* the sun's colour */
+  --g-rim-hot: 0.75;
+  --glass-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.05'/></svg>");
+
+  isolation: isolate;
+  color: rgb(255 255 255 / 0.97);         /* untagged text on glass (brand, nav links) inherits primary */
+  transition: --g-rim-angle 0.5s ease;
+  background:
+    var(--glass-noise),
+    linear-gradient(160deg, var(--g-fill-top), var(--g-fill-bottom) 60%),
+    var(--g-tint-layer, linear-gradient(transparent, transparent)),
+    var(--g-dim);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--g-light) / 0.35),
+    inset 0 -1px 0 rgb(255 255 255 / 0.04),
+    inset 0 0 32px rgb(var(--g-light) / 0.06),
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 30px 60px -20px rgb(0 0 0 / 0.55);
+  /* regular */
+  backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85);
+  -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85);
+}
+
+/* Rim: 1px gradient ring, bright toward the sun. */
+:is(.glass-nav, .glass-card, .glass-search, .glass-toast)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--g-rim-angle),
+    rgb(var(--g-light) / var(--g-rim-hot)),
+    rgb(var(--g-light) / 0.12) 35%,
+    rgb(255 255 255 / 0.04) 60%,
+    rgb(var(--g-light) / 0.22)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* Fixed sheen (none of these surfaces is itself a control, so it never follows the pointer or hover). */
+:is(.glass-nav, .glass-card, .glass-search, .glass-toast)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at var(--g-sheen-x, 30%) var(--g-sheen-y, 0%), rgb(var(--g-light) / 0.14), transparent 55%);
+}
+
+/* ---- Per surface ---- */
+
+/* Nav: a wide pill over the darkest sky; sun is below it. Regular glass, sheen pushed to the bottom edge. */
+.glass-nav {
+  --g-rim-angle: 0deg;
+  --g-sheen-x: 62%;
+  --g-sheen-y: 100%;
+  --g-dim: rgb(12 9 22 / 0.42);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    inset 0 -1px 0 rgb(var(--g-light) / 0.18),
+    inset 0 0 32px rgb(var(--g-light) / 0.05),
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 18px 40px -18px rgb(0 0 0 / 0.5);
+}
+
+/* Player: the biggest, most text-heavy glass, sitting over the orange glow and the lighthouse lamp.
+   Thick, with a darker dim as the skill advises over a bright, detailed backdrop; vividness goes to the
+   warm rim and sheen. Sun is down-left of it. */
+.glass-card {
+  --g-rim-angle: 45deg;
+  --g-rim-hot: 0.9;
+  --g-sheen-x: 10%;
+  --g-sheen-y: 100%;
+  --g-dim: rgb(14 9 22 / 0.62);
+  backdrop-filter: blur(44px) saturate(160%) brightness(0.96) contrast(0.8);
+  -webkit-backdrop-filter: blur(44px) saturate(160%) brightness(0.96) contrast(0.8);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    inset 0 -1px 0 rgb(var(--g-light) / 0.12),
+    inset 0 0 40px rgb(var(--g-light) / 0.07),
+    0 1px 2px rgb(0 0 0 / 0.25),
+    0 40px 80px -24px rgb(10 4 20 / 0.7);          /* larger glass, deeper shadow */
+}
+
+/* Search: over the shimmering reflection path; the sun is up-right. Small text, so a firmer dim. */
+.glass-search {
+  --g-rim-angle: 225deg;
+  --g-sheen-x: 95%;
+  --g-sheen-y: 0%;
+  --g-dim: rgb(12 9 22 / 0.54);
+  backdrop-filter: blur(40px) saturate(170%) brightness(0.96) contrast(0.82);
+  -webkit-backdrop-filter: blur(40px) saturate(170%) brightness(0.96) contrast(0.82);
+}
+
+/* Toast: small, over dark water; sun is up-left. */
+.glass-toast {
+  --g-rim-angle: 135deg;
+  --g-sheen-x: 15%;
+  --g-sheen-y: 0%;
+  --g-dim: rgb(12 9 22 / 0.5);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--g-light) / 0.3),
+    inset 0 0 24px rgb(var(--g-light) / 0.05),
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 18px 40px -16px rgb(0 0 0 / 0.55);
+}
+
+/* ---- Text on glass: near-solid primary, translucent white secondary, faint halo ---- */
+.glass-text  { color: rgb(255 255 255 / 0.97); }
+.glass-muted { color: rgb(255 255 255 / 0.8); }
+.glass-text,
+.glass-muted { text-shadow: 0 0 1px rgb(0 0 0 / 0.3), 0 1px 10px rgb(0 0 0 / 0.22); }
+.glass-nav   { text-shadow: 0 0 1px rgb(0 0 0 / 0.25), 0 1px 8px rgb(0 0 0 / 0.2); }
+
+/* ---- Tinted level (iOS 26.1 style): adds opacity on top of each surface's own dim ---- */
+:root[data-glass="tinted"] :is(.glass-nav, .glass-card, .glass-search, .glass-toast) {
+  --g-tint-layer: linear-gradient(rgb(14 12 22 / 0.6), rgb(14 12 22 / 0.6));
+}
+@media (prefers-contrast: more) {
+  :is(.glass-nav, .glass-card, .glass-search, .glass-toast) {
+    --g-tint-layer: linear-gradient(rgb(14 12 22 / 0.65), rgb(14 12 22 / 0.65));
+    --g-rim-hot: 1;
+  }
+  .glass-muted { color: rgb(255 255 255 / 0.88); }
+}
+
+/* Phones: the player and search stack over the water; keep the fill, keep the blur (only three
+   surfaces), but firm the dim since text sits closer to the reflection path. */
+@media (max-width: 600px) {
+  .glass-card   { --g-dim: rgb(14 9 22 / 0.66); }
+  .glass-search { --g-dim: rgb(12 9 22 / 0.6); }
+}
+
+/* No backdrop-filter support: nearly opaque, keep rim and highlights. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :is(.glass-nav, .glass-card, .glass-search, .glass-toast) {
+    background: linear-gradient(160deg, rgb(52 40 66 / 0.96), rgb(22 16 32 / 0.97));
+  }
+}
+
+/* Chromium only; Safari users reach the tinted level through prefers-contrast. */
+@media (prefers-reduced-transparency: reduce) {
+  :is(.glass-nav, .glass-card, .glass-search, .glass-toast) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgb(24 18 34 / 0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.glass-nav, .glass-card, .glass-search, .glass-toast) { transition: none; }
+}

@@ -3,7 +3,8 @@
  *   1. backdrop  heavy blur + high saturation, brightness held at or below 1 on dark glass (the frosting)
  *   2. fill      a gradient, lighter at the top-left where light hits, not a flat tint
  *   3. edge      a 1px gradient rim, bright where light hits, fading on the far side
- *   4. specular  an inner top highlight, plus an optional sheen that follows the pointer
+ *   4. specular  an inner top highlight and a fixed sheen; on interactive glass only, JS can move the sheen
+ *                with the pointer (--mx/--my). Static glass never reacts to hover: that would signal "clickable".
  *   5. depth     a soft drop shadow and a faint inner glow, so the slab has thickness
  *
  * Usage: <div class="glass glass--regular"> … </div>. Pick the thickness by how much text it holds
@@ -32,15 +33,17 @@
   --glass-radius: 28px;
   --glass-rim-hot: 0.6;                     /* rim alpha on the lit side; 0.8-0.9 when the light is strong */
   --glass-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.05'/></svg>");
-  --mx: 30%;                                 /* pointer position for the sheen, set from JS */
+  --mx: 30%;                                 /* sheen position; JS moves it only on interactive glass */
   --my: 0%;
 
   --glass-pad: 20px;                         /* set to the element's padding; inner radius stays concentric */
   --glass-inner-radius: max(6px, calc(var(--glass-radius) - var(--glass-pad)));   /* WWDC25: inner = outer − padding */
 
-  position: relative;
   isolation: isolate;
   border-radius: var(--glass-radius);
+  color: rgb(255 255 255 / 0.97);            /* text without a glass-* class inherits a readable colour */
+  outline: 1px solid transparent;            /* invisible normally; becomes a real edge in forced colors */
+  outline-offset: -1px;
   transition: --glass-rim-angle 0.5s ease;   /* --glass-rim-angle (registered, initial 135deg) can be set here or on any ancestor */
   background:
     var(--glass-noise),                                         /* 2.5% grain, as Fluent's acrylic (2%) */
@@ -56,6 +59,11 @@
     0 1px 2px rgb(0 0 0 / 0.2),
     0 30px 60px -20px rgb(0 0 0 / 0.55);                    /* lift */
 }
+
+/* Positioned so the rim and sheen can sit inside it, at zero specificity: any position your layout gives
+   the element (absolute, fixed, sticky) wins. */
+:where(.glass) { position: relative; }
+:where(.glass--light) { color: rgb(10 12 20 / 0.92); }
 
 /* 3. Edge: a gradient rim drawn on a ring (mask-composite keeps only the border). */
 .glass::before {
@@ -198,3 +206,47 @@
 
 /* Motion: the rim swing is decoration. */
 @media (prefers-reduced-motion: reduce) { .glass { transition: none; } }
+
+/* Windows High Contrast (forced colors). Chromium keeps backdrop-filter and the translucent fill there but
+   strips shadows and gradient images, so the rim, sheen and lift vanish and text sits on a see-through
+   pane. Give it a solid system surface and a system-coloured edge instead. Never set
+   forced-color-adjust: none on glass. */
+@media (forced-colors: active) {
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: Canvas;
+    color: CanvasText;
+    outline-color: CanvasText;
+  }
+  .glass .glass-label, .glass .glass-secondary, .glass .glass-tertiary { color: CanvasText; text-shadow: none; }
+}
+
+/* Print and PDF drop the blur (Chromium's page.pdf keeps the tint, loses the frost) and often drop
+   backgrounds entirely. Print glass as a plain bordered box. */
+@media print {
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #fff;
+    color: #000;
+    box-shadow: none;
+    outline: 1px solid #0003;
+  }
+  .glass::before, .glass::after { display: none; }
+  .glass :is(.glass-label, .glass-secondary, .glass-tertiary) { color: #000; text-shadow: none; }
+}
+
+/* Capture mode: html2canvas ignores backdrop-filter, Satori/@vercel/og renders it as a black slab, and
+   headless captures with transforms can catch half-drawn tiles. Set data-glass-capture on <html> just
+   before capturing (and remove it after): glass becomes an opaque version of itself. */
+:root[data-glass-capture] .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.88), rgb(14 14 20 / 0.88));
+}
+:root[data-glass-capture] .glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.9), rgb(250 250 252 / 0.9)); }
+
+/* Right-to-left: gradients have no logical directions, so mirror the sheen's resting point by hand. For a
+   custom rim angle θ, use 360deg − θ under :dir(rtl) (135deg top-left → 225deg top-right). */
+.glass:dir(rtl) { --mx: 70%; --glass-rim-angle: 225deg; }

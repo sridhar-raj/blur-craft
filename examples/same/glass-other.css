@@ -1,0 +1,11 @@
+/* The linked glassmorphism skill's web CSS, applied verbatim to this page's glass classes
+   (its default light-glass variant; its text rule: "pure white"). */
+.glass-nav, .glass-card, .glass-search, .glass-toast {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+.glass-text { color: #fff; }
+.glass-muted { color: rgba(255, 255, 255, 0.8); }

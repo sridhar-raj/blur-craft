@@ -49,6 +49,8 @@ const BUILD_PREFIX = cssPrefixedByBuild();
 // blanked to newlines so reported line numbers still point into the .html file.
 function units(f) {
   const src = readFileSync(f, "utf8");
+  // Test fixtures that contain broken cases on purpose opt out with this marker anywhere in the file.
+  if (src.includes("blur-audit: ignore-file")) return [];
   if (extname(f) !== ".html") return [{ f, src, isCss: /\.s?css$/.test(f) }];
   const keep = (tag) => {
     let out = "", last = 0;

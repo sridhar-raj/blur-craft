@@ -1,6 +1,7 @@
 "use client";
 // Glass surface for React + Framer Motion. Pairs with glass.css (import it once in the section's CSS or
-// copy its rules under the section's prefix). The sheen follows the pointer on a spring; `liquid` adds
+// copy its rules under the section's prefix). On interactive glass, `sheen` makes the highlight follow the
+// pointer on a spring (off by default: on static glass a hover glow falsely signals "clickable"); `liquid` adds
 // edge refraction in Chromium (liquid-glass.ts) and quietly falls back to frosted glass elsewhere.
 //
 //   <Glass thickness="regular" light="255 214 190" liquid className="tk-player">…</Glass>
@@ -19,14 +20,15 @@ type Props = {
   liquid?: boolean | LiquidOptions;
   /** The more opaque, higher-contrast level (iOS 26.1 "Tinted"). Also automatic on prefers-contrast: more. */
   tinted?: boolean;
-  /** Sheen follows the pointer. Off for reduced motion automatically. */
+  /** Highlight follows the pointer. Only for glass you can act on (a dock, a glass button). Off by default;
+   *  ignored for touch and under reduced motion. */
   sheen?: boolean;
   className?: string;
   style?: CSSProperties;
 };
 
 export function Glass({
-  children, thickness = "regular", tone = "dark", light, liquid = false, tinted = false, sheen = true, className = "", style,
+  children, thickness = "regular", tone = "dark", light, liquid = false, tinted = false, sheen = false, className = "", style,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
@@ -54,7 +56,7 @@ export function Glass({
         ["--my" as string]: myPct,
       }}
       onPointerMove={(e) => {
-        if (!sheen || reduce) return;
+        if (!sheen || reduce || e.pointerType !== "mouse") return;
         const r = e.currentTarget.getBoundingClientRect();
         mx.set(((e.clientX - r.left) / r.width) * 100);
         my.set(((e.clientY - r.top) / r.height) * 100);

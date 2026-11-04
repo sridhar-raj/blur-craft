@@ -146,6 +146,42 @@ not on the resting state.
   opaque background (WebKit 271340, fixed in 2024 for opaque documents: so it's the opaque `html` that
   avoids the layer). Set `html { background: <colour> }` on pages with glass; it costs nothing.
 
+## Framework fades and view transitions flatten glass
+
+Measured in Chrome 156: an ancestor with `opacity < 1` (even 0.99) or any `filter` (even `blur(0)`) turns
+the glass inside it flat; an ancestor with only a `transform` keeps the blur. So Vue `<Transition>`,
+Svelte `transition:fade` and Framer Motion `AnimatePresence` on a *wrapper* blank the glass for the whole
+fade, then it pops in. Fade or scale the glass element itself, or animate only `transform` on wrappers.
+
+A standing `view-transition-name` on an ancestor also kills child backdrop blur in Chromium (not in the
+spec's list, but measured, and seen in production). Give elements their view-transition names only for
+the swap and clear them on `transition.finished`.
+
+## Tint tokens with light-dark()
+
+Keep glass tint tokens that use `light-dark()` as **unregistered** custom properties. A token registered
+with `@property { syntax: '<color>' }` resolves once at the root's `color-scheme` and stays frozen there,
+so a section switched to `color-scheme: dark` keeps the light tint (measured in Chrome 156; WebKit 282057,
+Mozilla 1924562, CSSWG #13836).
+
+## Capturing glass as an image or PDF
+
+| Tool | What happens to backdrop-filter | Do this |
+|---|---|---|
+| html2canvas | ignored (filters unsupported) | `data-glass-capture` on `<html>` while capturing |
+| html-to-image, dom-to-image, modern-screenshot | renders only if the backdrop is inside the captured node and the glass fill isn't fully transparent | capture the common ancestor, or use capture mode |
+| Satori / @vercel/og | renders an opaque black slab, not a blur | build OG cards from a pre-blurred image (`filter: blur()` on a copy) plus the tint |
+| Chromium `page.pdf()` / print | blur dropped, tint kept | the `@media print` rule in glass.css |
+| Firefox Screenshots | ignored (bug 1657997) | capture mode |
+| Playwright/Puppeteer screenshots | works headed; headless can differ, and transforms can catch half-drawn tiles | one mode, consistent container, or capture mode |
+
+## Windows High Contrast (forced colors)
+
+Chromium keeps `backdrop-filter` and the translucent fill under `forced-colors: active` but strips shadows
+and gradient images (the rim, sheen and lift). glass.css switches glass to `Canvas`/`CanvasText` with a
+system-coloured edge there (via a transparent outline that forced colours make visible). Never put
+`forced-color-adjust: none` on glass.
+
 ## backdrop-filter makes a containing block
 
 Like `transform` and `filter`, `backdrop-filter` makes the element the containing block for

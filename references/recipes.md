@@ -632,6 +632,23 @@ function setGooMask(el, shapes, spread = 10) {
   the page behind disappears.
 - Put the content (icons, labels) in normal elements above, positioned over the shapes.
 
+## 12a. When to use WebGL glass instead
+
+CSS glass covers flat UI surfaces. Use WebGL only when the glass is a 3D object (a lens, a bottle, a
+logo) or the backdrop is already a WebGL scene; every transmissive mesh renders the scene a second time per
+frame. With react-three-fiber, drei's `MeshTransmissionMaterial` is the usual choice. Its defaults are
+transmission 1, thickness 0, roughness 0, chromaticAberration 0.03, samples 6, full-screen resolution;
+a frosted starting point is:
+
+```tsx
+<MeshTransmissionMaterial resolution={256} samples={6} thickness={0.5} roughness={0.2} chromaticAberration={0.03} anisotropicBlur={0.1} backside={false} />
+```
+
+- Lower `resolution` is the main speed lever; with roughness, 32–128 still looks right. `backside` costs
+  another pass. In plain three.js, `MeshPhysicalMaterial` with `transmission: 1, thickness: 0.5,
+  roughness: 0.2, ior: 1.5` is the equivalent.
+- Docs: https://drei.docs.pmnd.rs/shaders/mesh-transmission-material
+
 ## 12. Tinting glass with colour
 
 - Structural glass carries almost no chroma: keep tints at OKLCH chroma ~0.03–0.05. Material 3 moved to
