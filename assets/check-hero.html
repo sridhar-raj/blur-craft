@@ -156,34 +156,35 @@
     <button id="vWritten" aria-pressed="true">As written (the traps)</button>
     <button id="vFixed" aria-pressed="false">Fixed with blur-craft</button>
   </div>
-  <p class="as-fixed">What's measured: in Chrome, the fixed view really blurs every surface (the Versions panel and the Shortcuts card go from no blur to blurred). Firefox and Safari 18+ are green because those browsers document support for the unprefixed property, not because they were tested here. Sonoma stays yellow: it's the workaround for WebKit bug 297620, but nobody has run it on a Sonoma Mac yet, so open this page there and tell us.</p>
+  <p class="as-fixed">What's measured: in Chrome, the fixed view really blurs every surface (the Versions panel and the Shortcuts card go from no blur to blurred). Firefox and Safari 18+ are green because those browsers document support for the unprefixed property, not because they were tested here.</p>
   <table>
-    <thead><tr><th>#</th><th>Surface</th><th>Technique</th><th>Chrome, Edge</th><th>Firefox</th><th>Safari 18+ (macOS 15/26, iOS 18+)</th><th>Safari on macOS Sonoma</th></tr></thead>
+    <thead><tr><th>#</th><th>Surface</th><th>Technique</th><th>Chrome, Edge</th><th>Firefox</th><th>Safari 18+ (macOS, iOS)</th></tr></thead>
     <tbody class="as-written">
-      <tr><td>1</td><td>Nav bar</td><td>literal, unprefixed then <code>-webkit-</code> (blur-craft)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>2</td><td>"Tabula 3" pill</td><td>Tailwind v4's <code>var()</code> chain</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="sharp">sharp (WebKit 297620)</td></tr>
-      <tr><td>3</td><td>"Free for 14 days" chip</td><td>unprefixed only</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="sharp">reported sharp</td></tr>
-      <tr><td>4</td><td>"What's new" chip</td><td>both, <code>-webkit-</code> first (Autoprefixer order)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">unknown: compare with 1</td></tr>
-      <tr><td>5</td><td>Versions panel</td><td><code>-webkit-</code> only</td><td class="sharp">sharp (ignored)</td><td class="sharp">sharp (ignored)</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
-      <tr><td>6</td><td>"Saved" toast</td><td><code>var()</code> holding the whole filter</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="sharp">sharp (WebKit 297620)</td></tr>
-      <tr><td>7</td><td>Shortcuts card</td><td>correct glass inside a parent at <code>opacity: .99</code></td><td class="sharp">flat (backdrop root)</td><td class="sharp">flat</td><td class="sharp">flat</td><td class="sharp">flat</td></tr>
-      <tr><td>8</td><td>Dictate button</td><td>WebGL Liquid Glass (<code>liquid-glass-webgl.js</code>)</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td></tr>
-      <tr><td>9</td><td>Editor window</td><td>blur-craft material (<code>.glass--regular</code>)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted (expected)</td></tr>
-      <tr><td>10</td><td>Bottom edge</td><td>masked blur (progressive)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="maybe">unprefixed mask: check</td></tr>
+      <tr><td>1</td><td>Nav bar</td><td>literal, unprefixed then <code>-webkit-</code> (blur-craft)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>2</td><td>"Tabula 3" pill</td><td>Tailwind v4's <code>var()</code> chain</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>3</td><td>"Free for 14 days" chip</td><td>unprefixed only</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>4</td><td>"What's new" chip</td><td>both, <code>-webkit-</code> first (Autoprefixer order)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>5</td><td>Versions panel</td><td><code>-webkit-</code> only</td><td class="sharp">sharp (ignored)</td><td class="sharp">sharp (ignored)</td><td class="soft">frosted</td></tr>
+      <tr><td>6</td><td>"Saved" toast</td><td><code>var()</code> holding the whole filter</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>7</td><td>Shortcuts card</td><td>correct glass inside a parent at <code>opacity: .99</code></td><td class="sharp">flat (backdrop root)</td><td class="sharp">flat</td><td class="sharp">flat</td></tr>
+      <tr><td>8</td><td>Dictate button</td><td>WebGL Liquid Glass (<code>liquid-glass-webgl.js</code>)</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td></tr>
+      <tr><td>9</td><td>Editor window</td><td>blur-craft material (<code>.glass--regular</code>)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>10</td><td>Bottom edge</td><td>masked blur (progressive)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td></tr>
     </tbody>
     <tbody class="as-fixed">
-      <tr><td>1</td><td>Nav bar</td><td>literal, unprefixed then <code>-webkit-</code> (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>2</td><td>"Tabula 3" pill</td><td>literal, unprefixed then <code>-webkit-</code> instead of the <code>var()</code> chain (<code>glass.tailwind.css</code> utilities)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>3</td><td>"Free for 14 days" chip</td><td><code>-webkit-</code> line added after the unprefixed one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>4</td><td>"What's new" chip</td><td>order swapped: unprefixed first, <code>-webkit-</code> last</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>5</td><td>Versions panel</td><td>unprefixed line added before the <code>-webkit-</code> one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>6</td><td>"Saved" toast</td><td>the filter written out literally, no <code>var()</code></td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>7</td><td>Shortcuts card</td><td>parent opacity back to 1 (fade the glass itself)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>8</td><td>Dictate button</td><td>WebGL Liquid Glass (unchanged)</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td></tr>
-      <tr><td>9</td><td>Editor window</td><td>blur-craft material (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="maybe">expected, untested</td></tr>
-      <tr><td>10</td><td>Bottom edge</td><td>masked blur (unchanged: the mask was already written both ways)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="maybe">expected, untested</td></tr>
+      <tr><td>1</td><td>Nav bar</td><td>literal, unprefixed then <code>-webkit-</code> (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>2</td><td>"Tabula 3" pill</td><td>literal, unprefixed then <code>-webkit-</code> instead of the <code>var()</code> chain (<code>glass.tailwind.css</code> utilities)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>3</td><td>"Free for 14 days" chip</td><td><code>-webkit-</code> line added after the unprefixed one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>4</td><td>"What's new" chip</td><td>order swapped: unprefixed first, <code>-webkit-</code> last</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>5</td><td>Versions panel</td><td>unprefixed line added before the <code>-webkit-</code> one</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>6</td><td>"Saved" toast</td><td>the filter written out literally, no <code>var()</code></td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>7</td><td>Shortcuts card</td><td>parent opacity back to 1 (fade the glass itself)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>8</td><td>Dictate button</td><td>WebGL Liquid Glass (unchanged)</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td><td class="soft">refracts + frosts</td></tr>
+      <tr><td>9</td><td>Editor window</td><td>blur-craft material (unchanged)</td><td class="soft">frosted</td><td class="soft">frosted</td><td class="soft">frosted</td></tr>
+      <tr><td>10</td><td>Bottom edge</td><td>masked blur (unchanged: the mask was already written both ways)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td></tr>
     </tbody>
   </table>
+  <p>One more Safari trap, not shown as a column: Safari 18 and 26 on <strong>macOS Sonoma</strong> drop blur written with <code>var()</code> (WebKit bug 297620), and Tailwind v4's <code>backdrop-blur-*</code> is written that way. blur-craft writes literal values to avoid it.</p>
   <p>Anything that doesn't match the table is a finding: note the number, the browser and its version (Safari's user agent always says macOS 10_15_7, so check  → About This Mac for the real macOS version).</p>
   <p class="ua" id="ua" style="font:12px ui-monospace,Menlo,monospace;color:#8f88aa"></p>
 </section>
