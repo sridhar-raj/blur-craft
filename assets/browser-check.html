@@ -7,13 +7,13 @@
 <meta name="description" content="The Tabula hero twice in your browser: a typical glass build on the left, blur-craft on the right. Then every technique, one by one.">
 <style>
   /* blur-audit: ignore-file */
-  :root { --x: 50%; }
-  * { box-sizing: border-box; }
+    * { box-sizing: border-box; }
   html { background: #07051a; }
   body { margin: 0; color: #f4f1fb; font: 15px/1.5 -apple-system, "Segoe UI", Inter, sans-serif; }
   .split { position: relative; height: 100vh; min-height: 680px; overflow: hidden; }
   .split iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
-  #typical { clip-path: inset(0 calc(100% - var(--x)) 0 0); z-index: 2; }
+  .split { --x: 50%; }
+  .split .top { clip-path: inset(0 calc(100% - var(--x)) 0 0); z-index: 2; }
 
   .cmp-line { position: absolute; top: 0; bottom: 0; left: var(--x); width: 0; z-index: 7; pointer-events: none; }
   .cmp-line::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1.5px; width: 3px; background: #fff; box-shadow: 0 0 6px rgb(0 0 0 / 0.35); }
@@ -34,16 +34,30 @@
   .tests { padding: 40px max(16px, 4vw) 24px; max-width: 1400px; margin: 0 auto; }
   .tests h2 { margin: 0 0 6px; font-size: 26px; } .tests p { margin: 0 0 18px; color: #c9c3dd; max-width: 80ch; }
   #tests { width: 100%; border: 0; display: block; border-radius: 12px; height: 100vh; }
+
+  .usecase { padding: 56px max(16px, 4vw) 20px; max-width: 1400px; margin: 0 auto; }
+  .usecase h2, .benefits h2 { margin: 0 0 6px; font-size: 26px; } .usecase p, .benefits > p { margin: 0 0 18px; color: #c9c3dd; max-width: 80ch; }
+  .split.framed { height: min(820px, 100vh); min-height: 640px; border-radius: 14px; max-width: 1400px; margin: 0 auto; }
+  .benefits { padding: 56px max(16px, 4vw) 80px; max-width: 1200px; margin: 0 auto; }
+  .benefits table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  .benefits th, .benefits td { text-align: left; padding: 12px 12px; border-bottom: 1px solid #2a2440; vertical-align: top; }
+  .benefits th { color: #a49cc0; font-weight: 500; }
+  .benefits td:first-child { font-weight: 600; color: #f4f1fb; width: 20%; }
+  .benefits .no { color: #ffb4b4; } .benefits .yes { color: #9dffb8; } .benefits .how { color: #a49cc0; font-size: 13px; }
+  .benefits code { font: 12.5px ui-monospace, Menlo, monospace; }
+  @media (max-width: 760px) { .benefits table, .benefits tbody, .benefits tr, .benefits td { display: block; } .benefits thead { display: none; }
+    .benefits tr { padding: 12px 0; border-bottom: 1px solid #2a2440; } .benefits td { border: 0; padding: 3px 0; width: auto !important; }
+    .benefits .no::before { content: "Without: "; color: #a49cc0; } .benefits .yes::before { content: "With: "; color: #a49cc0; } }
 </style>
 </head>
 <body>
 <section class="split" aria-label="Typical glass vs blur-craft, in this browser">
   <iframe id="craft" src="check-hero.html?mode=craft&embed" title="blur-craft"></iframe>
-  <iframe id="typical" src="check-hero.html?mode=typical&embed" title="Typical glass build"></iframe>
+  <iframe id="typical" class="top" src="check-hero.html?mode=typical&embed" title="Typical glass build"></iframe>
 
-  <div class="cmp-capture" id="cmpCapture" role="slider" tabindex="0" aria-label="Compare: move left and right" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
+  <div class="cmp-capture" role="slider" tabindex="0" aria-label="Compare: move left and right" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
   <div class="cmp-line"><span class="cmp-chev l">‹</span><span class="cmp-knob"></span><span class="cmp-chev r">›</span><span class="cmp-label l">TYPICAL BUILD<small>Tailwind-style, blur via var()</small></span><span class="cmp-label r">BLUR-CRAFT<small>literal filters, measured material</small></span></div>
-  <div class="cmp-tools"><button id="cmpInteract" aria-pressed="false">Interact with the page</button></div>
+  <div class="cmp-tools"><button class="cmp-interact" aria-pressed="false">Interact with the page</button></div>
   <p class="verdict" id="verdict"></p>
 </section>
 
@@ -53,39 +67,68 @@
   <iframe id="tests" src="check-hero.html?mode=tests" title="Technique-by-technique test"></iframe>
 </section>
 
+<section class="usecase">
+  <h2>Another real use case: a sign-in over a landscape</h2>
+  <p>The Esquisse sign-in from the OriginKit X posts. The form panel and the painting's caption are glass, and the card sits across the horizon: a bright, flat sky behind the heading, busy grass behind the form. Move across it.</p>
+  <section class="split framed" aria-label="Sign-in: typical glass vs blur-craft">
+    <iframe src="check-login.html?mode=craft&embed" title="Sign-in with blur-craft" loading="lazy"></iframe>
+    <iframe class="top" src="check-login.html?mode=typical&embed" title="Sign-in with typical glass" loading="lazy"></iframe>
+    <div class="cmp-capture" role="slider" tabindex="0" aria-label="Compare: move left and right" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
+    <div class="cmp-line"><span class="cmp-chev l">‹</span><span class="cmp-knob"></span><span class="cmp-chev r">›</span><span class="cmp-label l">TYPICAL<small>1.69:1 · 7 of 12 lines fail</small></span><span class="cmp-label r">BLUR-CRAFT<small>6.73:1 · all pass</small></span></div>
+    <div class="cmp-tools"><button class="cmp-interact" aria-pressed="false">Interact with the page</button></div>
+  </section>
+</section>
+
+<section class="benefits">
+  <h2>With and without blur-craft</h2>
+  <p>What changes when glass is built with this skill, measured on the pages above unless the last column says otherwise.</p>
+  <table>
+    <thead><tr><th>What</th><th>Without (typical glass)</th><th>With blur-craft</th><th>How we know</th></tr></thead>
+    <tbody>
+      <tr><td>Text you can read</td><td class="no">Sign-in: lowest 1.69:1, 7 of 12 lines fail. Harbor Radio: 1.91:1, 4 lines fail</td><td class="yes">Sign-in: 6.73:1 (6.27:1 on phones), every line passes. Harbor Radio: 5.53:1, every line passes</td><td class="how">Measured with <code>glass-contrast.mjs</code>, worst pixel under each line</td></tr>
+      <tr><td>Blur switched off</td><td class="no">iOS Low Power Mode or Reduce Transparency leaves white text on a 15% white tint</td><td class="yes">A tinted level takes over; the text still passes with blur off</td><td class="how">Measured: the checker's tint-only state</td></tr>
+      <tr><td>Safari on macOS Sonoma</td><td class="no">Tailwind's <code>backdrop-blur-*</code> is built from <code>var()</code>, which Sonoma Safari drops: no blur at all</td><td class="yes">Literal filters, unprefixed first and <code>-webkit-</code> last</td><td class="how">WebKit bug 297620. Expected, not yet run on a Sonoma Mac</td></tr>
+      <tr><td>Glass that silently goes flat</td><td class="no">A parent left at <code>opacity: .99</code> by a fade, <code>-webkit-</code>-only CSS in Chrome and Firefox: no blur, no warning</td><td class="yes"><code>blur-audit.mjs</code> flags both; <code>frost-check.mjs</code> proves each surface blurs</td><td class="how">Shown live in the technique test above (surfaces 5 and 7)</td></tr>
+      <tr><td>High contrast and forced colours</td><td class="no">Nothing changes; the glass stays see-through</td><td class="yes">High contrast gets a near-solid layer; forced colours get a real outline</td><td class="how">Measured: the checker's high-contrast state</td></tr>
+      <tr><td>Slow devices</td><td class="no">Full blur everywhere, at full cost</td><td class="yes">Full, lite or flat glass picked per device</td><td class="how">Benchmark: blurred area drives the cost (90% of the screen: 51 fps)</td></tr>
+      <tr><td>Liquid Glass</td><td class="no">SVG refraction works in Chromium only</td><td class="yes">A WebGL version refracts in every browser</td><td class="how">Rendered in Chromium and WebKit</td></tr>
+      <tr><td>The look</td><td class="no">One flat tint and a white border</td><td class="yes">Lit rim from the scene's light, gradient fill, fine grain, specular edge</td><td class="how">Design judgement: compare the sliders</td></tr>
+    </tbody>
+  </table>
+</section>
+
 <script>
 
-  // Compare slider: the line follows the pointer (mouse hover, touch drag), arrow keys move it, and the
-  // capture layer forwards scrolling to both live pages so they stay together.
-  (() => {
-    const root = document.documentElement, cap = document.getElementById("cmpCapture"), box = cap.parentElement;
-    let x = 50;
-    const set = (v) => { x = Math.max(0, Math.min(100, v)); root.style.setProperty("--x", x + "%"); cap.setAttribute("aria-valuenow", String(Math.round(x))); };
+  // Compare sliders: the line follows the pointer (mouse hover, touch drag), arrow keys move it, and the
+  // capture layer forwards scrolling to both live pages; once they can't scroll further, the page scrolls.
+  for (const box of document.querySelectorAll(".split")) {
+    const cap = box.querySelector(".cmp-capture"), frames = [...box.querySelectorAll("iframe")];
+    let x = 50, y = 0;
+    const set = (v) => { x = Math.max(0, Math.min(100, v)); box.style.setProperty("--x", x + "%"); cap.setAttribute("aria-valuenow", String(Math.round(x))); };
     const fromEvent = (e) => { const r = box.getBoundingClientRect(); set(((e.clientX - r.left) / r.width) * 100); };
     cap.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" || e.buttons) fromEvent(e); });
     cap.addEventListener("pointerdown", fromEvent);
     cap.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") { set(x - 4); e.preventDefault(); } if (e.key === "ArrowRight") { set(x + 4); e.preventDefault(); } });
-    const frames = [...box.querySelectorAll("iframe")];
-    let y = 0;
     cap.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      const max = Math.max(...frames.map((f) => { try { return f.contentDocument.documentElement.scrollHeight - f.clientHeight; } catch { return 99999; } }));
-      y = Math.max(0, Math.min(max, y + e.deltaY));
+      const max = Math.max(0, ...frames.map((f) => { try { return f.contentDocument.documentElement.scrollHeight - f.clientHeight; } catch { return 0; } }));
+      const next = Math.max(0, Math.min(max, y + e.deltaY));
+      if (next === y) return;                       // nothing left to scroll inside: let the page scroll
+      e.preventDefault(); y = next;
       for (const f of frames) f.contentWindow.postMessage({ bcScroll: y }, "*");
     }, { passive: false });
     addEventListener("message", (e) => {            // a page scrolled itself (keyboard, interact mode): follow
-      if (typeof e.data?.bcScroll !== "number") return;
+      if (typeof e.data?.bcScroll !== "number" || !frames.some((f) => f.contentWindow === e.source)) return;
       y = e.data.bcScroll;
       for (const f of frames) if (f.contentWindow !== e.source) f.contentWindow.postMessage({ bcScroll: y }, "*");
     });
-    const toggle = document.getElementById("cmpInteract");
+    const toggle = box.querySelector(".cmp-interact");
     toggle?.addEventListener("click", () => {
       const on = cap.hidden = !cap.hidden;
       toggle.textContent = on ? "Back to comparing" : "Interact with the page";
       toggle.setAttribute("aria-pressed", String(on));
     });
-    window.__cmpSet = set;
-  })();
+    box.__cmpSet = set;
+  }
 
   // What this comparison means in the browser you're using.
   const ua = navigator.userAgent, isSafari = /Safari\//.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua);

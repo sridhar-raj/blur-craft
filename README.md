@@ -31,7 +31,9 @@ passes the skill's own contrast check (every line, three states, desktop and pho
 Also: **[the playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface
 with thickness, tint, tone and rim controls) and **[the browser check](https://sridhar-raj.github.io/blur-craft/assets/browser-check.html)**: the
 Tabula hero from the OriginKit posts behind the same before/after slider (a typical Tailwind-style glass build vs blur-craft, in
-whatever browser you open it in), then ten surfaces each written a different way with a per-browser table.
+whatever browser you open it in); ten surfaces each written a different way with a per-browser table; a
+second real use case (the Esquisse sign-in over a landscape: typical glass 1.69:1 with 7 of 12 lines failing,
+blur-craft 6.73:1 with all passing); and a with-and-without table of what the skill changes.
 On Safari for macOS Sonoma the typical side is expected to lose its blur; blur-craft's keeps it.
 
 ## Install

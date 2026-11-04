@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Esquisse sign-in · blur-craft check</title>
+<link rel="stylesheet" href="glass.css">
+<style>
+  /* blur-audit: ignore-file (typical mode writes the usual tutorial glass on purpose: that's the comparison) */
+  /* A second real use case: the Esquisse sign-in from the OriginKit X posts (section 08), with its form
+     panel and the painting's caption as glass over the island lawn. The card straddles the horizon, so
+     the glass sits on a bright, flat sky at the top and busy grass at the bottom: the hard case. */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font: 15px/1.5 -apple-system, "Segoe UI", Inter, sans-serif; color: #1d2033; background: #86abd8; }
+  .stage { position: relative; height: 100vh; min-height: 640px; display: grid; place-items: center; padding: 24px; overflow: hidden;
+           background: #86abd8 url(check-login-backdrop.jpg) center / cover no-repeat; }
+
+  .card { position: relative; display: grid; grid-template-columns: 44fr 56fr; width: min(1000px, 100%); height: min(600px, calc(100vh - 48px)); min-height: 540px;
+          border-radius: 26px; overflow: hidden; box-shadow: 0 40px 90px -30px rgb(18 22 14 / 0.55); }
+  .art { position: relative; margin: 0; overflow: hidden; background: #2b3326; }
+  .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .caption { position: absolute; left: 16px; right: 16px; bottom: 16px; display: grid; gap: 2px; padding: 10px 14px 11px; --glass-radius: 12px; }
+  .caption span { font-size: 12px; font-weight: 500; }
+  .caption em { font: italic 17px/1.25 Georgia, "Times New Roman", serif; }
+
+  .form-side { position: relative; display: flex; flex-direction: column; padding: 36px 60px 32px 52px; --glass-radius: 0; border-radius: 0; }
+  .back { align-self: flex-start; font-size: 14px; font-weight: 500; color: inherit; text-decoration: none; }
+  .head { margin-top: auto; }
+  .head p { margin: 0 0 10px; font-size: 18px; font-weight: 500; }
+  .head h1 { margin: 0; font: 400 50px/1.04 Georgia, "Times New Roman", serif; letter-spacing: -0.012em; }
+  form { display: grid; gap: 12px; margin-top: 30px; max-width: 400px; }
+  .field { position: relative; display: block; }
+  .field input { width: 100%; height: 48px; padding: 0 18px; border-radius: 12px; font: inherit; font-size: 15px; outline: none; }
+  .field input:focus-visible { outline: 2px solid #3e4c9a; outline-offset: 1px; }
+  .show { position: absolute; top: 50%; right: 8px; translate: 0 -50%; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: 500 13px inherit; font-family: inherit; cursor: pointer; }
+  .submit { height: 48px; border: 0; border-radius: 999px; font: 600 15px inherit; font-family: inherit; cursor: pointer; }
+  .alt { margin: 4px 0 0; font-size: 14px; } .alt a { font-weight: 600; color: inherit; }
+  .foot { margin-top: auto; padding-top: 24px; display: flex; gap: 14px; align-items: center; font-size: 13px; }
+  .foot b { font: 400 22px Georgia, serif; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  /* ---------- typical: the usual glassmorphism tutorial, as a Tailwind v4 build ships it ---------- */
+  .m-typical .glassy { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+                       --tw-backdrop-blur: blur(16px);
+                       -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,); backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,); }
+  .m-typical .form-side, .m-typical .caption { color: #fff; }
+  .m-typical .field input { border: 1px solid rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.2); color: #fff; }
+  .m-typical .field input::placeholder { color: rgba(255, 255, 255, 0.8); }
+  .m-typical .show { color: #fff; }
+  .m-typical .submit { background: rgba(255, 255, 255, 0.3); color: #fff; border: 1px solid rgba(255, 255, 255, 0.4); }
+
+  /* ---------- craft: blur-craft's material. Light glass over the sky (dark ink), dark glass on the painting ---------- */
+  .m-craft .form-side { --glass-light: 255 246 220; }
+  .m-craft .field input { border: 1px solid rgb(29 32 51 / 0.14); background: rgb(255 255 255 / 0.72); color: #1d2033; }
+  .m-craft .field input::placeholder { color: #55535c; }
+  .m-craft .show { color: #2f3b84; }
+  .m-craft .submit { background: #1d2033; color: #fff; }
+  .m-craft .caption { --glass-light: 255 214 160; color: #fff; }
+
+  @media (max-width: 760px) {
+    .card { grid-template-columns: 1fr; grid-template-rows: 180px 1fr; height: auto; min-height: 0; }
+    .form-side { padding: 24px 22px; } .head h1 { font-size: 36px; } .head { margin-top: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <main class="card">
+    <figure class="art">
+      <img src="check-login-study.jpg" alt="Georges Seurat, Study for La Grande Jatte, 1884">
+      <figcaption class="caption glassy" data-craft="glass glass--thick"><span class="glass-label">Georges Seurat</span><em class="glass-label">Study for La Grande Jatte, 1884</em></figcaption>
+    </figure>
+    <section class="form-side glassy" data-craft="glass glass--thick glass--light">
+      <a class="back glass-label" href="#">‹ Back</a>
+      <div class="head">
+        <p class="glass-label">Log in to Esquisse</p>
+        <h1 class="glass-label">Every masterpiece<br>began as a study</h1>
+      </div>
+      <form onsubmit="event.preventDefault()">
+        <label class="field"><span class="sr">Email</span><input type="email" placeholder="Email" autocomplete="off"></label>
+        <label class="field"><span class="sr">Password</span><input type="password" placeholder="Password" autocomplete="off"><button type="button" class="show">Show</button></label>
+        <button class="submit">Log in</button>
+        <p class="alt glass-secondary">New to Esquisse? <a href="#">Create an account</a></p>
+      </form>
+      <footer class="foot"><b class="glass-label">esquisse</b><span class="glass-secondary">Art history, one study at a time.</span></footer>
+    </section>
+  </main>
+</div>
+<script>
+  // ?mode=typical | craft (default), &embed for the split view. Same scroll protocol as the other checks.
+  const q = new URLSearchParams(location.search), mode = q.get("mode") === "typical" ? "typical" : "craft";
+  document.documentElement.classList.add("m-" + mode);
+  if (mode === "craft") for (const el of document.querySelectorAll("[data-craft]")) { el.classList.remove("glassy"); el.classList.add(...el.dataset.craft.split(" ")); }
+  if (q.has("embed") && parent !== window) {
+    let target = -1;
+    addEventListener("scroll", () => { if (Math.abs(scrollY - target) < 2) return; target = -1; parent.postMessage({ bcScroll: scrollY }, "*"); }, { passive: true });
+    addEventListener("message", (e) => { if (e.source === parent && typeof e.data?.bcScroll === "number") { target = e.data.bcScroll; scrollTo(0, target); } });
+  }
+</script>
+</body>
+</html>
