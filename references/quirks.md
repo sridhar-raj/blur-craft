@@ -1,6 +1,6 @@
 # Blur quirks and performance traps
 
-**Contents:** The backdrop root (the most common "my glass disappeared") · Safari · Chrome and Firefox · Liquid Glass shows sharp patches · Checking Safari: Playwright's WebKit can't show backdrop-filter · Support at a glance (MDN browser-compat data, November 2026) · Never build backdrop-filter from var() · Screenshots at deviceScaleFactor 2 · Component rules vs the tinted level · Hover glass on many items · Safari: toolbar tint and the extra layer · Framework fades and view transitions flatten glass · Tint tokens with light-dark() · Capturing glass as an image or PDF · Windows High Contrast (forced colors) · backdrop-filter makes a containing block · iOS 26 Safari's floating toolbar · Glass over video · Testing tools that can't see glass · Clipped glows · Banding · WebGL and canvas · Performance numbers to work from · Video capture
+**Contents:** The backdrop root (the most common "my glass disappeared") · Safari · Chrome and Firefox · Liquid Glass shows sharp patches · Checking Safari: Playwright's WebKit can't show backdrop-filter · Never build backdrop-filter from var() · Screenshots at deviceScaleFactor 2 · Component rules vs the tinted level · Hover glass on many items · Safari: toolbar tint and the extra layer · Framework fades and view transitions flatten glass · Tint tokens with light-dark() · Capturing glass as an image or PDF · Windows High Contrast (forced colors) · backdrop-filter makes a containing block · iOS 26 Safari's floating toolbar · Glass over video · Testing tools that can't see glass · Clipped glows · Banding · WebGL and canvas · Performance numbers to work from · Video capture · Support at a glance (MDN browser-compat data, November 2026)
 
 Read this when a blur looks wrong (missing, clipped, banded, flickering) or the frame rate drops.
 
@@ -77,29 +77,6 @@ WebKit and Chromium), and check the look in real Safari. Without one, follow SKI
 `webkitBackdropFilter` here, pass the tint-only state, and name exactly what is still unseen. In WebKit `matchMedia("(prefers-reduced-transparency:
 no-preference)")` is false because the query is unsupported, which matches the research: only
 `prefers-contrast` reaches Safari users.
-
-## Support at a glance (MDN browser-compat data, November 2026)
-
-| Feature the skill uses | Chrome | Firefox | Safari |
-|---|---|---|---|
-| `backdrop-filter` | 76 | 103 | 18 (`-webkit-` from 9) |
-| `mask-image`, `mask-composite` (the rim) | 120 (`-webkit-` before) | 53 | 15.4 |
-| `@property` (the rim angle) | 85 | 128 | 16.4 |
-| `animation-timeline: scroll()` (glass on scroll) | 115 | 159 | 26 |
-| `prefers-contrast` (tinted level) | 96 | 101 | 14.1 |
-| `prefers-reduced-transparency` | 118 | flag only | none |
-| `inert` (dialog) | 102 | 112 | 15.5 |
-| `requestVideoFrameCallback` (video glow) | 83 | 132 | 15.4 |
-| `requestIdleCallback` (tier probe timing) | 47 | 55 | none: use `setTimeout` |
-| canvas `ctx.filter` (baked art backdrop) | 52 | 49 | flag only: skipped, upscaling still blurs |
-| `PressureObserver` (tier downgrades) | 125 | none | none |
-| SVG filter in `backdrop-filter` (liquid-glass.ts) | yes | ignored | paints nothing (245510) |
-| WebGL lens over a canvas/img/video (liquid-glass-webgl.js) | yes | yes | yes (verified rendering in WebKit) |
-
-Firefox: bug 1782876 (backdrop-filter not rendering when a *parent* has transform, opacity, clip-path or a
-mask) closed as WORKSFORME on 2026-07-30. The backdrop-root rule below still applies in every browser.
-Firefox couldn't be launched in this skill's test environment, so it's covered by compatibility data, not
-screenshots: test in current Firefox rather than assuming either way.
 
 ## Never build backdrop-filter from var()
 
@@ -219,7 +196,7 @@ against the nav, not the viewport. Portal overlays out of glass containers.
 - Safari never hands `<video>` pixels to SVG filters, so SVG refraction over video fails there (use
   WebGL if it must refract).
 - Glass over a playing video can stop the browser using a hardware video overlay, which costs power.
-  Prefer a small ambient canvas (recipes.md, 8b) to a live backdrop blur over the video.
+  Prefer a small ambient canvas (recipes/08b-ambient-glow-from-video.md) to a live backdrop blur over the video.
 - Drop glass in fullscreen (`document.fullscreenElement`, iOS `webkitbeginfullscreen`) and stop canvas
   loops on `visibilitychange`.
 
@@ -282,3 +259,26 @@ Measure rather than guess: `scripts/blur-audit.mjs --url` reports frame rate whi
   glass unfrosted, the capture probably landed mid-fade on a parent (see backdrop root).
 - Blur reveals can fall inside the trimmed page-load part of a capture. Use `--settle` or start the reveal
   on a delay long enough to be recorded.
+
+## Support at a glance (MDN browser-compat data, November 2026)
+
+| Feature the skill uses | Chrome | Firefox | Safari |
+|---|---|---|---|
+| `backdrop-filter` | 76 | 103 | 18 (`-webkit-` from 9) |
+| `mask-image`, `mask-composite` (the rim) | 120 (`-webkit-` before) | 53 | 15.4 |
+| `@property` (the rim angle) | 85 | 128 | 16.4 |
+| `animation-timeline: scroll()` (glass on scroll) | 115 | 159 | 26 |
+| `prefers-contrast` (tinted level) | 96 | 101 | 14.1 |
+| `prefers-reduced-transparency` | 118 | flag only | none |
+| `inert` (dialog) | 102 | 112 | 15.5 |
+| `requestVideoFrameCallback` (video glow) | 83 | 132 | 15.4 |
+| `requestIdleCallback` (tier probe timing) | 47 | 55 | none: use `setTimeout` |
+| canvas `ctx.filter` (baked art backdrop) | 52 | 49 | flag only: skipped, upscaling still blurs |
+| `PressureObserver` (tier downgrades) | 125 | none | none |
+| SVG filter in `backdrop-filter` (liquid-glass.ts) | yes | ignored | paints nothing (245510) |
+| WebGL lens over a canvas/img/video (liquid-glass-webgl.js) | yes | yes | yes (verified rendering in WebKit) |
+
+Firefox: bug 1782876 (backdrop-filter not rendering when a *parent* has transform, opacity, clip-path or a
+mask) closed as WORKSFORME on 2026-07-30. The backdrop-root rule below still applies in every browser.
+Firefox couldn't be launched in this skill's test environment, so it's covered by compatibility data, not
+screenshots: test in current Firefox rather than assuming either way.

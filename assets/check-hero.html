@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tabula hero · blur-craft check</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="Technique test: ten glass surfaces, each written a different way (Tailwind var(), prefix order, backdrop roots, WebGL), to see which blur in this browser.">
 <link rel="stylesheet" href="glass.css">
 <style>
   /* blur-audit: ignore-file (several elements use broken techniques on purpose: that's the test) */
@@ -195,7 +197,8 @@
   import { mountWebGLGlass } from "./liquid-glass-webgl.js";
   // The wallpaper drawn into a canvas with cover-crop, so the WebGL lens can sample exactly what's on screen.
   const wall = document.getElementById("wall"), hero = document.getElementById("hero");
-  const img = new Image(); img.src = "check-backdrop.jpg";
+  const img = new Image(); img.src = "check-backdrop.avif";   // ~20 KB; the JPEG is the fallback for browsers without AVIF
+  img.onerror = () => { img.onerror = null; img.src = "check-backdrop.jpg"; };
   let stopLens = null;
   function paint() {
     const dpr = Math.min(2, devicePixelRatio || 1), W = hero.clientWidth, H = hero.clientHeight;
@@ -205,7 +208,7 @@
     if (window.__checkMode === "typical") return;
     if (stopLens) stopLens.refresh(); else stopLens = mountWebGLGlass(document.getElementById("mic"), wall, { blur: 3, bezel: 18, strength: 30, aberration: 0.8 });
   }
-  img.decode().then(paint); addEventListener("resize", () => img.complete && paint());
+  img.addEventListener("load", paint, { once: false }); addEventListener("resize", () => img.complete && paint());
 
   // markers for the CTA chips follow their elements
   const place = () => {

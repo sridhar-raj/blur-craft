@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Esquisse sign-in · blur-craft check</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="A sign-in over a landscape, built two ways: typical 15% white glass and blur-craft's graded dark glass, for a before/after contrast check.">
 <link rel="stylesheet" href="glass.css">
 <style>
   /* blur-audit: ignore-file (typical mode writes the usual tutorial glass on purpose: that's the comparison) */
@@ -14,7 +16,8 @@
   html, body { margin: 0; height: 100%; }
   body { font: 15px/1.5 -apple-system, "Segoe UI", Inter, sans-serif; color: #1d2033; background: #86abd8; }
   .stage { position: relative; height: 100vh; min-height: 640px; display: grid; place-items: center; padding: 24px; overflow: hidden;
-           background: #86abd8 url(check-login-backdrop.jpg) center / cover no-repeat; }
+           background: #86abd8 url(check-login-backdrop.jpg) center / cover no-repeat;
+           background-image: image-set(url(check-login-backdrop.avif) type("image/avif"), url(check-login-backdrop.jpg) type("image/jpeg")); }
 
   .card { position: relative; display: grid; grid-template-columns: 44fr 56fr; width: min(1000px, 100%); height: min(600px, calc(100vh - 48px)); min-height: 540px;
           border-radius: 26px; overflow: hidden; box-shadow: 0 40px 90px -30px rgb(18 22 14 / 0.55); }
@@ -73,7 +76,7 @@
 <div class="stage">
   <main class="card">
     <figure class="art">
-      <img src="check-login-study.jpg" alt="Georges Seurat, Study for La Grande Jatte, 1884">
+      <picture><source srcset="check-login-study.avif" type="image/avif"><img src="check-login-study.jpg" alt="Georges Seurat, Study for La Grande Jatte, 1884" width="704" height="900" decoding="async"></picture>
       <figcaption class="caption glassy" data-craft="glass glass--thick"><span class="glass-label">Georges Seurat</span><em class="glass-label">Study for La Grande Jatte, 1884</em></figcaption>
     </figure>
     <section class="form-side glassy" data-craft="glass glass--regular">

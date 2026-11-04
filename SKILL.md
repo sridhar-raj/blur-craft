@@ -110,7 +110,8 @@ Linear, Raycast, Radix, Material and Fluent, Apple's full WWDC25 rule list, and 
 
 ## 3. Signature effects
 
-Code in `references/recipes.md`:
+Code is one file per effect in `references/recipes/` (`references/recipes.md` maps the numbers to files);
+read only the ones you build:
 
 - **Liquid Glass refraction:** the rim bends what's behind it like a lens, with optional chromatic
   aberration (0.6–1). Two versions: `liquid-glass.ts`/`.js` refracts *any* page content but only in
@@ -210,8 +211,11 @@ Run all of these before calling glass done:
    - The tint-only state of `glass-contrast.mjs` passing is what a Safari that drops the blur would show.
    - Then name what is still unverified, specifically, e.g. "rendered blur and the Liquid Glass fallback
      in Safari 26 on macOS 15 and 14 not seen; computed filters and the tint-only fallback verified".
-6. **Don't trust axe for glass.** axe-core ignores `backdrop-filter`: text on glass over images comes back
-   "incomplete", and glass over flat colour is scored as if unblurred. `glass-contrast.mjs` is the check.
+6. **Don't trust Lighthouse or axe for glass.** axe-core (which Lighthouse's accessibility score runs) ignores
+   `backdrop-filter`: text on glass over images comes back "incomplete" and isn't scored, and glass over
+   flat colour is scored as if unblurred. Measured: Lighthouse gives the typical-glass Harbor page 100 for
+   accessibility, colour contrast passing, while `glass-contrast.mjs` measures it at 1.91:1 with 7 lines
+   failing. A clean Lighthouse or axe run says nothing about text on glass; `glass-contrast.mjs` is the check.
    For visual regression, freeze grain and sheen and compare glass regions at `maxDiffPixelRatio` ~0.01.
 
 ## Tells to avoid
@@ -232,7 +236,7 @@ Run all of these before calling glass done:
 
 - **taste-skill** (if installed) bans glass outright. Keep its process; this skill decides when glass has
   earned its place and how to make it right.
-- **React:** recipes use Framer Motion. Plain HTML maps onto the Web Animations API (recipes.md, top).
+- **React:** recipes use Framer Motion. Plain HTML maps onto the Web Animations API (`references/recipes.md`).
 - **WebGL backgrounds** (OriginKit, shader gradients, three.js) are the best light behind glass. Mind §4.
 
 ## Files
@@ -252,7 +256,7 @@ Run all of these before calling glass done:
 - `assets/glass-tier.js`: full / lite / flat glass by device capability and power state.
 - References are long; read only the one the task needs, and only its relevant section (each opens with
   its section list or headings to jump to). Most builds need none beyond this file and `assets/`.
-- `references/recipes.md`: code for every effect. `references/research.md`: sources and what each
+- `references/recipes.md` + `references/recipes/`: code for every effect, one file each. `references/research.md`: sources and what each
   established. `references/material.md`: every layer explained, production presets, Apple's WWDC25 rules, register.
   `references/quirks.md`: browser and performance traps.
   `references/native.md`: SwiftUI, UIKit, Flutter, React Native and Compose equivalents.

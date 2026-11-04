@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>blur-craft playground</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="Playground for the blur-craft glass material: every surface with thickness, tint, tone and rim controls, over a lit scene.">
 <link rel="stylesheet" href="glass.css">
 <link rel="stylesheet" href="surfaces.css">
 <style>
@@ -49,7 +51,7 @@
   .demo-dock__meta strong { font-weight: 600; }
   .demo-dock__play { margin-left: auto; width: 48px; height: 48px; border-radius: 50%; background: #fff; color: #111; display: grid; place-items: center; }
   .demo-card { position: absolute; left: 47%; top: 300px; width: min(380px, calc(100vw - 32px)); padding: 20px; display: grid; gap: 6px; }
-  .demo-card h3 { margin: 0; font-size: 20px; }
+  .demo-card h2 { margin: 0; font-size: 20px; }
   .demo-menu { position: absolute; right: max(16px, 4vw); top: 64px; z-index: 55; }
   .demo-toast { position: absolute; right: max(16px, 6vw); top: 560px; }
   .demo-toast__dot { width: 10px; height: 10px; border-radius: 50%; background: #7dffb1; flex: none; }
@@ -112,7 +114,7 @@
 
   <article class="demo-card glass glass--regular js-swatch" style="--glass-light: 255 207 138">
     <span class="glass-tertiary">Now playing</span>
-    <h3 class="glass-label">Evening wind-down</h3>
+    <h2 class="glass-label">Evening wind-down</h2>
     <span class="glass-secondary">12 min · Guided by Mara Lindqvist</span>
   </article>
 

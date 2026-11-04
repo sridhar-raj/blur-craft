@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>blur-craft · before and after</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="description" content="The same live page twice: typical glass on the left, blur-craft on the right. Move across it.">
 <style>
   :root { --x: 50%; }
@@ -40,7 +41,7 @@
 <body>
 <div class="stage">
   <iframe id="after" src="examples/?mode=after&embed" title="After: blur-craft"></iframe>
-  <iframe id="before" src="examples/?mode=before&embed" title="Before: typical glass"></iframe>
+  <iframe id="before" data-src="examples/?mode=before&embed" title="Before: typical glass" style="visibility:hidden"></iframe>
 
   <div class="cmp-capture" id="cmpCapture" role="slider" tabindex="0" aria-label="Compare: move left and right" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
   <div class="cmp-line"><span class="cmp-chev l">‹</span><span class="cmp-knob"></span><span class="cmp-chev r">›</span><span class="cmp-label l">BEFORE<small>typical glass · 1.91:1, 7 lines fail</small></span><span class="cmp-label r">AFTER<small>blur-craft · 4.6:1, all pass</small></span></div>
@@ -98,6 +99,13 @@
       toggle.setAttribute("aria-pressed", String(on));
     });
     window.__cmpSet = set;
+
+    // Load the "before" copy only after the "after" copy has loaded and the browser is idle: the page no
+    // longer fetches and runs the whole example twice before its first paint. Hidden until it's ready.
+    const before = document.getElementById("before"), after = document.getElementById("after");
+    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200));
+    const loadBefore = () => { if (before.src) return; before.addEventListener("load", () => { before.style.visibility = ""; before.contentWindow.postMessage({ bcScroll: y }, "*"); }, { once: true }); before.src = before.dataset.src; };
+    if (after.contentDocument?.readyState === "complete") idle(loadBefore); else after.addEventListener("load", () => idle(loadBefore), { once: true });
   })();
 
 </script>

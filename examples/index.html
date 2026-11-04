@@ -5,10 +5,455 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Harbor Radio · blur-craft example</title>
 <meta name="description" content="One working product built with blur-craft: every glass use case, live.">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/glass.css">
-<link rel="stylesheet" href="../assets/surfaces.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<!-- Self-hosted fonts (latin subsets, SIL OFL), preloaded; "optional" never blocks or reflows the first paint. -->
+<link rel="preload" href="fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family: Fraunces; src: url(fonts/fraunces-latin.woff2) format("woff2"); font-weight: 100 900; font-display: optional; }
+  @font-face { font-family: Inter; src: url(fonts/inter-latin.woff2) format("woff2"); font-weight: 100 900; font-display: optional; }
+</style>
+<!-- inline:../assets/glass.css ../assets/surfaces.css -->
+<style>
+/* ../assets/glass.css */
+/* Glass material: the five-layer stack premium glass is built from.
+ *
+ *   1. backdrop  heavy blur + high saturation, brightness held at or below 1 on dark glass (the frosting)
+ *   2. fill      a gradient, lighter at the top-left where light hits, not a flat tint
+ *   3. edge      a 1px gradient rim, bright where light hits, fading on the far side
+ *   4. specular  an inner top highlight and a fixed sheen; on interactive glass only, JS can move the sheen
+ *                with the pointer (--mx/--my). Static glass never reacts to hover: that would signal "clickable".
+ *   5. depth     a soft drop shadow and a faint inner glow, so the slab has thickness
+ *
+ * Usage: <div class="glass glass--regular"> … </div>. Pick the thickness by how much text it holds
+ * (Apple HIG: thicker = more opaque = better for text; thinner = more context). Rename the `glass`
+ * prefix to the section's prefix when copying into a section.
+ *
+ * Set --glass-light to the colour of the light source behind the glass (the glow, the sun, the art),
+ * so the rim and sheen pick up the scene's colour instead of plain white.
+ *
+ * Two levels, as Apple shipped in iOS 26.1 after the Liquid Glass legibility backlash: the default
+ * (clear-ish) and TINTED (much more opaque). Tinted turns on for `prefers-contrast: more`, for
+ * `prefers-reduced-transparency: reduce`, with class `glass--tinted`, or site-wide with
+ * <html data-glass="tinted"> (offer it as a user setting). Safari does not support
+ * prefers-reduced-transparency, so prefers-contrast is the signal that reaches iPhone and Mac users.
+ */
+
+/* Registered so the rim can swing smoothly toward a moving light (pointer, scroll, device tilt):
+   Apple's specular highlights "respond to geometry" and travel around the material. */
+@property --glass-rim-angle { syntax: "<angle>"; inherits: true; initial-value: 135deg; }
+
+.glass {
+  --glass-fill-top: rgb(255 255 255 / 0.12);   /* lower than it looks right at first: white fill sits behind white text */
+  --glass-fill-bottom: rgb(255 255 255 / 0.04);
+  --glass-dim: rgb(10 10 18 / 0.48);        /* a COLOUR, not a number: rgb(r g b / alpha). Same as regular, the default filter */
+  --glass-light: 255 255 255;               /* r g b of the scene's light */
+  --glass-radius: 28px;
+  --glass-rim-hot: 0.6;                     /* rim alpha on the lit side; 0.8-0.9 when the light is strong */
+  --glass-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.05'/></svg>");
+  --mx: 30%;                                 /* sheen position; JS moves it only on interactive glass */
+  --my: 0%;
+
+  --glass-pad: 20px;                         /* set to the element's padding; inner radius stays concentric */
+  --glass-inner-radius: max(6px, calc(var(--glass-radius) - var(--glass-pad)));   /* WWDC25: inner = outer − padding */
+
+  isolation: isolate;
+  border-radius: var(--glass-radius);
+  color: rgb(255 255 255 / 0.97);            /* text without a glass-* class inherits a readable colour */
+  outline: 1px solid transparent;            /* invisible normally; becomes a real edge in forced colors */
+  outline-offset: -1px;
+  transition: --glass-rim-angle 0.5s ease;   /* --glass-rim-angle (registered, initial 135deg) can be set here or on any ancestor */
+  background:
+    var(--glass-noise),                                         /* 2.5% grain, as Fluent's acrylic (2%) */
+    linear-gradient(160deg, var(--glass-fill-top), var(--glass-fill-bottom) 60%),
+    var(--glass-tint-layer, linear-gradient(transparent, transparent)),   /* tinted level adds opacity on top, never replaces */
+    var(--glass-dim);
+  /* backdrop-filter is set per thickness below, as LITERAL values: Safari on macOS Sonoma (18 and later,
+     Technology Preview included: it follows the OS) renders no blur when the filter is composed from var()
+     (WebKit bug 297620, open). Never build it from variables. */
+  box-shadow:
+    inset 0 1px 0 rgb(var(--glass-light) / 0.35),          /* top specular line */
+    inset 0 -1px 0 rgb(255 255 255 / 0.04),
+    inset 0 0 32px rgb(var(--glass-light) / 0.06),         /* inner glow: thickness */
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 30px 60px -20px rgb(0 0 0 / 0.55);                    /* lift */
+}
+
+/* Positioned so the rim and sheen can sit inside it, at zero specificity: any position your layout gives
+   the element (absolute, fixed, sticky) wins. */
+:where(.glass) { position: relative; }
+/* Same specificity as .glass and later, so light glass gets dark ink (a :where() here would lose to .glass's white). */
+.glass.glass--light { color: rgb(10 12 20 / 0.92); }
+
+/* 3. Edge: a gradient rim drawn on a ring (mask-composite keeps only the border). */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;                 /* isolation on .glass keeps it above the fill, below the content */
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--glass-rim-angle),
+    rgb(var(--glass-light) / var(--glass-rim-hot)),
+    rgb(var(--glass-light) / 0.12) 35%,
+    rgb(255 255 255 / 0.04) 60%,
+    rgb(var(--glass-light) / 0.22)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* 4. Sheen: a soft specular bloom, positioned by --mx/--my (static top-left if no JS). */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 80% at var(--mx) var(--my),
+    rgb(var(--glass-light) / 0.14),
+    transparent 55%
+  );
+}
+
+/* Thickness scale. Blur goes up with thickness; busy or moving backdrops want the thicker end. */
+.glass--clear   { --glass-dim: rgb(10 10 18 / 0.22); --glass-fill-top: rgb(255 255 255 / 0.10); }   /* Apple: clear needs a dimming layer and bold, bright content on it */
+.glass--thin    { --glass-dim: rgb(10 10 18 / 0.30); }
+.glass--regular { --glass-dim: rgb(10 10 18 / 0.48); }
+.glass--thick   { --glass-dim: rgb(10 10 18 / 0.56); }
+
+/* Neutral: colour-critical apps (photo and video editors, design tools, colour pickers). The glass must not
+   recolour the picture next to it, so no saturation boost and no tone shift; legibility comes from the dim. */
+.glass--neutral { --glass-light: 255 255 255; }
+
+/* Nearly solid: trust-critical dialogs (payments, deletes, signatures). Glass family, nothing competes. */
+.glass--solid   { --glass-dim: rgb(18 18 26 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.06); --glass-fill-bottom: rgb(255 255 255 / 0.02); }
+.glass--solid.glass--light { --glass-dim: rgb(255 255 255 / 0.92); --glass-fill-top: rgb(255 255 255 / 0.6); --glass-fill-bottom: rgb(255 255 255 / 0.4); }
+
+
+/* ---- Backdrop filters: literal per thickness × tone (see the Sonoma note at the top of .glass) ----
+   dark: brightness .96 (never lift a bright backdrop behind white text); light: 1.08.
+   contrast < 1 is the working CSS form of Fluent's luminosity layer (colour through, harsh light and
+   dark blocked); a mix-blend-mode child does not work in browsers. Solid uses 4px: above ~85% fill the
+   radius barely shows, so a big blur there only costs frames.
+   neutral (colour-critical apps): blur only, no saturation or tone change. */
+.glass { backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); }
+.glass.glass--light { backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); }
+.glass.glass--neutral { backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); }
+.glass--clear { backdrop-filter: blur(16px) saturate(180%) brightness(0.96); -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(0.96); }
+.glass--light.glass--clear { backdrop-filter: blur(16px) saturate(180%) brightness(1.08); -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.08); }
+.glass--neutral.glass--clear { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.glass--thin { backdrop-filter: blur(24px) saturate(180%) brightness(0.96) contrast(0.92); -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(0.96) contrast(0.92); }
+.glass--light.glass--thin { backdrop-filter: blur(24px) saturate(180%) brightness(1.08) contrast(0.92); -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.08) contrast(0.92); }
+.glass--neutral.glass--thin { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.glass--regular { backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); }
+.glass--light.glass--regular { backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); }
+.glass--neutral.glass--regular { backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); }
+.glass--thick { backdrop-filter: blur(44px) saturate(160%) brightness(0.96) contrast(0.8); -webkit-backdrop-filter: blur(44px) saturate(160%) brightness(0.96) contrast(0.8); }
+.glass--light.glass--thick { backdrop-filter: blur(44px) saturate(160%) brightness(1.08) contrast(0.8); -webkit-backdrop-filter: blur(44px) saturate(160%) brightness(1.08) contrast(0.8); }
+.glass--neutral.glass--thick { backdrop-filter: blur(44px); -webkit-backdrop-filter: blur(44px); }
+.glass--solid { backdrop-filter: blur(4px) saturate(140%) brightness(0.96); -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(0.96); }
+.glass--light.glass--solid { backdrop-filter: blur(4px) saturate(140%) brightness(1.08); -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(1.08); }
+.glass--neutral.glass--solid { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+
+/* Device tiers (assets/glass-tier.js sets <html data-glass-tier>): "lite" keeps a small blur and no
+   extras; "flat" drops the blur and leans on the dim, as Android and Fluent do on weak hardware. */
+/* Screen only, never in forced colours or capture mode: those states drop the blur, and this !important
+   rule is more specific than theirs, so it would put the blur back. Reduced transparency is re-asserted below. */
+@media screen and (forced-colors: none) {
+  :root[data-glass-tier="lite"]:not([data-glass-capture]) .glass.glass { backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }   /* !important beats Liquid Glass's inline filter */
+}
+:root[data-glass-tier="flat"] .glass.glass {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.66), rgb(14 14 20 / 0.66));   /* ≥ the tinted level, so flat never lowers it */
+}
+:root[data-glass-tier="flat"] .glass.glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.76), rgb(250 250 252 / 0.76)); }
+
+
+/* Light glass (over light scenes). */
+.glass--light {
+  --glass-fill-top: rgb(255 255 255 / 0.55);
+  --glass-fill-bottom: rgb(255 255 255 / 0.25);
+  --glass-dim: rgb(255 255 255 / 0.45);      /* light glass over a mixed scene needs real white, or it greys */
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    inset 0 0 24px rgb(255 255 255 / 0.25),
+    0 1px 2px rgb(20 20 40 / 0.08),
+    0 30px 60px -24px rgb(20 20 60 / 0.25);
+}
+
+/* Text on glass: near-solid primary, translucent white secondary (vibrancy), never a mid grey.
+   Values calibrated with scripts/glass-contrast.mjs over a bright light (demo.html). A faint halo
+   follows Harrison & Vicente (CHI '96): a contrasting outline made 75-90% transparent menus read like
+   50% ones. Tertiary is for large or non-essential text only. */
+.glass .glass-label     { color: rgb(255 255 255 / 0.97); }
+.glass .glass-secondary { color: rgb(255 255 255 / 0.82); }
+.glass .glass-tertiary  { color: rgb(255 255 255 / 0.70); }
+.glass :is(.glass-label, .glass-secondary, .glass-tertiary) { text-shadow: 0 0 1px rgb(0 0 0 / 0.3), 0 1px 10px rgb(0 0 0 / 0.22); }
+.glass--light :is(.glass-label, .glass-secondary, .glass-tertiary) { text-shadow: 0 0 1px rgb(255 255 255 / 0.5); }
+.glass--light .glass-label     { color: rgb(10 12 20 / 0.92); }
+.glass--light .glass-secondary { color: rgb(10 12 20 / 0.78); }
+.glass--light .glass-tertiary  { color: rgb(10 12 20 / 0.7); }
+
+/* Tinted level: legibility first. It adds a 60% layer OVER the surface's own dim (combined alpha
+   1 − (1 − dim)(1 − 0.6)), so it only ever raises opacity: a component that already set a darker dim
+   gets darker still, never lighter. Brightness range clamped harder too. */
+.glass.glass--tinted,
+:root[data-glass="tinted"] .glass.glass {
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.6), rgb(14 14 20 / 0.6));
+}
+.glass.glass--tinted.glass--light,
+:root[data-glass="tinted"] .glass.glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.7), rgb(250 250 252 / 0.7)); }
+@media (prefers-contrast: more) {
+  .glass.glass { --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.65), rgb(14 14 20 / 0.65)); }
+  .glass.glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.75), rgb(250 250 252 / 0.75)); }
+  .glass .glass-secondary, .glass .glass-tertiary { color: rgb(255 255 255 / 0.85); }
+  .glass--light .glass-secondary, .glass--light .glass-tertiary { color: rgb(10 12 20 / 0.8); }
+  .glass::before { --glass-rim-hot: 1; }
+}
+
+/* No backdrop-filter: go nearly opaque, keep the rim and highlights. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: linear-gradient(160deg, rgb(48 48 62 / 0.96), rgb(22 22 30 / 0.97)); }
+  .glass--light { background: rgb(250 250 252 / 0.97); }
+}
+/* Chromium only; Safari ignores this query (see prefers-contrast above). */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, :root[data-glass-tier]:not([data-glass-capture]) .glass.glass { backdrop-filter: none !important; -webkit-backdrop-filter: none !important;  /* !important beats liquid glass's inline filter and the lite tier */ background: rgb(22 22 30 / 0.97); }
+  .glass--light, :root[data-glass-tier]:not([data-glass-capture]) .glass.glass--light { background: rgb(250 250 252 / 0.98); }
+}
+
+/* Motion: the rim swing is decoration. */
+@media (prefers-reduced-motion: reduce) { .glass { transition: none; } }
+
+/* Windows High Contrast (forced colors). Chromium keeps backdrop-filter and the translucent fill there but
+   strips shadows and gradient images, so the rim, sheen and lift vanish and text sits on a see-through
+   pane. Give it a solid system surface and a system-coloured edge instead. Never set
+   forced-color-adjust: none on glass. */
+@media (forced-colors: active) {
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: Canvas;
+    color: CanvasText;
+    outline-color: CanvasText;
+  }
+  .glass .glass-label, .glass .glass-secondary, .glass .glass-tertiary { color: CanvasText; text-shadow: none; }
+}
+
+/* Print and PDF drop the blur (Chromium's page.pdf keeps the tint, loses the frost) and often drop
+   backgrounds entirely. Print glass as a plain bordered box. */
+@media print {
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #fff;
+    color: #000;
+    box-shadow: none;
+    outline: 1px solid #0003;
+  }
+  .glass::before, .glass::after { display: none; }
+  .glass :is(.glass-label, .glass-secondary, .glass-tertiary) { color: #000; text-shadow: none; }
+}
+
+/* Capture mode: html2canvas ignores backdrop-filter, Satori/@vercel/og renders it as a black slab, and
+   headless captures with transforms can catch half-drawn tiles. Set data-glass-capture on <html> just
+   before capturing (and remove it after): glass becomes an opaque version of itself. */
+:root[data-glass-capture] .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.88), rgb(14 14 20 / 0.88));
+}
+:root[data-glass-capture] .glass--light { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.9), rgb(250 250 252 / 0.9)); }
+
+/* Right-to-left: gradients have no logical directions, so mirror the sheen's resting point by hand. For a
+   custom rim angle θ, use 360deg − θ under :dir(rtl) (135deg top-left → 225deg top-right). */
+.glass:dir(rtl) { --mx: 70%; --glass-rim-angle: 225deg; }
+
+/* ../assets/surfaces.css */
+/* Ready-made glass surfaces, built on glass.css. Each is calibrated from production values (Apple.com,
+ * Linear, Raycast, Material, Fluent; see references/research.md) and passes scripts/glass-contrast.mjs on
+ * the demo page (assets/demo.html). Rename the `gs-` prefix with the `glass` prefix when copying.
+ *
+ *   .gs-bar      sticky nav bar with extended backdrop and glassy edge (Comeau; Apple 20px/180%/80%)
+ *   .gs-dock     floating dock or player over art (pill; pair with liquid-glass.ts, clear)
+ *   .gs-menu     menu / popover / command bar (Linear 32px over 90%, Raycast 0.5px top highlight)
+ *   .gs-veil     dialog scrim (Material 32%, Fluent Smoke 30%) with a 6px focus blur
+ *   .gs-dialog   dialog over the veil: thick, or add .glass--solid for money/deletes
+ *   .gs-toast    small notification
+ *   .gs-sheet    bottom sheet on phones
+ */
+
+/* ---------- Sticky bar ---------- */
+.gs-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 56px;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px));
+  /* Safari 26 samples a fixed/sticky bar at the top edge to tint its own toolbar: give the bar a real
+     colour (the fill below), never a fully transparent one (WebKit bug 301756). */
+}
+.gs-bar__backdrop {               /* samples twice the bar's height: colour arrives before content does */
+  position: absolute;
+  inset: 0;
+  height: 200%;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--gs-bar-fill, rgb(14 14 20 / 0.8)) 0 50%, transparent 50%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+  mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+}
+.gs-bar__edge {                   /* a 1px lit edge where the glass ends */
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14) 20%, rgb(255 255 255 / 0.14) 80%, transparent);
+}
+.gs-bar--light { --gs-bar-fill: rgb(250 250 252 / 0.8); color: rgb(10 12 20 / 0.92); }
+.gs-bar--light .gs-bar__edge { background: rgb(0 0 0 / 0.1); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gs-bar__backdrop { --gs-bar-fill: rgb(14 14 20 / 0.95); }
+  .gs-bar--light .gs-bar__backdrop { --gs-bar-fill: rgb(250 250 252 / 0.95); }
+}
+
+/* Forced colours strip the bar's gradient fill and leave a see-through blur under the links: give it a solid
+   system surface and a system edge instead (the .glass surfaces get the same in glass.css). */
+@media (forced-colors: active) {
+  .gs-bar__backdrop { height: 100%; background: Canvas !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; -webkit-mask-image: none; mask-image: none; animation: none !important; opacity: 1 !important; }
+  .gs-bar__edge { background: CanvasText !important; animation: none !important; opacity: 1 !important; }
+  .gs-veil { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+@media print {
+  .gs-bar { position: static; }
+  .gs-bar__backdrop { display: none; }
+}
+
+/* Optional: the bar turns to glass once the page scrolls, with no JS (scroll-driven animations:
+   Chrome/Edge 115, Safari 26, Firefox 159). Animates the opacity of the pre-blurred layer, which is
+   cheap, rather than the blur radius. Add class gs-bar--on-scroll. */
+@supports (animation-timeline: scroll()) {
+  .gs-bar--on-scroll .gs-bar__backdrop,
+  .gs-bar--on-scroll .gs-bar__edge { animation: gs-bar-in linear both; animation-timeline: scroll(root); animation-range: 0 120px; }
+  @keyframes gs-bar-in { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* Device tiers (glass-tier.js) reach the surfaces that aren't .glass elements too. */
+:root[data-glass-tier="lite"] .gs-bar__backdrop { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+:root[data-glass-tier="flat"] .gs-bar__backdrop { backdrop-filter: none; -webkit-backdrop-filter: none; --gs-bar-fill: rgb(14 14 20 / 0.94); }
+:root[data-glass-tier="flat"] .gs-bar--light .gs-bar__backdrop { --gs-bar-fill: rgb(250 250 252 / 0.95); }
+:root[data-glass-tier="flat"] .gs-veil { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(8 8 12 / 0.5); }
+
+/* ---------- Dock / player ---------- */
+.gs-dock {
+  --glass-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px 10px 10px;
+  min-height: 64px;
+}
+.gs-dock button { min-width: 44px; min-height: 44px; }   /* targets survive the glass */
+
+/* ---------- Menu / popover / command bar ---------- */
+.gs-menu {
+  --glass-radius: 14px;
+  --glass-dim: rgb(10 10 14 / 0.86);
+  /* 86% fill: a big blur under it can't be seen and only costs frames (Linear ships 32px over 90%; the radius
+     doesn't show). 4px still turns text scrolling behind the menu into soft shapes. Literal: Sonoma var() bug. */
+  backdrop-filter: blur(4px) saturate(140%) brightness(0.96);
+  -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(0.96);
+  display: grid;
+  padding: 6px;
+  min-width: 220px;
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.3),
+    0 0 0 0.5px rgb(0 0 0 / 0.8),
+    0 16px 40px -8px rgb(0 0 0 / 0.6);
+}
+.gs-menu.glass--light { backdrop-filter: blur(4px) saturate(140%) brightness(1.08); -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(1.08); --glass-dim: rgb(250 250 252 / 0.88); box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 16px 40px -8px rgb(20 20 40 / 0.25); }
+.gs-menu > * { padding: 8px 10px; border-radius: 8px; }
+.gs-menu > :is(button, a, [role="menuitem"], [role="option"]) { min-height: 44px; }   /* targets survive the glass */
+.gs-menu.glass--light > :is(:hover, :focus-visible) { background: rgb(0 0 0 / 0.06); }
+.gs-menu.glass--light > :focus-visible { outline-color: rgb(10 12 20 / 0.85); }
+.gs-menu > :hover { background: rgb(255 255 255 / 0.08); }
+.gs-menu > :focus-visible { background: rgb(255 255 255 / 0.08); outline: 2px solid rgb(255 255 255 / 0.9); outline-offset: -2px; }
+
+/* ---------- Veil + dialog ---------- */
+.gs-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgb(8 8 12 / 0.32);
+  backdrop-filter: blur(6px) saturate(0.9);
+  -webkit-backdrop-filter: blur(6px) saturate(0.9);
+}
+.gs-dialog {
+  --glass-radius: 24px;
+  position: fixed;
+  z-index: 91;                     /* a sibling of the veil, never its child (backdrop root) */
+  inset: 0;
+  margin: auto;
+  width: min(440px, calc(100vw - 32px));
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 24px;
+}
+/* Flat veil: no live blur, a darker scrim (as Material, Primer and Polaris ship). Use it when several
+   glass surfaces sit under the dialog: a full-screen live blur over them measured 31fps on a test page,
+   60fps without. If the backdrop is an image or canvas, a baked blur (recipes/08-art-backdrop.md) keeps the look. */
+.gs-veil--flat { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(8 8 12 / 0.5); }
+
+/* While a dialog is open, the chrome underneath stops blurring (never two stacked live blurs) and goes
+   near-opaque instead. Toggle .gs-modal-open on <html> with the dialog. */
+.gs-modal-open .glass:not(.gs-dialog, .gs-sheet) {
+  backdrop-filter: none !important;          /* !important also stops Liquid Glass's inline filter */
+  -webkit-backdrop-filter: none !important;
+  --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.7), rgb(14 14 20 / 0.7));
+}
+.gs-modal-open .glass--light:not(.gs-dialog, .gs-sheet) { --glass-tint-layer: linear-gradient(rgb(250 250 252 / 0.78), rgb(250 250 252 / 0.78)); }
+
+@media (prefers-reduced-transparency: reduce) {
+  .gs-veil { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(8 8 12 / 0.6); }
+}
+
+/* ---------- Toast ---------- */
+.gs-toast {
+  --glass-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  max-width: 360px;
+}
+
+/* ---------- Bottom sheet (phones) ---------- */
+.gs-sheet {
+  --glass-radius: 28px;
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 91;
+  padding: 12px 20px max(20px, env(safe-area-inset-bottom, 0px));
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.gs-sheet__grip { width: 36px; height: 5px; border-radius: 3px; margin: 0 auto 12px; background: rgb(255 255 255 / 0.3); }
+.glass--light .gs-sheet__grip { background: rgb(10 12 20 / 0.25); }
+</style>
+<!-- /inline -->
 <style>
   /* Harbor Radio: one product, every glass use case in its real place. All glass comes from the skill's
      glass.css + surfaces.css; this file only lays the product out. */
@@ -34,7 +479,16 @@
   /* Hero with the harbour scene: the light behind the "on air" glass */
   .hero { position: relative; height: min(86vh, 820px); min-height: 600px; margin-top: -56px; overflow: hidden; }
   #art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .hero-copy { position: absolute; left: max(16px, 6vw); bottom: 18%; max-width: 560px; }
+  .hero-copy { position: absolute; left: max(16px, 6vw); bottom: 18%; max-width: 560px; isolation: isolate; }
+  /* A soft scrim, not glass: the headline sits over lit windows and the sunset, and text off the glass has to
+     pass too (measured 1.11:1 at its worst pixel without it). It fades to nothing well outside the copy. */
+  .hero-copy::before { content: ""; position: absolute; inset: -120px -320px -110px -160px; z-index: -1; pointer-events: none;
+    /* An even dim under every line, feathered only in the margin, so no line sits on a thin edge. */
+    background: rgb(13 10 21 / 0.62);
+    --feather-x: linear-gradient(to right, transparent, #000 150px, #000 calc(100% - 340px), transparent);
+    --feather-y: linear-gradient(to bottom, transparent, #000 115px, #000 calc(100% - 105px), transparent);
+    -webkit-mask-image: var(--feather-x), var(--feather-y); -webkit-mask-composite: source-in;
+    mask-image: var(--feather-x), var(--feather-y); mask-composite: intersect; }
   .hero-copy h1 { font: 600 clamp(40px, 5.6vw, 80px)/1.02 Fraunces, serif; margin: 0 0 14px; letter-spacing: -0.02em; text-shadow: 0 2px 30px rgb(0 0 0 / 0.35); text-wrap: balance; }
   .hero-copy p { margin: 0; max-width: 44ch; font-size: 17px; text-shadow: 0 1px 12px rgb(0 0 0 / 0.45); }
 
@@ -163,7 +617,7 @@
   html.before .fade-edge { display: none; }
 
   .compare { position: fixed; left: 50%; translate: -50% 0; top: 70px; z-index: 80; display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: #fff; color: #120e18; box-shadow: 0 8px 30px rgb(0 0 0 / 0.35); font-size: 14px; }
-  .compare button { min-height: 44px; padding: 8px 16px; border-radius: 999px; font-weight: 600; }
+  .compare button { white-space: nowrap; min-height: 44px; padding: 8px 16px; border-radius: 999px; font-weight: 600; }
   .compare button:focus-visible { outline: 2px solid #120e18; outline-offset: 2px; }
   .compare button[aria-pressed="true"] { background: #120e18; color: #fff; }
   .compare output { padding: 0 10px 0 6px; font-variant-numeric: tabular-nums; color: #5a5468; white-space: nowrap; }

@@ -8,14 +8,14 @@ one flat tint with one blur, and nobody measured the text on it. This skill give
 (compose the light, choose the thickness, avoid the traps), a measured drop-in material, ready-made
 surfaces, and scripts that check the result.
 
-![Harbor Radio, the example built with blur-craft](examples/harbor-radio.png)
+![Harbor Radio, the example built with blur-craft](examples/harbor-radio.webp)
 
 **Before / after, one link:** [sridhar-raj.github.io/blur-craft](https://sridhar-raj.github.io/blur-craft/)
 opens the example twice with a before/after slider: move across the page and the line follows, typical glass on
 the left, blur-craft on the right, scrolling together. The example itself also has a switch at the top. *Before* swaps the glass for the typical
 tutorial recipe (flat 15% white, 16px blur, white border); *After* is blur-craft. Same page, same words:
 
-![Before: typical glass, text washes out. After: blur-craft, readable and lit](examples/before-after.png)
+![Before: typical glass, text washes out. After: blur-craft, readable and lit](examples/before-after.webp)
 
 | Mode | Worst contrast (desktop) | Lines failing | Phone |
 |---|---|---|---|
@@ -30,8 +30,8 @@ with every glass use case in its real place: a nav that turns to glass on scroll
 sun with live listener counts, a Liquid Glass player dock, progressive blur under it, a ⌘K search palette,
 a recording dialog, toasts and settings with a tinted-glass switch and a measured device tier. Every line
 of text on glass passes the skill's own contrast check (three states, desktop and phone, the record dialog
-and the palette included). Text that isn't on glass isn't covered by that claim: the hero copy over the
-sky is 1.53:1 at its worst on a phone, like any headline over a photo.
+and the palette included). The hero copy over the sky sits on a soft scrim (not glass), so it passes too:
+5.8:1 or better at desktop, tablet and phone widths with `--all-text`.
 
 Also: **[the playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface
 with thickness, tint, tone and rim controls) and **[the browser check](https://sridhar-raj.github.io/blur-craft/assets/browser-check.html)**: the
@@ -86,7 +86,7 @@ It doesn't add glass to a design that has none just because someone asked for "p
 | `scripts/frost-check.mjs` | Does each surface actually blur (blur on vs off) |
 | `scripts/blur-audit.mjs` | Static audit (CSS, TSX, Vue, Svelte, HTML) and a live `--url` check |
 | `scripts/test-checkers.mjs` | The checkers' own tests: 19 fixtures each checker must catch or pass |
-| `references/` | `recipes.md` (every effect, with code), `quirks.md` (browser and performance traps, support table), `native.md`, `research.md` (sources) |
+| `references/` | `recipes/` (every effect, one file each, indexed by `recipes.md`), `quirks.md` (browser and performance traps, support table), `native.md`, `research.md` (sources) |
 
 ## Important: Safari on macOS Sonoma
 

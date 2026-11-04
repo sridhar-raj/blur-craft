@@ -136,7 +136,7 @@
 }
 /* Flat veil: no live blur, a darker scrim (as Material, Primer and Polaris ship). Use it when several
    glass surfaces sit under the dialog: a full-screen live blur over them measured 31fps on a test page,
-   60fps without. If the backdrop is an image or canvas, a baked blur (recipes.md, 8) keeps the look. */
+   60fps without. If the backdrop is an image or canvas, a baked blur (recipes/08-art-backdrop.md) keeps the look. */
 .gs-veil--flat { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(8 8 12 / 0.5); }
 
 /* While a dialog is open, the chrome underneath stops blurring (never two stacked live blurs) and goes
