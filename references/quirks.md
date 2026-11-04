@@ -1,5 +1,7 @@
 # Blur quirks and performance traps
 
+**Contents:** The backdrop root (the most common "my glass disappeared") · Safari · Chrome and Firefox · Liquid Glass shows sharp patches · Checking Safari: Playwright's WebKit can't show backdrop-filter · Support at a glance (MDN browser-compat data, November 2026) · Never build backdrop-filter from var() · Screenshots at deviceScaleFactor 2 · Component rules vs the tinted level · Hover glass on many items · Safari: toolbar tint and the extra layer · Framework fades and view transitions flatten glass · Tint tokens with light-dark() · Capturing glass as an image or PDF · Windows High Contrast (forced colors) · backdrop-filter makes a containing block · iOS 26 Safari's floating toolbar · Glass over video · Testing tools that can't see glass · Clipped glows · Banding · WebGL and canvas · Performance numbers to work from · Video capture
+
 Read this when a blur looks wrong (missing, clipped, banded, flickering) or the frame rate drops.
 
 ## The backdrop root (the most common "my glass disappeared")
@@ -36,7 +38,9 @@ What this means in practice:
   transform animation in older Safari. Adding `isolation: isolate` or `transform: translateZ(0)` to the
   glass usually fixes it.
 - SVG filters (motion blur recipe) run on the CPU. Keep them small and short.
-- iOS Low Power Mode drops backdrop blur frames. The design must still read with the tint alone.
+- Blur can disappear: browsers without support, the flat device tier, capture tools, a broken filter. The
+  design must still read with the tint alone (the tint-only state of glass-contrast.mjs). iOS Low Power
+  Mode is not one of these: its only documented web effect is the 30fps animation cap.
 
 ## Chrome and Firefox
 
@@ -69,7 +73,8 @@ Playwright's WebKit build (headless *and* headed; Playwright 1.64's WebKit build
 in screenshots, even a bare `blur(10px)`; `filter: blur()` paints fine. A screenshot from it shows every
 glass surface as see-through and looks like a broken material. It isn't. Use it only to confirm the CSS
 parses (read `getComputedStyle(el).backdropFilter` and the `::before` mask; glass.css parses identically in
-WebKit and Chromium), and check the look in real Safari. In WebKit `matchMedia("(prefers-reduced-transparency:
+WebKit and Chromium), and check the look in real Safari. Without one, follow SKILL.md §5.5: audit the literals, read
+`webkitBackdropFilter` here, pass the tint-only state, and name exactly what is still unseen. In WebKit `matchMedia("(prefers-reduced-transparency:
 no-preference)")` is false because the query is unsupported, which matches the research: only
 `prefers-contrast` reaches Safari users.
 
@@ -91,16 +96,18 @@ no-preference)")` is false because the query is unsupported, which matches the r
 | SVG filter in `backdrop-filter` (liquid-glass.ts) | yes | ignored | paints nothing (245510) |
 | WebGL lens over a canvas/img/video (liquid-glass-webgl.js) | yes | yes | yes (verified rendering in WebKit) |
 
-Firefox: the closest open rendering bug is 1782876 (backdrop-filter not rendering when an *ancestor* has
-transform, opacity, clip-path or a mask), which is the backdrop-root rule below. Firefox couldn't be
-launched in this skill's test environment, so it's covered by compatibility data, not screenshots.
+Firefox: bug 1782876 (backdrop-filter not rendering when a *parent* has transform, opacity, clip-path or a
+mask) closed as WORKSFORME on 2026-07-30. The backdrop-root rule below still applies in every browser.
+Firefox couldn't be launched in this skill's test environment, so it's covered by compatibility data, not
+screenshots: test in current Firefox rather than assuming either way.
 
 ## Never build backdrop-filter from var()
 
-Safari 18.x and 26.x **on macOS Sonoma** render no blur when `backdrop-filter` is composed from custom
-properties (`blur(var(--r))`, or `var()` holding the whole filter). It works on macOS 15 and 26, which is
-why it passes in Playwright's WebKit (27.2) and in newer Safari: an earlier version of this skill tested
-only there and wrongly concluded it was fine. WebKit bug 297620 (open, P2). Tailwind v4 compiles every
+Safari **on macOS Sonoma** renders no blur when `backdrop-filter` is composed from custom properties
+(`blur(var(--r))`, or `var()` holding the whole filter). It follows the OS, not the WebKit version: the bug
+report shows it in Safari 18.6, 26.1 and Safari Technology Preview on Sonoma, and not on macOS 15 or 26.
+That's why it passes in Playwright's WebKit (27.2) and in Safari on a newer Mac: an earlier version of this
+skill tested only there and wrongly concluded it was fine. WebKit bug 297620 (open, P2). Tailwind v4 compiles every
 `backdrop-blur-*` this way, so Tailwind glass loses its blur on those Macs too.
 
 The bug's own test file (attachment 476457) has a third case: a **literal, unprefixed**
@@ -197,8 +204,8 @@ against the nav, not the viewport. Portal overlays out of glass containers.
 - `env(safe-area-inset-bottom)` doesn't include Safari's own UI; `dvh`/`svh`/`lvh` behave like `vh` there.
   `window.innerHeight` does track the toolbar. (Empirical, from a published spike; Safari 26.1 fixed one
   bottom-gap bug.)
-- iOS Low Power Mode throttles `requestAnimationFrame` to 30fps on purpose (WebKit 215745). That's the
-  signal `glass-tier.js` uses to go flat.
+- iOS Low Power Mode throttles `requestAnimationFrame` to 30fps on purpose (WebKit 215745). That's its only
+  documented effect on web pages (it doesn't remove blur), and the signal `glass-tier.js` uses to go flat.
 - Pages can't read Apple's transparency settings: Safari has no `prefers-reduced-transparency`, even with
   iOS 27's Liquid Glass slider. Use `prefers-contrast: more` and offer a site setting
   (`data-glass="tinted"`).

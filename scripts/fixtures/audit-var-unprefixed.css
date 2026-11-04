@@ -1,0 +1,2 @@
+/* expect: WARN for var() in the unprefixed line */
+.card { --b: blur(20px); background: linear-gradient(#0003, #0001); backdrop-filter: var(--b); -webkit-backdrop-filter: blur(20px); }

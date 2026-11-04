@@ -1,7 +1,7 @@
 # The material, in detail
 
-Why each value in glass.css is what it is, the production presets it was calibrated against, Apple's rules
-from WWDC25 and how to match a brief's register. SKILL.md has the short version.
+Why each value in glass.css is what it is, how to match a brief's register, and (at the end, for reference)
+the production presets it was calibrated against and Apple's rules from WWDC25. SKILL.md has the short version.
 
 ## What's in the material, and why
 
@@ -35,8 +35,9 @@ not grey:
 
 Measured on the Esquisse sign-in in `assets/check-login.html`, the heaviest dim sits where the sky is brightest.
 Inputs on it are recessed (`rgb(8 14 6 / .16)`), not lightened, because a white-washed field drops small
-labels such as "Show" below 4.5:1 once the blur is off. The result is 4.97:1 in every state at four sizes, against
-1.69:1 for the usual 15%-white recipe. Re-run `glass-contrast.mjs` after changing the stops: the gradient
+labels such as "Show" below 4.5:1 once the blur is off. The result is 4.69:1 or better in every state at four sizes, against
+1.69:1 (1.45:1 on a phone with the blur off) for the usual 15%-white recipe. On phones the stacked form's
+top sits on the brightest sky, so it takes a heavier first stop (0.8) there. Re-run `glass-contrast.mjs` after changing the stops: the gradient
 is tied to the panel's height, and on a phone the layout moves the text.
 
 ## Two levels, like iOS 26.1
@@ -47,12 +48,20 @@ component that set a darker dim stays darker). It turns on for `prefers-contrast
 `glass--tinted`, or site-wide with `<html data-glass="tinted">` (offer it as a setting). **Safari ignores
 `prefers-reduced-transparency`**; `prefers-contrast` is the signal that reaches iPhone and Mac users.
 
+## Match the brief's register
+
+ Immersive briefs (music, media, launches): dark ground, strong light in
+the art's colours, clear glass and Liquid Glass on the hero control. Calm briefs (wellness, travel):
+one warm and one cool light, regular glass. Trusted briefs (finance, health, admin): light or quiet dark,
+barely any light behind, thick or solid glass on anything that confirms money or data. A light, solid
+dialog over a blurred page reads as more trustworthy than dark glass.
+
 ## Calibrated presets (production CSS and published tokens)
 
 | Surface | Reference | Start from |
 |---|---|---|
 | Sticky nav | Apple.com `saturate(180%) blur(20px)` over 80%; Linear `blur(20px)` over `#0b0b0bcc` | `.gs-bar` |
-| Menu / command bar | Linear `blur(32px)` over 90%; Raycast `blur(36px)`, 0.5px top highlight | `.gs-menu` |
+| Menu / command bar | Linear `blur(32px)` over 90%; Raycast `blur(36px)`, 0.5px top highlight. At ~90% fill the radius can't be seen | `.gs-menu`: 86% fill, `blur(4px)` (enough to soften text behind it) |
 | Translucent panel | Radix Themes `blur(64px)` over 70% white (the only big design system that ships a blur token) | `thick`, or a custom class with a literal `backdrop-filter: blur(64px) saturate(180%)` for very busy backdrops |
 | Dialog scrim | Material 32%, Fluent Smoke 30%, Primer ~40%, Atlassian ~46%, Polaris 71% (no blur) | `.gs-veil`: 32% + 6px |
 | Hover chip | Linear `blur(8px)` over `#ffffff29` | `clear`, blur on `:hover` only |
@@ -74,12 +83,3 @@ no blur at all, which says something: glass is a choice for the functional layer
 - One scroll-edge effect per view: soft for glass controls, hard for pinned headers or bare-text
   controls, and none where nothing floats ("they're not decorative").
 - At rest (first launch), avoid content intersecting the glass.
-
-## Match the brief's register
-
- Immersive briefs (music, media, launches): dark ground, strong light in
-the art's colours, clear glass and Liquid Glass on the hero control. Calm briefs (wellness, travel):
-one warm and one cool light, regular glass. Trusted briefs (finance, health, admin): light or quiet dark,
-barely any light behind, thick or solid glass on anything that confirms money or data. A light, solid
-dialog over a blurred page reads as more trustworthy than dark glass.
-

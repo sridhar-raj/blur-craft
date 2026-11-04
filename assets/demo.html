@@ -9,7 +9,7 @@
 <style>
   /* Playground for the glass material and the ready-made surfaces. Also the skill's visual test:
      node ../scripts/glass-contrast.mjs demo.html must pass. */
-  :root { --ink: #f3f1f8; --ground: #0a0912; }
+  :root { --ink: #f3f1f8; --ground: #0a0912; color-scheme: dark; }
   * { box-sizing: border-box; }
   html { background: var(--ground); }              /* opaque html: Safari skips an extra full-screen layer */
   html, body { margin: 0; min-height: 100%; }
@@ -32,13 +32,14 @@
 
   .bar-brand { font-weight: 650; letter-spacing: -0.01em; }
   .bar-links { display: flex; gap: 20px; margin-left: auto; font-size: 14px; }
-  .bar-links a { color: inherit; text-decoration: none; opacity: 0.9; }
+  .bar-links a { color: inherit; text-decoration: none; opacity: 0.9; padding: 12px 0; }   /* 44px target */
 
   /* Controls */
   .controls { position: absolute; left: max(16px, 6vw); bottom: 36px; z-index: 60; width: 300px; padding: 16px; display: grid; gap: 12px; font-size: 13px; }
-  .controls label { display: grid; gap: 4px; }
+  .controls label { display: grid; gap: 4px; min-height: 44px; align-content: center; }
   .controls select, .controls input[type=range] { width: 100%; accent-color: #ffcf8a; }
-  .controls select { background: rgb(0 0 0 / 0.35); color: inherit; border: 1px solid rgb(255 255 255 / 0.2); border-radius: 8px; padding: 6px 8px; }
+  .controls select { min-height: 44px; background: rgb(0 0 0 / 0.35); color: inherit; border: 1px solid rgb(255 255 255 / 0.2); border-radius: 8px; padding: 6px 8px; color-scheme: dark; }
+  .controls input[type=checkbox] { width: 20px; height: 20px; accent-color: #ffcf8a; }
   .controls .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
   /* Surfaces placed on the scene */
@@ -52,7 +53,7 @@
   .demo-menu { position: absolute; right: max(16px, 4vw); top: 64px; z-index: 55; }
   .demo-toast { position: absolute; right: max(16px, 6vw); top: 560px; }
   .demo-toast__dot { width: 10px; height: 10px; border-radius: 50%; background: #7dffb1; flex: none; }
-  .open-dialog { margin-top: 20px; padding: 10px 16px; border-radius: 999px; background: #fff; color: #111; font-weight: 600; }
+  .open-dialog { margin-top: 20px; min-height: 44px; padding: 10px 18px; border-radius: 999px; background: #fff; color: #111; font-weight: 600; }
   .dialog-actions { display: flex; gap: 10px; margin-top: 18px; }
   .dialog-actions button { flex: 1; min-height: 44px; border-radius: 12px; font-weight: 600; }
   .btn-ghost { background: rgb(255 255 255 / 0.1) !important; }
@@ -60,6 +61,11 @@
   .glass--light .btn-ghost { background: rgb(0 0 0 / 0.06) !important; }
   .glass--light .btn-solid { background: #111 !important; color: #fff !important; }
   [hidden] { display: none !important; }
+  /* The panel sits in the flow under the copy, so at no width does it cover the call to action. */
+  @media (min-width: 761px) {
+    .controls { position: relative; left: auto; bottom: auto; margin: 28px max(16px, 6vw) 0; }
+    .scene { padding-bottom: 140px; }
+  }
   @media (max-width: 760px) {
     .controls { position: static; width: auto; margin: 16px; }
     .demo-menu, .demo-toast { display: none; }
@@ -82,14 +88,14 @@
 
   <div class="scene__copy">
     <h1>Glass that belongs to the light behind it.</h1>
-    <p>Every surface on this page is the blur-craft material. Change the thickness, tint and rim angle on the right; open the dialog to see the veil and the solid level.</p>
+    <p>Every surface on this page is the blur-craft material. Change the thickness, tint and rim angle in the panel below; open the dialog to see the veil and the solid level.</p>
     <button class="open-dialog" id="open">Open the payment dialog</button>
   </div>
 
   <aside class="controls glass glass--thick" aria-label="Material controls">
     <label>Thickness
       <select id="thickness"><option>clear</option><option>thin</option><option selected>regular</option><option>thick</option></select></label>
-    <label>Rim angle <span id="angleOut">135°</span>
+    <label>Rim angle <span id="angleOut">aimed at the sun</span>
       <input id="angle" type="range" min="0" max="345" step="15" value="135"></label>
     <label class="row"><span>Tinted (iOS 26.1)</span><input id="tinted" type="checkbox"></label>
     <label class="row"><span>Light tone</span><input id="light" type="checkbox"></label>
@@ -145,6 +151,16 @@
   const dock = $("dock");
 
   let stopLiquid = null;
+  // The rim's bright end faces the light (SKILL.md: "is the rim lit on the light side"). The sun is the first
+  // radial in .scene__light, at 70% 62% of the scene. A CSS gradient angle points AWAY from its first colour,
+  // so aim along the vector from the sun to the surface. Moving the slider switches to one manual angle.
+  let manualAngle = false;
+  function aimAt(el) {
+    const sc = $("scene").getBoundingClientRect(), r = el.getBoundingClientRect();
+    const lx = sc.left + sc.width * 0.7, ly = sc.top + sc.height * 0.62;
+    const vx = r.left + r.width / 2 - lx, vy = r.top + r.height / 2 - ly;
+    return Math.round(((Math.atan2(vx, -vy) * 180) / Math.PI + 360) % 360);
+  }
   function apply() {
     const t = $("thickness").value;
     for (const el of document.querySelectorAll(".js-swatch, .demo-toast")) {
@@ -154,9 +170,9 @@
     document.documentElement.dataset.glass = $("tinted").checked ? "tinted" : "";
     for (const el of swatches) {
       el.classList.toggle("glass--light", $("light").checked);
-      el.style.setProperty("--glass-rim-angle", `${$("angle").value}deg`);
+      el.style.setProperty("--glass-rim-angle", `${manualAngle ? $("angle").value : aimAt(el)}deg`);
     }
-    $("angleOut").textContent = `${$("angle").value}°`;
+    $("angleOut").textContent = manualAngle ? `${$("angle").value}°` : "aimed at the sun";
     $("bar").classList.toggle("gs-bar--light", $("light").checked);
     // Liquid Glass only (re)mounts when toggled; watchLiquidGlass keeps the map in step with the dock's size.
     if ($("liquid").checked && !stopLiquid) stopLiquid = watchLiquidGlass(dock, { bezel: 18, strength: 34, blur: 4, aberration: 0.7 });
@@ -167,7 +183,9 @@
   if (q.get("thickness")) $("thickness").value = q.get("thickness");
   if (q.get("light")) $("light").checked = true;
   if (q.get("tinted")) $("tinted").checked = true;
+  $("angle").addEventListener("input", () => { manualAngle = true; });
   for (const id of ["thickness", "angle", "tinted", "light", "liquid"]) $(id).addEventListener("input", apply);
+  addEventListener("resize", () => { if (!manualAngle) apply(); });
   document.fonts?.ready.then(apply); apply();
 
   // Device tier: measured after the glass is on screen; the select overrides it.

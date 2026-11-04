@@ -10,24 +10,27 @@
 //   navigator.deviceMemory ≤ 2      Chromium only
 //   navigator.connection.saveData   Chromium only
 //   a 60-frame rAF probe            everywhere. iOS Low Power Mode throttles rAF to 30fps on purpose
-//                                   (WebKit 215745), so < 34fps reads as "saving power" -> flat
+//                                   (WebKit 215745; its only documented web effect), so < 34fps reads as "saving power" -> flat
 //   hardwareConcurrency ≤ 4         everywhere (weak signal)
 //   Compute Pressure 'serious' or 'critical'   Chrome 125+: steps down one tier while it lasts
 // prefers-reduced-motion is NOT a performance signal (no data links it to weak hardware).
 // Probe after glass is on screen: blur cost is GPU work, so an empty page measures nothing useful.
 
-// Resolves null when it can't measure fairly: a hidden tab (rAF paused) or a probe that never finishes.
+// Resolves null when it can't measure fairly: a hidden tab (rAF paused) or fewer than 2 frames in the time.
+// A slow device that runs out of time is measured from the frames it did draw: a 15fps phone takes 4s for
+// 60 frames, and treating that timeout as "unknown" would land exactly the weakest devices in "full".
 export async function measureFps(frames = 60, timeoutMs = 3000) {
   if (document.hidden) return null;
   return new Promise((resolve) => {
-    let n = 0, t0, done = false;
+    let n = 0, t0, tLast, done = false;
     const finish = (v) => { if (!done) { done = true; resolve(v); } };
-    setTimeout(() => finish(null), timeoutMs);
+    const rate = () => (n >= 2 && tLast > t0 ? ((n - 1) * 1000) / (tLast - t0) : null);
+    setTimeout(() => finish(document.hidden ? null : n >= 2 ? rate() : 0), timeoutMs);   // 0-1 frames in 3s: as slow as it gets
     const step = (t) => {
       if (done) return;
       if (document.hidden) return finish(null);          // tab went to the background mid-probe
-      t0 ??= t;
-      if (++n < frames) requestAnimationFrame(step); else finish(((frames - 1) * 1000) / (t - t0));
+      t0 ??= t; tLast = t;
+      if (++n < frames) requestAnimationFrame(step); else finish(rate());
     };
     requestAnimationFrame(step);
   });

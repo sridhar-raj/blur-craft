@@ -3,6 +3,8 @@
 Code for each effect in SKILL.md. Class names use a `bc-` placeholder prefix: rename them to the
 section's own prefix. React snippets assume `"use client"` and `framer-motion` (12+). Numbers are starting points; tune them by eye on a screenshot.
 
+**Contents:** 0 Light behind the glass · 1 Glass surface · 1b Liquid Glass refraction · 1d Liquid Glass in every browser (WebGL, over a known backdrop) · 1c Extended-backdrop sticky bar · 2 Progressive blur · 3 Focus veil · 4 Blur reveal · 4b Blur-bridged crossfade · 4c Glass morph and press · 5 Glow · 6 Depth of field · 7 Velocity motion blur · 8 Art backdrop · 8b Ambient glow from video · 9 Locked content · 10 Grain · 11 Merging glass shapes (Liquid Glass merge) · 12a When to use WebGL glass instead · 12 Tinting glass with colour
+
 **Plain HTML (no React):** every Framer Motion recipe maps onto the Web Animations API. For example, the
 blur reveal becomes
 `el.animate([{ opacity: 0, filter: "blur(8px)", transform: "translateY(10px)" }, { opacity: 1, filter: "blur(0px)", transform: "none" }], { duration: 600, easing: "cubic-bezier(.2,.8,.2,1)", delay: i * 45, fill: "backwards" })`.

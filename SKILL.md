@@ -1,17 +1,15 @@
 ---
 name: blur-craft
 description: >-
-  Make blur and glass look premium in UI, and prove it's readable: Apple-grade frosted glass (a measured
-  material with thickness levels, a lit rim and a tinted level), ready-made glass surfaces (sticky nav,
-  sidebar/panel, dock, menu, dialog over a dimmed blurred page, toast, sheet), Liquid Glass refraction,
-  progressive blur, blur reveals, glows and depth, with React, Vue, Svelte, Tailwind and native
-  (SwiftUI, Flutter, React Native, Compose) guidance, plus contrast and frost checkers. Use this whenever
-  a design involves glass, glassmorphism, frosted or translucent surfaces, backdrop-filter or
-  backdrop-blur, blur, soft glows, depth, a bar/sidebar/dock/toolbar/toast/sheet floating over art,
-  photos, video or scrolling content, dimming behind a dialog, or a request to make a UI feel premium,
-  layered, luminous, or like macOS/iOS/visionOS ("Apple-like", "flat and cheap", "more depth"); also
-  whenever reviewing or fixing translucent UI that's hard to read or a blur that doesn't show in a
-  browser, even if the user never says "blur" or "glass".
+  Blur and glass in UI, done well and proven readable: a measured frosted-glass material (thickness
+  levels, lit rim, tinted level), ready-made glass surfaces (sticky nav, dock, sidebar, menu, dialog over a
+  blurred veil, toast, sheet), Liquid Glass refraction, progressive blur and blur reveals, for CSS, React,
+  Vue, Svelte, Tailwind and native toolkits, with contrast and frost checkers. Use it when a design has or
+  asks for glass, glassmorphism, frosted or translucent surfaces, backdrop-filter or backdrop-blur, a
+  blurred scrim behind a dialog, a bar or panel floating over images, video or scrolling content, or
+  Apple-style (macOS/iOS/visionOS) materials; and when fixing translucent UI that's hard to read or a blur
+  that doesn't render (Safari, Tailwind's backdrop-blur). A request to make UI "premium" or give it "more
+  depth" is not by itself a reason to add glass: use this only once glass is in the design or asked for.
 ---
 
 # Blur craft
@@ -33,7 +31,7 @@ expensive (Apple's materials, visionOS, the best product sites) gets three thing
 | A sticky nav bar | `.gs-bar` (surfaces.css) | Extended backdrop; add `gs-bar--on-scroll` to turn glassy only after scrolling |
 | A player, dock or pill over art | `.gs-dock.glass.glass--clear` + `liquid-glass.js` | Clear Liquid Glass, one per screen; adaptive tone if the art changes a lot |
 | A floating card or panel with text | `.glass.glass--regular` | `thick` over a detailed photo |
-| A menu, popover or command bar | `.gs-menu.glass` | 32px over ~86%, 0.5px top highlight |
+| A menu, popover or command bar | `.gs-menu.glass` | 4px over ~86% (a bigger blur under that fill only costs frames), 0.5px top highlight |
 | A dialog | `.gs-veil` + `.gs-dialog.glass.glass--thick` | `glass--solid` when it confirms money, deletes or signs; `gs-veil--flat` + `.gs-modal-open` when glass chrome sits underneath |
 | A toast or a bottom sheet | `.gs-toast.glass.glass--regular` / `.gs-sheet.glass.glass--thick` | The `gs-` classes are layout only; the material comes from `.glass` |
 | Content fading under a bar | Progressive blur (recipe 2) | One scroll-edge effect per view |
@@ -73,8 +71,10 @@ Use `assets/glass.css` (rename the `glass` prefix when copying) and `assets/surf
 ready-made surfaces, or the components: `Glass.tsx` (React), `Glass.vue` (Vue 3), `Glass.svelte` (Svelte 5). Don't hand-write a one-line `backdrop-filter` card.
 
 **Write `backdrop-filter` with literal values, never `var()`, unprefixed first and `-webkit-` last.**
-Safari 18 and 26 on macOS Sonoma render no blur when the filter is built from custom properties (WebKit
-297620, open), and Tailwind v4's `backdrop-blur-*` is built exactly that way. The same bug report shows the
+On macOS Sonoma, Safari renders no blur when the filter is built from custom properties (WebKit 297620,
+open), and Tailwind v4's `backdrop-blur-*` is built exactly that way. The bug follows the OS, not the Safari
+version: it reproduces in Safari 18, 26.1 and Safari Technology Preview on Sonoma, and not in the same
+versions on macOS 15 or 26. Sonoma Macs stay on it for years, so write for it. The same bug report shows the
 unprefixed property failing there even with a literal value, so the prefixed declaration goes last, where
 Safari applies it (Chrome and Firefox ignore it). `glass.css` has a literal filter per thickness × tone and
 switches by class; variables are fine for fills, dims and colours.
@@ -140,8 +140,8 @@ Code in `references/recipes.md`:
 
 Design the look first, then hold these:
 
-- Long or looping animation goes on opacity and transform, not the blur radius. Short one-offs are fine:
-  Apple.com animates its menu curtain's blur 0 → 20px over 320ms.
+- Animate opacity and transform, not the blur radius. Apple.com's menu curtain keeps a fixed 20px blur
+  over a 40% tint and fades its opacity in over 320ms; the blur itself never animates.
 - Never blur two stacked surfaces at once (Apple's nav drops its own blur while a flyout is open). When a
   dialog opens over glass chrome, add `.gs-modal-open` to `<html>` (the chrome stops blurring and goes
   near-opaque) and use `gs-veil--flat`, or bake the veil from an image or canvas backdrop. Measured on a
@@ -158,11 +158,11 @@ Design the look first, then hold these:
 - Give `html` an opaque background colour: Safari then skips an extra full-screen compositing layer for
   pages with glass (WebKit 271340: the fix skips the layer only for opaque documents).
 - Don't blur under an opaque fill. Framer and Dia ship `backdrop-filter` on solid backgrounds, paying
-  for a blur nobody can see. Above ~85% fill, use ≤ 4px or none (Arc's toasts: 85% and 3px).
+  for a blur nobody can see. Above ~85% fill, use ≤ 4px or none.
 - Tier glass by device: `assets/glass-tier.js` sets `data-glass-tier` to full, lite (one 8px blur) or
   flat (no blur, more tint) from device memory, Save-Data, a frame-rate probe (iOS Low Power Mode caps
-  animation at 30fps on purpose) and Compute Pressure, the way Android, Fluent and Apple drop blur on
-  weak or power-saving devices.
+  web animation at 30fps on purpose; that's its only documented effect on web pages) and Compute
+  Pressure, the way Android and Fluent drop blur on weak or power-saving devices.
 - Over video, don't blur the playing video: sample it into a tiny canvas (recipe 8b), and drop glass in
   fullscreen. Safari never passes video pixels to SVG filters.
 - Backdrop root: a parent with `opacity < 1`, `filter`, a mask, `clip-path`, `mix-blend-mode`,
@@ -190,7 +190,7 @@ Run all of these before calling glass done:
    test state so the script can load it). On one editor the default photo passed at 8.7:1 and a bright
    frame failed at 4.4:1. Check phone width too (`--width 390 --height 844`). It hides the text,
    finds the brightest and darkest pixel under each line, and checks 4.5:1 (3:1 large) in three states:
-   normal, tint-only (blur off, as iOS Low Power Mode shows it) and `prefers-contrast: more`. Fix failures
+   normal, tint-only (blur off, as a browser without support, the flat tier or a dropped filter shows it) and `prefers-contrast: more`. Fix failures
    by going a thickness up, raising the alpha in `--glass-dim` (e.g. `rgb(10 10 18 / 0.6)`), or moving text
    off the bright patch. Never put
    text-bearing glass over other text. Keep 44px targets on glass controls.
@@ -199,9 +199,17 @@ Run all of these before calling glass done:
 4. **Audit:** `node <skill>/scripts/blur-audit.mjs <folder | .css | .tsx | .html>`, and `--url` with the
    page running for blurred area and frame rate.
 5. **Other browsers:** open `assets/browser-check.html` in the browser in question (real Safari, a Sonoma
-   Mac, Firefox, an old iPhone): ten tiles show which blur cases work there. Read computed styles in Playwright's WebKit, but judge the look in real Safari:
-   Playwright's WebKit never paints `backdrop-filter` in screenshots, and it runs a newer WebKit than
-   Sonoma's Safari, so it can't show the `var()` bug either (the audit's literal-filter check can).
+   Mac, Firefox, an old iPhone): ten tiles show which blur cases work there. Playwright's WebKit never
+   paints `backdrop-filter` in screenshots and runs a newer WebKit than Sonoma's Safari, so it can't show
+   the look or the `var()` bug. **Without real Safari, don't stop at "please open it in Safari".** Do this
+   and report the result:
+   - `blur-audit.mjs` on the source: every `backdrop-filter` literal (both declarations), `-webkit-` last,
+     a `@supports` fallback. That is the whole Sonoma `var()` check; it needs no Mac.
+   - In Playwright's WebKit, read `getComputedStyle(el).webkitBackdropFilter` for each glass surface: it
+     must be the literal filter, not `none` (catches a missing prefix, a typo, a cascade that drops it).
+   - The tint-only state of `glass-contrast.mjs` passing is what a Safari that drops the blur would show.
+   - Then name what is still unverified, specifically, e.g. "rendered blur and the Liquid Glass fallback
+     in Safari 26 on macOS 15 and 14 not seen; computed filters and the tint-only fallback verified".
 6. **Don't trust axe for glass.** axe-core ignores `backdrop-filter`: text on glass over images comes back
    "incomplete", and glass over flat colour is scored as if unblurred. `glass-contrast.mjs` is the check.
    For visual regression, freeze grain and sheen and compare glass regions at `maxDiffPixelRatio` ~0.01.
@@ -242,10 +250,13 @@ Run all of these before calling glass done:
 - `assets/glass.tailwind.css`: Sonoma-safe Tailwind v4 utilities (`glass-blur-*`, `glass-neutral-blur-*`, `glass-none`).
 - `assets/adaptive-tone.js`: light/dark flip for small glass from the luminance behind it.
 - `assets/glass-tier.js`: full / lite / flat glass by device capability and power state.
+- References are long; read only the one the task needs, and only its relevant section (each opens with
+  its section list or headings to jump to). Most builds need none beyond this file and `assets/`.
 - `references/recipes.md`: code for every effect. `references/research.md`: sources and what each
   established. `references/material.md`: every layer explained, production presets, Apple's WWDC25 rules, register.
   `references/quirks.md`: browser and performance traps.
   `references/native.md`: SwiftUI, UIKit, Flutter, React Native and Compose equivalents.
-- `scripts/glass-contrast.mjs`: worst-case contrast in three states. `scripts/frost-check.mjs`: does each
-  surface actually blur (blur on vs off). `scripts/blur-audit.mjs`: static
-  and live audit.
+- `scripts/glass-contrast.mjs`: worst-case contrast in three states, whole page scrolled, `--click` to open
+  a state. `scripts/frost-check.mjs`: does each surface actually blur (blur on vs off), `--click` too.
+  `scripts/blur-audit.mjs`: static and live audit. `scripts/test-checkers.mjs`: the checkers' own tests
+  (fixtures in `scripts/fixtures/`); run it after editing any checker.

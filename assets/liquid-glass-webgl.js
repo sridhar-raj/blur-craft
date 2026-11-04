@@ -13,7 +13,7 @@
 // source every frame (video, animated canvas).
 //
 // Limits: only the source is refracted (not other page elements over it); the source must be same-origin
-// or CORS-enabled; it stays off on "lite"/"flat" device tiers, under prefers-reduced-transparency, and in
+// or CORS-enabled; it stays off on "lite"/"flat" device tiers, in capture mode, under prefers-reduced-transparency, and in
 // forced colours. If WebGL isn't available it returns a no-op and the CSS material stays.
 
 const VERT = `attribute vec2 a; varying vec2 uv; void main(){ uv = vec2(a.x * .5 + .5, .5 - a.y * .5); gl_Position = vec4(a, 0., 1.); }`;
@@ -76,30 +76,52 @@ void main(){
   gl_FragColor = vec4(col * edge, edge);
 }`;
 
-function parseRgba(s) {
-  const m = s.match(/[\d.]+/g);
-  if (!m) return [0.04, 0.04, 0.07, 0.48];
-  const [r, g, b, a = "1"] = m;
-  return [r / 255, g / 255, b / 255, Math.min(1, Number(a))];
+// Resolve any CSS colour (rgb, hex, oklch, display-p3, named) to sRGB 0-1 + alpha by letting the browser
+// draw it on a 1x1 canvas. A gradient (a graded --glass-dim, the tinted level's layer) gives its first colour.
+let probe;
+const COLOUR = /(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)|#[0-9a-f]{3,8}\b|\b(?:transparent|white|black)\b/i;
+function toRgba(value, fallback) {
+  const m = COLOUR.exec(value || "");
+  if (!m) return fallback;
+  probe ??= Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true });
+  probe.clearRect(0, 0, 1, 1);
+  probe.fillStyle = "rgb(1 2 3 / 0)";
+  probe.fillStyle = m[0];
+  if (probe.fillStyle === "rgba(1, 2, 3, 0)") return fallback;   // the browser didn't accept it
+  probe.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
+  return [r / 255, g / 255, b / 255, a / 255];
 }
+// The element's dim with the tinted level (glass--tinted, data-glass="tinted", prefers-contrast: more, the
+// flat tier) laid over it, as glass.css does: the opaque WebGL canvas covers the CSS layers, so it has to.
+function tintOf(cs) {
+  const dim = toRgba(cs.getPropertyValue("--glass-dim"), [0.04, 0.04, 0.07, 0.48]);
+  const layer = toRgba(cs.getPropertyValue("--glass-tint-layer"), null);
+  if (!layer || !layer[3]) return dim;
+  const a = layer[3] + dim[3] * (1 - layer[3]);
+  return [0, 1, 2].map((k) => (layer[k] * layer[3] + dim[k] * dim[3] * (1 - layer[3])) / a).concat(a);
+}
+
+// Every return carries .refresh(), so callers can do `stop.refresh()` without checking whether WebGL mounted.
+const noop = () => Object.assign(() => {}, { refresh() {}, mounted: false });
 
 export function mountWebGLGlass(el, source, opts = {}) {
   const { bezel = 22, strength = 36, blur = 14, aberration = 0.6, saturate = 1.7, live = false } = opts;
   const root = document.documentElement;
-  const off = () => (root.dataset.glassTier && root.dataset.glassTier !== "full")
+  const off = () => (root.dataset.glassTier && root.dataset.glassTier !== "full") || "glassCapture" in root.dataset
     || matchMedia("(prefers-reduced-transparency: reduce)").matches || matchMedia("(forced-colors: active)").matches;
-  if (off()) return () => {};
+  if (off()) return noop();
 
   const canvas = document.createElement("canvas");
   canvas.setAttribute("aria-hidden", "true");
   canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;z-index:-2;pointer-events:none";
   const gl = canvas.getContext("webgl", { premultipliedAlpha: true, alpha: true });
-  if (!gl) return () => {};
+  if (!gl) return noop();
 
   const sh = (type, code) => { const s = gl.createShader(type); gl.shaderSource(s, code); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   const prog = gl.createProgram();
   try { gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG)); }
-  catch (e) { console.warn("[blur-craft] WebGL glass shader failed, keeping the CSS material:", e.message); return () => {}; }
+  catch (e) { console.warn("[blur-craft] WebGL glass shader failed, keeping the CSS material:", e.message); return noop(); }
   gl.linkProgram(prog); gl.useProgram(prog);
   const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
@@ -112,7 +134,7 @@ export function mountWebGLGlass(el, source, opts = {}) {
     try { gl.bindTexture(gl.TEXTURE_2D, tex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source); return true; }
     catch { return false; }   // tainted (cross-origin) or not ready
   };
-  if (!upload()) return () => {};
+  if (!upload()) return noop();
 
   // The CSS blur must not run underneath as well; remember what to restore.
   const prev = { bf: el.style.getPropertyValue("backdrop-filter"), wbf: el.style.getPropertyValue("-webkit-backdrop-filter") };
@@ -145,7 +167,7 @@ export function mountWebGLGlass(el, source, opts = {}) {
     gl.uniform1f(U.aberr, aberration);
     gl.uniform1f(U.sat, saturate);
     gl.uniform1f(U.dpr, k);
-    gl.uniform4f(U.tint, ...parseRgba(cs.getPropertyValue("--glass-dim")));
+    gl.uniform4f(U.tint, ...tintOf(cs));
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     if (live) raf = requestAnimationFrame(draw);
@@ -157,16 +179,23 @@ export function mountWebGLGlass(el, source, opts = {}) {
   ro.observe(el); ro.observe(source);
   addEventListener("scroll", schedule, { passive: true });
   addEventListener("resize", schedule);
+  // Settings that change the tint or switch the lens off: redraw (draw() stops itself when off() turns true).
+  const mqs = ["(prefers-contrast: more)", "(prefers-reduced-transparency: reduce)", "(forced-colors: active)"].map((q) => matchMedia(q));
+  for (const mq of mqs) mq.addEventListener("change", schedule);
+  const mo = new MutationObserver(schedule);
+  mo.observe(root, { attributes: true, attributeFilter: ["data-glass", "data-glass-tier", "data-glass-capture", "class"] });
+  mo.observe(el, { attributes: true, attributeFilter: ["class", "style"] });
   schedule();
 
   function stop() {
     if (!alive) return;
     alive = false; cancelAnimationFrame(raf); io.disconnect(); ro.disconnect();
     removeEventListener("scroll", schedule); removeEventListener("resize", schedule);
+    for (const mq of mqs) mq.removeEventListener("change", schedule); mo.disconnect();
     canvas.remove();
     el.style.removeProperty("backdrop-filter"); el.style.removeProperty("-webkit-backdrop-filter");
     if (prev.bf) el.style.setProperty("backdrop-filter", prev.bf);
     if (prev.wbf) el.style.setProperty("-webkit-backdrop-filter", prev.wbf);
   }
-  return Object.assign(stop, { refresh: () => { upload(); schedule(); } });
+  return Object.assign(stop, { refresh: () => { if (alive) { upload(); schedule(); } }, mounted: true });
 }

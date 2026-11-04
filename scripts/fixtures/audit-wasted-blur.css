@@ -1,0 +1,2 @@
+/* expect: WARN, 32px blur under a 90% fill */
+.menu { background: rgb(10 10 14 / 0.9); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); }

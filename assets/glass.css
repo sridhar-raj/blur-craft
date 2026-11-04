@@ -50,8 +50,9 @@
     linear-gradient(160deg, var(--glass-fill-top), var(--glass-fill-bottom) 60%),
     var(--glass-tint-layer, linear-gradient(transparent, transparent)),   /* tinted level adds opacity on top, never replaces */
     var(--glass-dim);
-  /* backdrop-filter is set per thickness below, as LITERAL values: Safari 18/26 on macOS Sonoma renders no
-     blur when the filter is composed from var() (WebKit bug 297620, open). Never build it from variables. */
+  /* backdrop-filter is set per thickness below, as LITERAL values: Safari on macOS Sonoma (18 and later,
+     Technology Preview included: it follows the OS) renders no blur when the filter is composed from var()
+     (WebKit bug 297620, open). Never build it from variables. */
   box-shadow:
     inset 0 1px 0 rgb(var(--glass-light) / 0.35),          /* top specular line */
     inset 0 -1px 0 rgb(255 255 255 / 0.04),
@@ -63,7 +64,8 @@
 /* Positioned so the rim and sheen can sit inside it, at zero specificity: any position your layout gives
    the element (absolute, fixed, sticky) wins. */
 :where(.glass) { position: relative; }
-:where(.glass--light) { color: rgb(10 12 20 / 0.92); }
+/* Same specificity as .glass and later, so light glass gets dark ink (a :where() here would lose to .glass's white). */
+.glass.glass--light { color: rgb(10 12 20 / 0.92); }
 
 /* 3. Edge: a gradient rim drawn on a ring (mask-composite keeps only the border). */
 .glass::before {
@@ -120,7 +122,7 @@
    dark: brightness .96 (never lift a bright backdrop behind white text); light: 1.08.
    contrast < 1 is the working CSS form of Fluent's luminosity layer (colour through, harsh light and
    dark blocked); a mix-blend-mode child does not work in browsers. Solid uses 4px: above ~85% fill the
-   radius barely shows (Arc ships 3px under 85%), so a big blur there only costs frames.
+   radius barely shows, so a big blur there only costs frames.
    neutral (colour-critical apps): blur only, no saturation or tone change. */
 .glass { backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85); }
 .glass.glass--light { backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08) contrast(0.85); }
@@ -143,7 +145,11 @@
 
 /* Device tiers (assets/glass-tier.js sets <html data-glass-tier>): "lite" keeps a small blur and no
    extras; "flat" drops the blur and leans on the dim, as Android and Fluent do on weak hardware. */
-:root[data-glass-tier="lite"] .glass.glass { backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }   /* !important beats Liquid Glass's inline filter */
+/* Screen only, never in forced colours or capture mode: those states drop the blur, and this !important
+   rule is more specific than theirs, so it would put the blur back. Reduced transparency is re-asserted below. */
+@media screen and (forced-colors: none) {
+  :root[data-glass-tier="lite"]:not([data-glass-capture]) .glass.glass { backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }   /* !important beats Liquid Glass's inline filter */
+}
 :root[data-glass-tier="flat"] .glass.glass {
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   --glass-tint-layer: linear-gradient(rgb(14 14 20 / 0.66), rgb(14 14 20 / 0.66));   /* ≥ the tinted level, so flat never lowers it */
@@ -200,8 +206,8 @@
 }
 /* Chromium only; Safari ignores this query (see prefers-contrast above). */
 @media (prefers-reduced-transparency: reduce) {
-  .glass { backdrop-filter: none !important; -webkit-backdrop-filter: none !important;  /* !important beats liquid glass's inline filter */ background: rgb(22 22 30 / 0.97); }
-  .glass--light { background: rgb(250 250 252 / 0.98); }
+  .glass, :root[data-glass-tier]:not([data-glass-capture]) .glass.glass { backdrop-filter: none !important; -webkit-backdrop-filter: none !important;  /* !important beats liquid glass's inline filter and the lite tier */ background: rgb(22 22 30 / 0.97); }
+  .glass--light, :root[data-glass-tier]:not([data-glass-capture]) .glass.glass--light { background: rgb(250 250 252 / 0.98); }
 }
 
 /* Motion: the rim swing is decoration. */

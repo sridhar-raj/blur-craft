@@ -1,0 +1,2 @@
+/* expect: FAIL, backdrop-filter without -webkit-backdrop-filter */
+.card { background: linear-gradient(#0003, #0001); backdrop-filter: blur(24px); }

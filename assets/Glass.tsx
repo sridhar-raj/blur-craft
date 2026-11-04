@@ -5,6 +5,7 @@
 // edge refraction in Chromium (liquid-glass.ts) and quietly falls back to frosted glass elsewhere.
 //
 //   <Glass thickness="regular" light="255 214 190" liquid className="tk-player">…</Glass>
+//   thickness: clear | thin | regular | thick | solid; tone: dark | light; tinted; neutral; sheen; liquid
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
@@ -12,7 +13,7 @@ import { watchLiquidGlass, type LiquidOptions } from "./liquid-glass";
 
 type Props = {
   children: ReactNode;
-  thickness?: "clear" | "thin" | "regular" | "thick";
+  thickness?: "clear" | "thin" | "regular" | "thick" | "solid";
   tone?: "dark" | "light";
   /** r g b of the light behind the glass, e.g. "255 180 120" for a warm sun. Tints the rim and sheen. */
   light?: string;
@@ -20,6 +21,8 @@ type Props = {
   liquid?: boolean | LiquidOptions;
   /** The more opaque, higher-contrast level (iOS 26.1 "Tinted"). Also automatic on prefers-contrast: more. */
   tinted?: boolean;
+  /** Colour-critical apps (photo/video editors, colour pickers): blur only, no saturation or tone shift. */
+  neutral?: boolean;
   /** Highlight follows the pointer. Only for glass you can act on (a dock, a glass button). Off by default;
    *  ignored for touch and under reduced motion. */
   sheen?: boolean;
@@ -28,10 +31,12 @@ type Props = {
 };
 
 export function Glass({
-  children, thickness = "regular", tone = "dark", light, liquid = false, tinted = false, sheen = false, className = "", style,
+  children, thickness = "regular", tone = "dark", light, liquid = false, tinted = false, neutral = false, sheen = false, className = "", style,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  // Rest point of the sheen: top-left, mirrored for right-to-left text (glass.css does the same for static glass).
+  const restX = () => (ref.current && getComputedStyle(ref.current).direction === "rtl" ? 70 : 30);
   const mx = useSpring(useMotionValue(30), { stiffness: 120, damping: 20 });
   const my = useSpring(useMotionValue(0), { stiffness: 120, damping: 20 });
   const mxPct = useMotionTemplate`${mx}%`;
@@ -44,16 +49,17 @@ export function Glass({
     if (!el || !liquidKey) return;
     return watchLiquidGlass(el, JSON.parse(liquidKey) as LiquidOptions);
   }, [liquidKey]);
+  useEffect(() => { if (sheen) mx.jump(restX()); }, [sheen]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <motion.div
       ref={ref}
-      className={`glass glass--${thickness}${tone === "light" ? " glass--light" : ""}${tinted ? " glass--tinted" : ""} ${className}`}
+      className={`glass glass--${thickness}${tone === "light" ? " glass--light" : ""}${tinted ? " glass--tinted" : ""}${neutral ? " glass--neutral" : ""} ${className}`}
       style={{
         ...style,
         ...(light ? ({ "--glass-light": light } as CSSProperties) : null),
-        ["--mx" as string]: mxPct,
-        ["--my" as string]: myPct,
+        // Only interactive glass writes the sheen position; static glass keeps glass.css's (RTL-aware) rest point.
+        ...(sheen ? { ["--mx" as string]: mxPct, ["--my" as string]: myPct } : null),
       }}
       onPointerMove={(e) => {
         if (!sheen || reduce || e.pointerType !== "mouse") return;
@@ -61,7 +67,7 @@ export function Glass({
         mx.set(((e.clientX - r.left) / r.width) * 100);
         my.set(((e.clientY - r.top) / r.height) * 100);
       }}
-      onPointerLeave={() => { mx.set(30); my.set(0); }}
+      onPointerLeave={() => { if (sheen) { mx.set(restX()); my.set(0); } }}
     >
       {children}
     </motion.div>

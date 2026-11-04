@@ -184,7 +184,7 @@
       <tr><td>10</td><td>Bottom edge</td><td>masked blur (unchanged: the mask was already written both ways)</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td><td class="soft">soft at the bottom</td></tr>
     </tbody>
   </table>
-  <p>One more Safari trap, not shown as a column: Safari 18 and 26 on <strong>macOS Sonoma</strong> drop blur written with <code>var()</code> (WebKit bug 297620), and Tailwind v4's <code>backdrop-blur-*</code> is written that way. blur-craft writes literal values to avoid it.</p>
+  <p>One more Safari trap, not shown as a column: Safari on <strong>macOS Sonoma</strong> (18 and later, Technology Preview included) drops blur written with <code>var()</code> (WebKit bug 297620), and Tailwind v4's <code>backdrop-blur-*</code> is written that way. blur-craft writes literal values to avoid it.</p>
   <p>Anything that doesn't match the table is a finding: note the number, the browser and its version (Safari's user agent always says macOS 10_15_7, so check  → About This Mac for the real macOS version).</p>
   <p class="ua" id="ua" style="font:12px ui-monospace,Menlo,monospace;color:#8f88aa"></p>
 </section>

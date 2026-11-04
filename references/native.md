@@ -9,7 +9,7 @@ real. The Flutter, React Native and Compose code is from current docs but was no
 
 | Web (blur-craft) | SwiftUI | UIKit | Flutter | React Native (Expo) | Jetpack Compose |
 |---|---|---|---|---|---|
-| `glass--clear`…`glass--thick` | `.ultraThinMaterial` … `.thickMaterial` | `UIBlurEffect(style:)` in `UIVisualEffectView` | `BackdropFilter(ImageFilter.blur(…))` | `<BlurView intensity tint>` | Haze `hazeEffect` + `HazeMaterials` |
+| `glass--clear`…`glass--thick` | `.ultraThinMaterial` … `.thickMaterial` | `UIBlurEffect(style:)` in `UIVisualEffectView` | `BackdropFilter(ImageFilter.blur(…))` | `<BlurView intensity tint>` | Haze `hazeBlur` (2.x) |
 | Liquid Glass (refraction) | `.glassEffect(_:in:)` (iOS 26) | `UIGlassEffect` (iOS 26) | none built in | none built in | none built in |
 | Merging shapes (recipe 11) | `GlassEffectContainer(spacing:)`, `glassEffectID`, `glassEffectUnion` | `UIGlassContainerEffect` | `BackdropGroup` shares one backdrop (performance, not merging) | n/a | n/a |
 | Tinted level / reduce transparency | automatic (system settings) | automatic | check `MediaQuery.highContrastOf`; supply a solid fallback | `AccessibilityInfo.isReduceTransparencyEnabled()` (iOS) | `RenderEffect` needs API 31; fallback is a tinted surface |
@@ -121,9 +121,13 @@ import { BlurView } from "expo-blur";
 
 ## Jetpack Compose (Android)
 
-- Compose has no backdrop-filter. Use Chris Banes' Haze: `Modifier.hazeSource(state)` on the content behind,
-  `Modifier.hazeEffect(state)` on the glass, styled with `HazeMaterials` (e.g. `HazeMaterials.thin()`).
-  Haze 1.x called the effect modifier `hazeChild`; check the version you install.
+- Compose has no backdrop-filter. Use Chris Banes' Haze. This targets **Haze 2.x (2.1.0, November 2026)**:
+  mark the content behind as a source (`Modifier.hazeSource(state)`) and blur on the glass with
+  `Modifier.hazeBlur(input = HazeInput.Sources(state), style = HazeBlurStyle { blurRadius(24.dp) })`, or
+  `Modifier.hazeGlass` for the glass look; presets live in the separate `haze-blur-materials` artifact.
+  Pin the version (`dev.chrisbanes.haze:haze:2.1.0`) and check its migration guide for the exact source and
+  materials names. Older APIs: 1.2–1.7 used `Modifier.hazeEffect(state) { … }` with `HazeMaterials`;
+  before 1.2 the pair was `haze` / `hazeChild`.
 - Real blur needs Android 12 (API 31, `RenderEffect`); below that, Haze falls back to a translucent scrim.
   Android's own window-blur guidance: 80px background blur for frosted glass, dim 0.1 with blur and 0.4
   without, never above 150px, and blur is off in battery saver.

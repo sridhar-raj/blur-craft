@@ -12,7 +12,7 @@
 <style>
   /* Harbor Radio: one product, every glass use case in its real place. All glass comes from the skill's
      glass.css + surfaces.css; this file only lays the product out. */
-  :root { --ink: #f6f2ee; --ground: #0d0a15; --muted: rgb(246 242 238 / 0.72); --accent: #ff7a59; }
+  :root { --ink: #f6f2ee; --ground: #0d0a15; --muted: rgb(246 242 238 / 0.72); --accent: #ff7a59; color-scheme: dark; accent-color: var(--accent); }   /* dark form controls, not light-blue ones */
   * { box-sizing: border-box; }
   html { background: var(--ground); scroll-padding-top: 80px; }   /* opaque html: Safari skips a layer */
   body { margin: 0; color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; padding-bottom: 120px; }
@@ -26,10 +26,10 @@
   .brand { font: 600 19px Fraunces, serif; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
   .brand i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
   .navlinks { display: flex; gap: 20px; font-size: 14px; margin-left: 8px; }
-  .navlinks a { text-decoration: none; opacity: 0.9; }
+  .navlinks a { text-decoration: none; opacity: 0.9; padding: 12px 0; }   /* 44px target */
   .navright { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-  .pill { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 999px; background: rgb(255 255 255 / 0.1); font-size: 14px; }
-  .pill kbd { font: 12px Inter, sans-serif; opacity: 0.7; border: 1px solid rgb(255 255 255 / 0.25); border-radius: 5px; padding: 0 5px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 999px; background: rgb(255 255 255 / 0.1); font-size: 14px; }
+  .pill kbd { font: 12px Inter, sans-serif; border: 1px solid rgb(255 255 255 / 0.25); border-radius: 5px; padding: 0 5px; }
 
   /* Hero with the harbour scene: the light behind the "on air" glass */
   .hero { position: relative; height: min(86vh, 820px); min-height: 600px; margin-top: -56px; overflow: hidden; }
@@ -59,11 +59,12 @@
   .station .meta { padding: 0 14px 14px; display: grid; gap: 2px; }
   .station strong { font-weight: 600; }
   .station span { color: var(--muted); font-size: 13px; }
-  .station[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .station[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); }   /* selection; the outline stays free for focus */
+  .station:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
   .schedule { list-style: none; padding: 0; margin: 0 0 48px; display: grid; gap: 8px; }
   .schedule li { display: grid; grid-template-columns: 70px 1fr auto; gap: 16px; align-items: center; padding: 14px 16px; background: #15111c; border-radius: 14px; }
   .schedule time { color: var(--muted); font-variant-numeric: tabular-nums; }
-  .schedule button { padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / 0.08); font-size: 13px; }
+  .schedule button { min-height: 44px; padding: 8px 16px; border-radius: 999px; background: rgb(255 255 255 / 0.08); font-size: 13px; }
   .why { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 0 0 40px; padding: 0; list-style: none; }
   .why li { background: #15111c; border-radius: 14px; padding: 14px 16px; color: var(--muted); font-size: 14px; }
   .why b { color: var(--ink); display: block; margin-bottom: 4px; }
@@ -91,15 +92,18 @@
   /* 6 · Command palette: thick menu glass over a flat veil */
   .palette { position: fixed; z-index: 91; top: 14vh; left: 0; right: 0; margin: 0 auto; width: min(560px, calc(100% - 24px)); padding: 8px; display: grid; gap: 4px; }
   .palette input { width: 100%; height: 48px; padding: 0 14px; border: 0; border-radius: 10px; background: rgb(255 255 255 / 0.07); outline: none; font-size: 16px; }
+  .palette input:focus-visible { outline: 2px solid rgb(255 255 255 / 0.9); outline-offset: -2px; }
   .palette input::placeholder { color: rgb(255 255 255 / 0.7); }
   .palette ul { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
-  .palette li button { width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; }
-  .palette li button:is(:hover, :focus-visible, [aria-selected="true"]) { background: rgb(255 255 255 / 0.1); outline: none; }
+  .palette li button { width: 100%; min-height: 44px; text-align: left; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .palette li button:is(:hover, [aria-selected="true"]) { background: rgb(255 255 255 / 0.1); }
+  .palette li button:focus-visible { background: rgb(255 255 255 / 0.1); outline: 2px solid rgb(255 255 255 / 0.9); outline-offset: -2px; }
 
   /* 7 · Dialog */
+  .gs-dialog { --glass-dim: rgb(10 10 18 / 0.64); }   /* thick's 0.56 measured 4.41:1 blur-off on phones, over the sun */
   .gs-dialog h4 { margin: 2px 0 6px; font: 600 24px Fraunces, serif; }
   .choices { display: grid; gap: 8px; margin: 14px 0 18px; }
-  .choices label { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / 0.06); }
+  .choices label { display: flex; gap: 10px; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / 0.06); }
   .actions { display: flex; gap: 10px; }
   .actions button { flex: 1; min-height: 44px; border-radius: 12px; font-weight: 600; }
   .ghost { background: rgb(255 255 255 / 0.1); }
@@ -113,7 +117,8 @@
 
   /* 9 · Settings popover (a menu: thick glass) */
   .settings { position: fixed; z-index: 70; top: 64px; right: max(16px, 4vw); width: 280px; padding: 14px; display: grid; gap: 12px; font-size: 14px; }
-  .settings label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .settings label { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; }
+  .settings input[type=checkbox] { width: 20px; height: 20px; }
   .settings small { color: rgb(255 255 255 / 0.8); }
   [hidden] { display: none !important; }
 
@@ -127,6 +132,21 @@
     .hero-copy { right: 56px; }
   }
   @media (prefers-reduced-motion: reduce) { .live i { animation: none; } .swap, .gs-toast { transition: none; } }
+
+  /* Print: the schedule and stations on paper. Floating chrome goes, the glass prints as plain boxes (glass.css). */
+  @media print {
+    html, body { background: #fff; color: #000; padding: 0; }
+    .dock, .fade-edge, .compare, .toast-wrap, .settings, .palette, .gs-veil, .gs-dialog, .navright, #art, .eq, .station canvas { display: none !important; }
+    .hero { height: auto; min-height: 0; margin: 0; }
+    .hero-copy, .onair { position: static; max-width: none; width: auto; margin: 0 0 16px; }
+    .hero-copy h1, .hero-copy p { text-shadow: none; }
+    main { padding: 0; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .station, .schedule li, .why li { background: #fff; color: #000; border: 1px solid #bbb; break-inside: avoid; }
+    .station span, .schedule time, .why li, .schedule span span { color: #333 !important; }
+    .schedule button { display: none; }
+    .why code { color: #000; }
+  }
 
   /* ---------- BEFORE mode: the same page with typical tutorial glass (flat 15% white, 16px blur, white
      border, white text), the approach most guides and generic skills give. Switch with the toggle. ---------- */
@@ -143,7 +163,8 @@
   html.before .fade-edge { display: none; }
 
   .compare { position: fixed; left: 50%; translate: -50% 0; top: 70px; z-index: 80; display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: #fff; color: #120e18; box-shadow: 0 8px 30px rgb(0 0 0 / 0.35); font-size: 14px; }
-  .compare button { padding: 8px 14px; border-radius: 999px; font-weight: 600; }
+  .compare button { min-height: 44px; padding: 8px 16px; border-radius: 999px; font-weight: 600; }
+  .compare button:focus-visible { outline: 2px solid #120e18; outline-offset: 2px; }
   .compare button[aria-pressed="true"] { background: #120e18; color: #fff; }
   .compare output { padding: 0 10px 0 6px; font-variant-numeric: tabular-nums; color: #5a5468; white-space: nowrap; }
   html.embed .compare { display: none; }   /* inside the split view, the page's own switch is hidden */
@@ -198,7 +219,7 @@
 
 <div class="compare" role="group" aria-label="Compare">
   <button id="mBefore" aria-pressed="false">Before</button><button id="mAfter" aria-pressed="true">After · blur-craft</button>
-  <output id="score">worst contrast: 5.53:1 · all pass</output>
+  <output id="score">worst contrast: 4.6:1 · all pass</output>
 </div>
 
 <div class="fade-edge" id="fade" aria-hidden="true"></div>
@@ -277,11 +298,15 @@ function drawScene() {
     x.fillStyle = `hsl(${270 + rnd() * 30} ${25 + rnd() * 15}% ${14 + rnd() * 10}%)`; x.fillRect(bx, by, bw, bh + 4 * s);
     for (let wy = by + 6 * s; wy < sea - 6 * s; wy += 11 * s) for (let wx = bx + 4 * s; wx < bx + bw - 5 * s; wx += 9 * s) if (rnd() < 0.42) { x.fillStyle = `rgba(255,${190 + rnd() * 50},${110 + rnd() * 60},${0.55 + rnd() * 0.45})`; x.fillRect(wx, wy, 4 * s, 5 * s); }
   }
-  const lx = W * (W / s < 760 ? 0.93 : 0.86);   // on phones, keep the lighthouse clear of the intro text x.fillStyle = "#efe6e0"; x.fillRect(lx, sea - 180 * s, 20 * s, 180 * s); x.fillStyle = "#c2423a"; for (let k = 0; k < 4; k++) x.fillRect(lx, sea - (40 + k * 42) * s, 20 * s, 13 * s);
+  const lx = W * (W / s < 760 ? 0.93 : 0.86);   // on phones, keep the lighthouse clear of the intro text
+  x.fillStyle = "#efe6e0"; x.fillRect(lx, sea - 180 * s, 20 * s, 180 * s); x.fillStyle = "#c2423a"; for (let k = 0; k < 4; k++) x.fillRect(lx, sea - (40 + k * 42) * s, 20 * s, 13 * s);
   g = x.createLinearGradient(0, sea, 0, H); g.addColorStop(0, "#5a3466"); g.addColorStop(1, "#0d0a15"); x.fillStyle = g; x.fillRect(0, sea, W, H - sea);
   for (let y = sea + 2 * s; y < H; y += (3 + (y - sea) / (60 * s)) * s) { const k = (y - sea) / (H - sea), w = (90 + k * 520) * s; x.fillStyle = `rgba(255,210,150,${0.5 * (1 - k)})`; x.fillRect(sx - w / 2 + (rnd() - 0.5) * 60 * s, y, w * (0.3 + rnd() * 0.7), 2 * s); }
 }
 drawScene(); addEventListener("resize", drawScene);
+// WebKit can lay the hero out again once the web fonts arrive (the canvas keeps its old pixel size): redraw then.
+document.fonts?.ready.then(drawScene);
+new ResizeObserver(() => { if (art.width !== Math.round(art.clientWidth * devicePixelRatio)) drawScene(); }).observe(art);
 
 // ---------- Covers (colourful content scrolling under the glass) ----------
 function cover(canvas, [a, b, c], i) {
@@ -366,7 +391,7 @@ function toast(text) {
 
 // ---------- Modals: palette and record dialog (flat veil, chrome stops blurring, page inert) ----------
 let openEl = null, returnTo = null;
-const page = [document.querySelector(".hero"), document.querySelector("main"), $("bar"), dock];
+const page = [document.querySelector(".hero"), document.querySelector("main"), $("bar"), dock, document.querySelector(".compare"), document.querySelector(".toast-wrap"), $("settings")];
 function openModal(el, focusEl) {
   closeModal(false); returnTo = document.activeElement; openEl = el;
   root.classList.add("gs-modal-open"); page.forEach((p) => (p.inert = true));
@@ -378,10 +403,21 @@ function closeModal(restore = true) {
   openEl = null; if (restore) returnTo?.focus();
 }
 $("veil").addEventListener("click", () => closeModal());
+// Keep Tab inside the open dialog: inert covers the page, but not the other floating layers.
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select, textarea, a[href], [tabindex]:not([tabindex="-1"])';
 addEventListener("keydown", (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
   else if (e.key === "Escape") { closeModal(); closeSettings(); }
+  else if (e.key === "Tab" && openEl) {
+    const items = [...openEl.querySelectorAll(FOCUSABLE)].filter((el) => el.getClientRects().length);
+    if (!items.length) { e.preventDefault(); openEl.focus(); return; }
+    const first = items[0], last = items.at(-1);
+    if (!openEl.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 });
+document.addEventListener("focusin", (e) => { if (openEl && !openEl.contains(e.target)) openEl.querySelector(FOCUSABLE)?.focus(); });
 
 function render(q = "") {
   const list = $("results"); list.innerHTML = "";
@@ -409,7 +445,7 @@ $("cancelRec").addEventListener("click", () => closeModal());
 $("confirmRec").addEventListener("click", () => { const s = $("record").dataset.show; closeModal(); toast(`Recording scheduled: ${s}`); });
 
 // ---------- Before / After ----------
-const SCORES = { before: "1.91:1 · 4 lines fail", after: "5.53:1 · all pass" };   // measured with glass-contrast.mjs (worst of three states, 1600x900)
+const SCORES = { before: "1.91:1 · 7 lines fail", after: "4.6:1 · all pass" };   // measured with glass-contrast.mjs (worst of three states, 1600x900)
 function setMode(m) {
   root.classList.toggle("before", m === "before");
   $("mBefore").setAttribute("aria-pressed", String(m === "before"));
@@ -439,6 +475,13 @@ $("openSettings").addEventListener("click", () => {
 $("tinted").addEventListener("input", (e) => { root.dataset.glass = e.target.checked ? "tinted" : ""; });
 const idle = window.requestIdleCallback || ((f) => setTimeout(f, 300));
 idle(() => applyGlassTier().then(({ tier }) => ($("tierOut").textContent = `${tier} (measured on this device)`)));
+
+// Test states the checkers can load directly: ?state=record | palette | settings (e.g. glass-contrast.mjs
+// "…/examples/?state=record --width 390"), so a dialog's text gets measured without patching the checker.
+const state = params.get("state");
+if (state === "record") openRecord();
+else if (state === "palette") openPalette();
+else if (state === "settings") $("openSettings").click();
 </script>
 </body>
 </html>

@@ -32,8 +32,10 @@
   form { display: grid; gap: 12px; margin-top: 30px; max-width: 400px; }
   .field { position: relative; display: block; }
   .field input { width: 100%; height: 48px; padding: 0 18px; border-radius: 12px; font: inherit; font-size: 15px; outline: none; }
-  .field input:focus-visible { outline: 2px solid #3e4c9a; outline-offset: 1px; }
-  .show { position: absolute; top: 50%; right: 8px; translate: 0 -50%; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: 500 13px inherit; font-family: inherit; cursor: pointer; }
+  /* Focus: a white ring with a dark halo reads on the green glass and on the 15% white version alike. */
+  :is(.field input, .show, .submit, .back, .alt a):focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 5px rgb(10 16 8 / 0.55); }
+  .show, .back { min-height: 44px; display: inline-flex; align-items: center; }
+  .show { position: absolute; top: 50%; right: 8px; translate: 0 -50%; height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: 500 13px inherit; font-family: inherit; cursor: pointer; }
   .submit { height: 48px; border: 0; border-radius: 999px; font: 600 15px inherit; font-family: inherit; cursor: pointer; }
   .alt { margin: 4px 0 0; font-size: 14px; } .alt a { font-weight: 600; color: inherit; }
   .foot { margin-top: auto; padding-top: 24px; display: flex; gap: 14px; align-items: center; font-size: 13px; }
@@ -62,6 +64,8 @@
   @media (max-width: 760px) {
     .card { grid-template-columns: 1fr; grid-template-rows: 180px 1fr; height: auto; min-height: 0; }
     .form-side { padding: 24px 22px; } .head h1 { font-size: 36px; } .head { margin-top: 18px; }
+    /* Stacked, the form's top sits on the brightest sky: a heavier first stop (measured 4.5:1 blur-off without it). */
+    .m-craft .form-side { --glass-dim: linear-gradient(180deg, rgb(26 40 20 / 0.8) 0%, rgb(26 40 20 / 0.66) 40%, rgb(26 40 20 / 0.5) 62%); }
   }
 </style>
 </head>

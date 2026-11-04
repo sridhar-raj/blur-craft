@@ -51,6 +51,18 @@
   .gs-bar--light .gs-bar__backdrop { --gs-bar-fill: rgb(250 250 252 / 0.95); }
 }
 
+/* Forced colours strip the bar's gradient fill and leave a see-through blur under the links: give it a solid
+   system surface and a system edge instead (the .glass surfaces get the same in glass.css). */
+@media (forced-colors: active) {
+  .gs-bar__backdrop { height: 100%; background: Canvas !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; -webkit-mask-image: none; mask-image: none; animation: none !important; opacity: 1 !important; }
+  .gs-bar__edge { background: CanvasText !important; animation: none !important; opacity: 1 !important; }
+  .gs-veil { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+@media print {
+  .gs-bar { position: static; }
+  .gs-bar__backdrop { display: none; }
+}
+
 /* Optional: the bar turns to glass once the page scrolls, with no JS (scroll-driven animations:
    Chrome/Edge 115, Safari 26, Firefox 159). Animates the opacity of the pre-blurred layer, which is
    cheap, rather than the blur radius. Add class gs-bar--on-scroll. */
@@ -81,8 +93,10 @@
 .gs-menu {
   --glass-radius: 14px;
   --glass-dim: rgb(10 10 14 / 0.86);
-  backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85);   /* literal: Sonoma var() bug */
-  -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.96) contrast(0.85);
+  /* 86% fill: a big blur under it can't be seen and only costs frames (Linear ships 32px over 90%; the radius
+     doesn't show). 4px still turns text scrolling behind the menu into soft shapes. Literal: Sonoma var() bug. */
+  backdrop-filter: blur(4px) saturate(140%) brightness(0.96);
+  -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(0.96);
   display: grid;
   padding: 6px;
   min-width: 220px;
@@ -91,8 +105,9 @@
     0 0 0 0.5px rgb(0 0 0 / 0.8),
     0 16px 40px -8px rgb(0 0 0 / 0.6);
 }
-.gs-menu.glass--light { backdrop-filter: blur(32px) saturate(180%) brightness(1.08); -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.08); --glass-dim: rgb(250 250 252 / 0.88); box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 16px 40px -8px rgb(20 20 40 / 0.25); }
+.gs-menu.glass--light { backdrop-filter: blur(4px) saturate(140%) brightness(1.08); -webkit-backdrop-filter: blur(4px) saturate(140%) brightness(1.08); --glass-dim: rgb(250 250 252 / 0.88); box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 16px 40px -8px rgb(20 20 40 / 0.25); }
 .gs-menu > * { padding: 8px 10px; border-radius: 8px; }
+.gs-menu > :is(button, a, [role="menuitem"], [role="option"]) { min-height: 44px; }   /* targets survive the glass */
 .gs-menu.glass--light > :is(:hover, :focus-visible) { background: rgb(0 0 0 / 0.06); }
 .gs-menu.glass--light > :focus-visible { outline-color: rgb(10 12 20 / 0.85); }
 .gs-menu > :hover { background: rgb(255 255 255 / 0.08); }

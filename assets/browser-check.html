@@ -20,14 +20,15 @@
   .cmp-knob { position: absolute; top: 50%; left: 0; translate: -50% -50%; width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 2px 10px rgb(0 0 0 / 0.35); }
   .cmp-chev { position: absolute; top: 50%; translate: 0 -50%; color: #fff; font: 600 22px/1 -apple-system, sans-serif; text-shadow: 0 1px 6px rgb(0 0 0 / 0.5); }
   .cmp-chev.l { right: 26px; } .cmp-chev.r { left: 26px; }
-  .cmp-capture { position: absolute; inset: 0; z-index: 6; cursor: ew-resize; touch-action: pan-y; }
+  .cmp-capture { position: absolute; inset: 0; z-index: 6; cursor: ew-resize; touch-action: pan-y; outline: none; }
+  .cmp-capture:focus-visible ~ .cmp-line .cmp-knob { outline: 3px solid #c9b2ff; outline-offset: 3px; }   /* keyboard focus shows on the knob */
   .cmp-capture[hidden] { display: none; }
   .cmp-label { position: absolute; top: calc(50% - 48px); white-space: nowrap; padding: 5px 10px; border-radius: 6px; background: rgb(0 0 0 / 0.55); color: #fff; font: 600 12px -apple-system, sans-serif; letter-spacing: 0.02em; pointer-events: none; }
   .cmp-label.l { right: 12px; } .cmp-label.r { left: 12px; }
   @media (max-width: 700px) { .cmp-label small { display: none; } }
   .cmp-label small { font-weight: 400; opacity: 0.85; margin-left: 6px; }
   .cmp-tools { position: absolute; right: 16px; bottom: 16px; z-index: 8; display: flex; gap: 8px; }
-  .cmp-tools button, .cmp-tools a { background: #fff; color: #120e18; border: 0; border-radius: 999px; padding: 8px 13px; font: 600 12px -apple-system, sans-serif; text-decoration: none; cursor: pointer; box-shadow: 0 4px 14px rgb(0 0 0 / 0.35); }
+  .cmp-tools button, .cmp-tools a { display: inline-flex; align-items: center; min-height: 44px; background: #fff; color: #120e18; border: 0; border-radius: 999px; padding: 8px 16px; font: 600 12px -apple-system, sans-serif; text-decoration: none; cursor: pointer; box-shadow: 0 4px 14px rgb(0 0 0 / 0.35); }
   .cmp-tools button:focus-visible, .cmp-tools a:focus-visible { outline: 3px solid #c9b2ff; outline-offset: 2px; }
   .verdict { position: absolute; left: 16px; bottom: 16px; z-index: 8; pointer-events: none; background: #fff; color: #120c24; border-radius: 12px; padding: 10px 14px; font-size: 13px; max-width: min(620px, calc(100% - 220px)); box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); }
   .verdict b { font-weight: 650; }
@@ -74,7 +75,7 @@
     <iframe src="check-login.html?mode=craft&embed" title="Sign-in with blur-craft" loading="lazy"></iframe>
     <iframe class="top" src="check-login.html?mode=typical&embed" title="Sign-in with typical glass" loading="lazy"></iframe>
     <div class="cmp-capture" role="slider" tabindex="0" aria-label="Compare: move left and right" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
-    <div class="cmp-line"><span class="cmp-chev l">‹</span><span class="cmp-knob"></span><span class="cmp-chev r">›</span><span class="cmp-label l">TYPICAL<small>1.69:1 · 7 of 12 lines fail</small></span><span class="cmp-label r">BLUR-CRAFT<small>4.97:1 · all pass</small></span></div>
+    <div class="cmp-line"><span class="cmp-chev l">‹</span><span class="cmp-knob"></span><span class="cmp-chev r">›</span><span class="cmp-label l">TYPICAL<small>1.69:1 · up to 11 of 11 lines fail</small></span><span class="cmp-label r">BLUR-CRAFT<small>4.69:1 · all pass</small></span></div>
     <div class="cmp-tools"><button class="cmp-interact" aria-pressed="false">Interact with the page</button></div>
   </section>
 </section>
@@ -85,8 +86,8 @@
   <table>
     <thead><tr><th>What</th><th>Without (typical glass)</th><th>With blur-craft</th><th>How we know</th></tr></thead>
     <tbody>
-      <tr><td>Text you can read</td><td class="no">Sign-in: lowest 1.69:1, 7 of 12 lines fail. Harbor Radio: 1.91:1, 4 lines fail</td><td class="yes">Sign-in: 4.97:1 at every size, every line passes, and it stays see-through glass. Harbor Radio: 5.53:1, every line passes</td><td class="how">Measured with <code>glass-contrast.mjs</code>, worst pixel under each line</td></tr>
-      <tr><td>Blur switched off</td><td class="no">iOS Low Power Mode or Reduce Transparency leaves white text on a 15% white tint</td><td class="yes">A tinted level takes over; the text still passes with blur off</td><td class="how">Measured: the checker's tint-only state</td></tr>
+      <tr><td>Text you can read</td><td class="no">Sign-in: 1.69:1 on a laptop, 6 of 11 lines fail as shown and all 11 with blur off; 1.45:1 on a phone. Harbor Radio: 1.91:1, 7 lines fail</td><td class="yes">Sign-in: 4.69:1 or better in every state at four sizes, and it stays see-through glass. Harbor Radio: 4.6:1 on a laptop, 5.47:1 on a phone; every line of text on glass passes</td><td class="how">Measured with <code>glass-contrast.mjs</code>, worst pixel under each line</td></tr>
+      <tr><td>Blur switched off</td><td class="no">A browser without blur, a weak-device fallback or a dropped filter leaves white text on a 15% white tint</td><td class="yes">A tinted level takes over; the text still passes with blur off</td><td class="how">Measured: the checker's tint-only state</td></tr>
       <tr><td>Safari on macOS Sonoma</td><td class="no">Tailwind's <code>backdrop-blur-*</code> is built from <code>var()</code>, which Sonoma Safari drops: no blur at all</td><td class="yes">Literal filters, unprefixed first and <code>-webkit-</code> last</td><td class="how">WebKit bug 297620. Expected, not yet run on a Sonoma Mac</td></tr>
       <tr><td>Glass that silently goes flat</td><td class="no">A parent left at <code>opacity: .99</code> by a fade, <code>-webkit-</code>-only CSS in Chrome and Firefox: no blur, no warning</td><td class="yes"><code>blur-audit.mjs</code> flags both; <code>frost-check.mjs</code> proves each surface blurs</td><td class="how">Shown live in the technique test above (surfaces 5 and 7)</td></tr>
       <tr><td>High contrast and forced colours</td><td class="no">Nothing changes; the glass stays see-through</td><td class="yes">High contrast gets a near-solid layer; forced colours get a real outline</td><td class="how">Measured: the checker's high-contrast state</td></tr>

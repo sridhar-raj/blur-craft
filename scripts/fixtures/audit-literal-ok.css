@@ -1,0 +1,2 @@
+/* expect: no var() warning, no prefix failure */
+.card { background: linear-gradient(rgb(10 10 18 / .5), rgb(10 10 18 / .4)); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); }

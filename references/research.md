@@ -107,8 +107,10 @@ https://github.com/microsoft/microsoft-ui-xaml/tree/main/controls/dev/Materials/
 ## Production CSS (read from the shipped stylesheets, November 2026)
 
 - **Apple.com global nav:** `saturate(180%) blur(20px)` over `rgba(250,250,252,.8)` / `rgba(22,22,23,.8)`;
-  92%/88% without blur support. The flyout curtain animates `backdrop-filter` from `blur(0)` to
-  `blur(20px)` over 320ms. While a flyout is open the nav drops its own blur.
+  92%/88% without blur support. The flyout curtain keeps a fixed `blur(20px)` over `rgba(232,232,237,.4)`
+  (dark: `rgba(0,0,0,.4)`) and transitions only its opacity, over 320ms with an 80ms delay; below 833px it
+  has no blur. While a flyout is open the nav drops its own blur. (Re-read November 2026 from
+  globalheader.css; an earlier note here said the blur radius animated. It doesn't.)
 - **Linear:** header `blur(20px)` over `#0b0b0bcc` with `isolation: isolate`; menus `blur(32px)` over 90%
   fill, `1px #ffffff14` border, radius 14px; glass variant `blur(24px)` over `#ffffff1a`.
 - **Raycast:** window `blur(36px)` over `#0009`, `inset 0 .5px #ffffff4d` top highlight; panels
@@ -198,9 +200,17 @@ readable by eye, which is why it's now a required step.
 ## Round 3: corrections, interaction, mobile, video, testing, award sites
 
 **Corrections to earlier rounds**
-- `var()` inside `backdrop-filter` **fails in Safari 18/26 on macOS Sonoma** (WebKit 297620, open; works on
-  macOS 15 and 26). An earlier note here said it worked, based only on a newer WebKit. Fixed: literal
-  filters everywhere. https://bugs.webkit.org/show_bug.cgi?id=297620
+- `var()` inside `backdrop-filter` **fails in Safari on macOS Sonoma** (WebKit 297620, open). The report's
+  matrix: broken in Safari 18.6, 26.1 and Technology Preview on macOS 14; fine in 18.6 on macOS 15 and 26 on
+  macOS 26. So it follows the OS, not the WebKit version. An earlier note here said it worked, based only on
+  a newer WebKit. Fixed: literal filters everywhere. https://bugs.webkit.org/show_bug.cgi?id=297620 (related:
+  289800, "-webkit-backdrop-filter ignores css variables")
+- iOS Low Power Mode: the only documented effect on web pages is the 30fps cap on animation and rAF (WebKit
+  215745, closed as intended). Nothing documents it removing `backdrop-filter`; an earlier round said it
+  did. Reduce Transparency is the setting that removes blur, in system UI, and pages can't read it in Safari.
+- Arc "85% black, 3px blur": no source could be found for these values on any Arc surface; removed.
+- Firefox 1782876 (backdrop-filter under a parent with transform/opacity/clip-path/mask) closed as
+  WORKSFORME on 2026-07-30.
 - The "Chrome 142 lets overflow:hidden clip extended backdrops" claim couldn't be found in any release note
   or CL: removed. Firefox did fix backdrop-filter ignoring a parent's `overflow: hidden` in 139.
 - Firefox 159 (2026-10-27) ships scroll-driven animations; `contrast-color()` is Chrome 147, Firefox 146,
@@ -222,7 +232,7 @@ readable by eye, which is why it's now a required step.
 
 **Mobile, tiers, video**
 - `backdrop-filter` creates a containing block for fixed descendants (MDN).
-- iOS Low Power Mode throttles rAF to 30fps by design (WebKit 215745); `deviceMemory` and `saveData` are
+- iOS Low Power Mode throttles rAF to 30fps by design (WebKit 215745), its only documented web effect; `deviceMemory` and `saveData` are
   Chromium-only; Compute Pressure is Chrome 125+. https://developer.chrome.com/docs/web-platform/compute-pressure
 - iOS 26 floating toolbar behaviour (scrims, sheets, safe-area): empirical spike,
   https://stevenocchipinti.github.io/liquid-glass-spike
@@ -239,7 +249,6 @@ readable by eye, which is why it's now a required step.
   and pill buttons over architecture photography.
 - Secret Level: `filter: url(#glass-distortion)` + `backdrop-filter: blur(8px) brightness(1.2)
   saturate(1.2)`; turbulence + specular lighting + three displacement passes for aberration.
-- Arc: toasts at 85% black with a 3px blur (blur barely matters at that fill).
 - Failures: Framer cards and Dia's nav blur under opaque backgrounds; Tailwind v4 glass breaking on
   Sonoma; many award sites do "glass" in WebGL, not CSS, and keep CSS glass for chrome.
 
@@ -283,7 +292,7 @@ and was discarded.)
   production, evesynapse PR #331).
 - Native: SwiftUI `glassEffect`/`GlassEffectContainer` (iOS 26), Flutter `BackdropGroup` +
   `BackdropFilter.grouped` (3.29), Expo `BlurView` (`blurMethod`, `BlurTargetView` on Android), Haze for
-  Compose (`hazeSource`/`hazeEffect`). See native.md.
+  Compose (2.x: `hazeBlur`/`hazeGlass`; 1.2–1.7: `hazeSource`/`hazeEffect`). See native.md.
 - drei `MeshTransmissionMaterial` defaults, for the WebGL threshold (recipe 12a).
 
 **Same-design A/B (examples/same).** One fixed page; only the glass stylesheet changed. Without a skill:

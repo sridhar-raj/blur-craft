@@ -26,7 +26,7 @@ function files(p) {
   const s = statSync(p);
   if (s.isFile()) return [p];
   return readdirSync(p).flatMap((n) =>
-    n === "node_modules" || n.startsWith(".") ? [] : files(join(p, n))
+    n === "node_modules" || n === "fixtures" || n.startsWith(".") ? [] : files(join(p, n))   // fixtures: broken on purpose (pass one directly to audit it)
   ).filter((f) => [".css", ".scss", ".tsx", ".ts", ".jsx", ".js", ".mjs", ".html", ".vue", ".svelte"].includes(extname(f)));
 }
 
@@ -108,8 +108,11 @@ function staticAudit(target) {
             ? `${sel}: no -webkit-backdrop-filter in source. This project's build (${BUILD_PREFIX}) adds it, but a copy pasted into a project without it gets no blur in Safari before 18.`
             : `${sel}: backdrop-filter without -webkit-backdrop-filter. Safari before 18 shows no blur.`);
         const bd = /backdrop-filter\s*:\s*([^;]+)/.exec(body);
-        if (bd && /var\(/.test(bd[1]))
-          add("WARN", at, `${sel}: backdrop-filter built from var(). Safari 18/26 on macOS Sonoma renders no blur then (WebKit 297620, open). Write literal values and switch variants by class.`);
+        // Check EVERY declaration, not just the first: with the recommended order the first is the unprefixed
+        // literal, and a var() in the -webkit- line (the one Safari applies) would slip through.
+        const varDecls = [...body.matchAll(/(-webkit-)?backdrop-filter\s*:\s*([^;]+)/g)].filter((d) => /var\(/.test(d[2]));
+        if (varDecls.length)
+          add("WARN", at, `${sel}: ${varDecls.map((d) => (d[1] ? "-webkit-" : "") + "backdrop-filter").join(" and ")} built from var(). Safari on macOS Sonoma (Safari 18 and later) renders no blur then (WebKit 297620, open). Write literal values and switch variants by class.`);
         {
           // Wasted blur: an opaque (or ≥ 85%) fill hides the frosting it pays for (Framer, Dia ship this).
           const bg = /(^|[^-])background(-color)?\s*:\s*([^;]+)/.exec(body);
@@ -170,7 +173,7 @@ function staticAudit(target) {
       if (tw) {
         anyBackdrop = true; tw.forEach((t, i) => surfaces.add(`${rel}:tw${i}`));
         if (tw.some((t) => !/\[/.test(t)))
-          add("INFO", rel, "Tailwind v4 compiles backdrop-blur-* through var(), which renders no blur in Safari 18/26 on macOS Sonoma (WebKit 297620). Use arbitrary values (backdrop-blur-[16px]) or a literal CSS rule for glass that must frost there.");
+          add("INFO", rel, "Tailwind v4 compiles backdrop-blur-* through var(), which renders no blur in Safari on macOS Sonoma (WebKit 297620). Use arbitrary values (backdrop-blur-[16px]) or a literal CSS rule for glass that must frost there.");
       }
       // Framer Motion blur that animates (initial/animate/variants) but is never cleared.
       // A reveal ends at blur(0px)/blur(0); a static style blur never does.

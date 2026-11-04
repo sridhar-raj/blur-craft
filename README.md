@@ -19,21 +19,26 @@ tutorial recipe (flat 15% white, 16px blur, white border); *After* is blur-craft
 
 | Mode | Worst contrast (desktop) | Lines failing | Phone |
 |---|---|---|---|
-| [Before (typical glass)](https://sridhar-raj.github.io/blur-craft/?mode=before) | 1.91:1 | 4 | 4.38:1, 1 fails |
-| [After (blur-craft)](https://sridhar-raj.github.io/blur-craft/?mode=after) | 5.53:1 | 0 | 5.47:1, 0 fail |
+| [Before (typical glass)](https://sridhar-raj.github.io/blur-craft/?mode=before) | 1.91:1 | 7 | 3.8:1, 4 fail |
+| [After (blur-craft)](https://sridhar-raj.github.io/blur-craft/?mode=after) | 4.6:1 | 0 | 5.47:1, 0 fail |
+
+Worst of three states (normal, blur off, increased contrast), every line of text on glass, measured by
+`glass-contrast.mjs` scrolling the whole page; the nav is re-measured at every scroll position.
 
 **[Open the live example](https://sridhar-raj.github.io/blur-craft/)**: Harbor Radio, one working product
 with every glass use case in its real place: a nav that turns to glass on scroll, an on-air card over the
 sun with live listener counts, a Liquid Glass player dock, progressive blur under it, a ⌘K search palette,
-a recording dialog, toasts and settings with a tinted-glass switch and a measured device tier. All of it
-passes the skill's own contrast check (every line, three states, desktop and phone).
+a recording dialog, toasts and settings with a tinted-glass switch and a measured device tier. Every line
+of text on glass passes the skill's own contrast check (three states, desktop and phone, the record dialog
+and the palette included). Text that isn't on glass isn't covered by that claim: the hero copy over the
+sky is 1.53:1 at its worst on a phone, like any headline over a photo.
 
 Also: **[the playground](https://sridhar-raj.github.io/blur-craft/assets/demo.html)** (every surface
 with thickness, tint, tone and rim controls) and **[the browser check](https://sridhar-raj.github.io/blur-craft/assets/browser-check.html)**: the
 Tabula hero from the OriginKit posts behind the same before/after slider (a typical Tailwind-style glass build vs blur-craft, in
 whatever browser you open it in); ten surfaces each written a different way with a per-browser table; a
-second real use case (the Esquisse sign-in over a landscape: typical glass 1.69:1 with 7 of 12 lines failing,
-blur-craft 4.97:1 with all passing, still see-through); and a with-and-without table of what the skill changes.
+second real use case (the Esquisse sign-in over a landscape: typical glass 1.69:1 with up to 11 of 11 lines
+failing, blur-craft 4.69:1 or better with all passing, still see-through); and a with-and-without table of what the skill changes.
 On Safari for macOS Sonoma the typical side is expected to lose its blur; blur-craft's keeps it.
 
 ## Install
@@ -43,13 +48,15 @@ npx skills add sridhar-raj/blur-craft
 ```
 
 Or copy this folder into `.claude/skills/blur-craft/` (Claude Code) or your agent's skills directory. The
-skill triggers on its own whenever a design involves glass, frosted panels, `backdrop-filter`, glows,
-depth, blur reveals, or a request to make something feel premium or "Apple-like".
+skill triggers on its own whenever a design involves glass, frosted or translucent panels,
+`backdrop-filter`, a blurred dialog scrim, blur reveals, Apple-style materials, or a blur that won't show.
+It doesn't add glass to a design that has none just because someone asked for "premium".
 
 ## What makes it different
 
 - **It measures.** `glass-contrast.mjs` checks every line of text on glass at its worst pixel in three
-  states (normal, blur off as in iOS Low Power Mode, high contrast). `frost-check.mjs` checks every
+  states (normal, blur off, high contrast), scrolling the whole page and re-checking the nav at every
+  position, and says how many lines it couldn't measure. `frost-check.mjs` checks every
   surface actually blurs. Both caught failures that looked fine by eye, including in this repo's own
   example while it was being built.
 - **It knows the traps:** Safari on macOS Sonoma dropping blur built from `var()` (Tailwind's included),
@@ -78,12 +85,13 @@ depth, blur reveals, or a request to make something feel premium or "Apple-like"
 | `scripts/glass-contrast.mjs` | Worst-case contrast for every line of text on glass, three states |
 | `scripts/frost-check.mjs` | Does each surface actually blur (blur on vs off) |
 | `scripts/blur-audit.mjs` | Static audit (CSS, TSX, Vue, Svelte, HTML) and a live `--url` check |
+| `scripts/test-checkers.mjs` | The checkers' own tests: 19 fixtures each checker must catch or pass |
 | `references/` | `recipes.md` (every effect, with code), `quirks.md` (browser and performance traps, support table), `native.md`, `research.md` (sources) |
 
 ## Important: Safari on macOS Sonoma
 
-Safari 18 and 26 on macOS Sonoma render **no blur** when `backdrop-filter` is built from CSS variables
-(WebKit bug 297620, open), and Tailwind v4's `backdrop-blur-*` is built that way. This skill writes literal
+Safari on macOS Sonoma renders **no blur** when `backdrop-filter` is built from CSS variables
+(WebKit bug 297620, open). It follows the OS: Safari 18, 26.1 and Technology Preview all fail on Sonoma, and Tailwind v4's `backdrop-blur-*` is built that way. This skill writes literal
 filters, unprefixed first and `-webkit-` last, and its audit flags both problems.
 
 ## Quick start without an agent

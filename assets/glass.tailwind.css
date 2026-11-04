@@ -2,7 +2,7 @@
  *
  * Tailwind's own backdrop-blur-* / backdrop-saturate-* utilities (arbitrary values included) compile to a
  * var() chain: -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-saturate,) …
- * Safari 18 and 26 on macOS Sonoma render no blur for that (WebKit 297620; Tailwind discussion #16019).
+ * Safari on macOS Sonoma (18 and later) renders no blur for that (WebKit 297620; Tailwind discussion #16019).
  * These utilities write LITERAL filters, unprefixed first, so they're safe there.
  *
  * Use:  @import "tailwindcss";  @import "./glass.css";  @import "./glass.tailwind.css";
