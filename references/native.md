@@ -2,8 +2,10 @@
 
 The method in SKILL.md (compose the light, choose thickness by how much text the glass carries, measure
 contrast at the worst point, avoid glass on glass) is platform-independent. This page maps the web
-material onto each native toolkit. API names were checked against current docs in November 2026; versions
-move fast, so confirm against the docs for the version you're on.
+material onto each native toolkit. API names were checked against current docs in November 2026. The
+SwiftUI example below was **type-checked with Xcode against the iOS 27.2 SDK** (targeting iOS 17, with the
+iOS 26 availability gate); a deliberately wrong API in the same test failed to compile, so the check is
+real. The Flutter, React Native and Compose code is from current docs but was not compiled here.
 
 | Web (blur-craft) | SwiftUI | UIKit | Flutter | React Native (Expo) | Jetpack Compose |
 |---|---|---|---|---|---|
@@ -26,6 +28,58 @@ move fast, so confirm against the docs for the version you're on.
   `@Environment(\.accessibilityReduceTransparency)`.
 - Text on materials: use the hierarchical styles (`.primary`, `.secondary`) so vibrancy applies, not fixed
   greys.
+Verified example (standard material, Liquid Glass with a fallback, a morphing container, Reduce
+Transparency):
+
+```swift
+import SwiftUI
+
+struct PlayerCard: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Namespace private var ns
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Standard material, thickness by text amount
+            Text("Evening wind-down")
+                .padding(20)
+                .background(.regularMaterial, in: .rect(cornerRadius: 24))
+
+            // Liquid Glass (iOS 26+), gated with a material fallback
+            if #available(iOS 26, *) {
+                GlassEffectContainer(spacing: 40) {
+                    HStack(spacing: 24) {
+                        Image(systemName: "play.fill")
+                            .frame(width: 56, height: 56)
+                            .glassEffect(.regular.tint(.orange).interactive(), in: .rect(cornerRadius: 20))
+                            .glassEffectID("play", in: ns)
+                        if expanded {
+                            Image(systemName: "forward.fill")
+                                .frame(width: 56, height: 56)
+                                .glassEffect()
+                                .glassEffectID("next", in: ns)
+                        }
+                    }
+                }
+            } else {
+                Image(systemName: "play.fill").padding().background(.thinMaterial, in: .capsule)
+            }
+
+            // Respect Reduce Transparency for custom glass
+            Text("Now playing")
+                .foregroundStyle(.secondary)
+                .padding()
+                .background(reduceTransparency ? AnyShapeStyle(Color.black) : AnyShapeStyle(.ultraThinMaterial),
+                            in: .rect(cornerRadius: 16))
+        }
+    }
+}
+```
+
+Note: `glassEffect` takes a `Glass` value and a shape; there is no `intensity:` parameter (some third-party
+guides show one; it doesn't compile).
+
 - Docs: https://developer.apple.com/documentation/swiftui/glasseffectcontainer ·
   https://developer.apple.com/design/human-interface-guidelines/materials
 

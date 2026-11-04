@@ -1,16 +1,17 @@
 ---
 name: blur-craft
 description: >-
-  Make blur and glass look premium in UI, and prove it's readable: Apple-grade frosted glass (a
-  measured five-layer material with a lit rim, specular sheen, thickness scale and an iOS 26.1-style
-  tinted level), ready-made glass surfaces (sticky nav, dock, menu, dialog over a focus veil, toast,
-  sheet), Liquid Glass refraction with chromatic aberration, adaptive light/dark tone, progressive blur,
-  blur reveals and blur-bridged crossfades, glows, depth of field and ambient art backdrops, plus a
-  worst-case contrast checker and an audit script. Use this whenever a design involves glass,
-  glassmorphism, frosted or translucent panels, backdrop-filter, blur, soft glows, bokeh, depth, a
-  player/dock/toolbar/sheet floating over art, photos or video, dimming behind a dialog, blur reveals,
-  or a request to make something feel premium, layered, luminous or "Apple-like", and whenever reviewing
-  or fixing a page that already uses blur, even if the user never says "blur".
+  Make blur and glass look premium in UI, and prove it's readable: Apple-grade frosted glass (a measured
+  material with thickness levels, a lit rim and a tinted level), ready-made glass surfaces (sticky nav,
+  sidebar/panel, dock, menu, dialog over a dimmed blurred page, toast, sheet), Liquid Glass refraction,
+  progressive blur, blur reveals, glows and depth, with React, Vue, Svelte, Tailwind and native
+  (SwiftUI, Flutter, React Native, Compose) guidance, plus contrast and frost checkers. Use this whenever
+  a design involves glass, glassmorphism, frosted or translucent surfaces, backdrop-filter or
+  backdrop-blur, blur, soft glows, depth, a bar/sidebar/dock/toolbar/toast/sheet floating over art,
+  photos, video or scrolling content, dimming behind a dialog, or a request to make a UI feel premium,
+  layered, luminous, or like macOS/iOS/visionOS ("Apple-like", "flat and cheap", "more depth"); also
+  whenever reviewing or fixing translucent UI that's hard to read or a blur that doesn't show in a
+  browser, even if the user never says "blur" or "glass".
 ---
 
 # Blur craft
@@ -69,7 +70,7 @@ Decide what will be directly behind each glass surface, and make it the most lum
 ## 2. Set the material
 
 Use `assets/glass.css` (rename the `glass` prefix when copying) and `assets/surfaces.css` for the
-ready-made surfaces, or `assets/Glass.tsx` in React. Don't hand-write a one-line `backdrop-filter` card.
+ready-made surfaces, or the components: `Glass.tsx` (React), `Glass.vue` (Vue 3), `Glass.svelte` (Svelte 5). Don't hand-write a one-line `backdrop-filter` card.
 
 **Write `backdrop-filter` with literal values, never `var()`, unprefixed first and `-webkit-` last.**
 Safari 18 and 26 on macOS Sonoma render no blur when the filter is built from custom properties (WebKit
@@ -94,60 +95,18 @@ and design editors): no saturation boost or tone shift, because the glass mustn'
 `--glass-dim: rgb(10 10 18 / 0.65–0.75)` (it's a colour, not a number): vivid glass and readable text pull against each other there, so spend the
 vividness on the rim, the sheen and the light spilling around the glass.
 
-**What's in the material** (and why):
+**Two levels, like iOS 26.1:** a tinted level (more opacity, never less) turns on for `prefers-contrast:
+more` (the setting Safari users can reach; Safari has no `prefers-reduced-transparency`), with
+`glass--tinted`, or site-wide with `<html data-glass="tinted">`. glass.css also handles Windows High
+Contrast (solid `Canvas` surface), print (plain bordered box), capture mode for screenshot tools, and RTL.
 
-| Layer | Value | Source |
-|---|---|---|
-| Backdrop | Literal per variant: clear `blur(16px) saturate(180%)`, thin `blur(24px) … contrast(.92)`, regular `blur(32px) … contrast(.85)`, thick `blur(44px) saturate(160%) … contrast(.8)`, solid `blur(4px) saturate(140%)`; dark glass adds `brightness(.96)`, light `brightness(1.08)`; neutral is blur only | Saturation keeps colour alive (Comeau, Apple.com's 180%). Contrast < 1 is the working CSS form of Fluent's luminosity layer: colour through, harsh light and dark blocked. Brightness ≤ 1 so a bright backdrop isn't lifted behind white text |
-| Fill | 160° white gradient over a dim layer | A flat tint reads as plastic (NN/g: gradient fills mimic reflection) |
-| Grain | 2.5% noise | Fluent acrylic ships 2% |
-| Rim | 1px gradient ring (mask-composite), bright toward the light | Edge = thickness |
-| Specular | inset top line + a fixed sheen; the sheen follows the pointer only on interactive glass | Apple's highlights answer touching a *control*. On a static card a hover glow is a false "click me" (Vercel's guidelines: interactions change contrast, static things don't) |
-| Text | primary 97%, secondary 82%, tertiary 70% white, faint halo | Measured; the halo follows Harrison & Vicente (CHI '96): an outline made 75–90% transparent menus read like 50% ones |
-| Radius | `--glass-inner-radius = radius − padding` | Apple's concentricity rule: inner corners neither pinched nor flared |
+**Glass belongs to the control layer** (nav, toolbars, docks, menus, sheets, dialogs) floating over
+content, never the content itself, and never glass on glass (Apple, WWDC25). Tint only the primary action.
+Match the brief's register: immersive briefs take strong light and clear glass on the hero control; trusted
+ones (finance, health) take thick or solid glass and barely any light.
 
-**Windows High Contrast and print** are handled by glass.css: forced colours turn glass into a solid
-`Canvas` surface with a system edge, and print turns it into a plain bordered box.
-
-**Two levels, like iOS 26.1.** Apple added Clear/Tinted after the Liquid Glass legibility backlash. The
-tinted level adds an opaque layer *on top of* each surface's own dim, so it only ever raises opacity (a
-component that set a darker dim stays darker). It turns on for `prefers-contrast: more`, for `prefers-reduced-transparency`, with
-`glass--tinted`, or site-wide with `<html data-glass="tinted">` (offer it as a setting). **Safari ignores
-`prefers-reduced-transparency`**; `prefers-contrast` is the signal that reaches iPhone and Mac users.
-
-**Calibrated presets** (production CSS and published tokens, read for this skill):
-
-| Surface | Reference | Start from |
-|---|---|---|
-| Sticky nav | Apple.com `saturate(180%) blur(20px)` over 80%; Linear `blur(20px)` over `#0b0b0bcc` | `.gs-bar` |
-| Menu / command bar | Linear `blur(32px)` over 90%; Raycast `blur(36px)`, 0.5px top highlight | `.gs-menu` |
-| Translucent panel | Radix Themes `blur(64px)` over 70% white (the only big design system that ships a blur token) | `thick`, or a custom class with a literal `backdrop-filter: blur(64px) saturate(180%)` for very busy backdrops |
-| Dialog scrim | Material 32%, Fluent Smoke 30%, Primer ~40%, Atlassian ~46%, Polaris 71% (no blur) | `.gs-veil`: 32% + 6px |
-| Hover chip | Linear `blur(8px)` over `#ffffff29` | `clear`, blur on `:hover` only |
-
-Most enterprise systems (Primer, Polaris, Carbon, Atlassian, Geist) use opaque surfaces over a scrim and
-no blur at all, which says something: glass is a choice for the functional layer, not a default.
-
-**Rules from Apple's own sessions (WWDC25 "Meet Liquid Glass", "Get to know the new design system"):**
-
-- Glass belongs to the navigation and control layer floating over content, never the content itself.
-  "Always avoid glass on glass." Elements *on* glass use fills and vibrancy, not more glass.
-- Regular and clear glass "should never be mixed" on one screen.
-- Only small elements flip between light and dark with the content behind them; menus, sidebars and
-  panels never flip. `assets/adaptive-tone.js` does the small-element flip with hysteresis.
-- Shadows deepen over text and soften over light solids; larger glass casts deeper shadows.
-- Tint only primary actions. "If you want to imbue color into your app, do it in the content layer."
-- Apply the material to the control, not its inner views; group bar items by function, keep text
-  buttons and the primary action in their own containers.
-- One scroll-edge effect per view: soft for glass controls, hard for pinned headers or bare-text
-  controls, and none where nothing floats ("they're not decorative").
-- At rest (first launch), avoid content intersecting the glass.
-
-**Match the brief's register.** Immersive briefs (music, media, launches): dark ground, strong light in
-the art's colours, clear glass and Liquid Glass on the hero control. Calm briefs (wellness, travel):
-one warm and one cool light, regular glass. Trusted briefs (finance, health, admin): light or quiet dark,
-barely any light behind, thick or solid glass on anything that confirms money or data. A light, solid
-dialog over a blurred page reads as more trustworthy than dark glass.
+`references/material.md` has the rest: what every layer does and why, the presets read from Apple.com,
+Linear, Raycast, Radix, Material and Fluent, Apple's full WWDC25 rule list, and the register table.
 
 ## 3. Signature effects
 
@@ -189,7 +148,10 @@ Design the look first, then hold these:
 - Phones: seven 18px panels cost ~3.5ms per frame on a Mali-G57 (75–80% of frames on time vs 99% without).
   With more than a few panels, drop `backdrop-filter` at your layout's phone breakpoint and keep the
   translucent fill (or let glass-tier.js decide per device).
-- Radius matters less than area and count: Skia downsamples past a small sigma, so 40px isn't 10× 4px.
+- **Budget blurred area, not radius or count.** Measured for this skill (Chromium, software rendering at 2×,
+  moving backdrop, vsync on): radius 4 → 64px and 1 → 9 surfaces at the same total area made no difference;
+  blurring 90% of the screen dropped to 51fps (p95 33ms). That matches Skia downsampling large blurs. The
+  numbers are relative (a fast Mac rendering in software), the ranking is what transfers.
 - Give `html` an opaque background colour: Safari then skips an extra full-screen compositing layer for
   pages with glass (WebKit 271340: the fix skips the layer only for opaque documents).
 - Don't blur under an opaque fill. Framer and Dia ship `backdrop-filter` on solid backgrounds, paying
@@ -268,13 +230,15 @@ Run all of these before calling glass done:
 - `assets/surfaces.css`: sticky bar, dock, menu, veil + dialog, toast, sheet.
 - `assets/demo.html`: live playground of every surface with controls (also the calibration page).
 - `assets/browser-check.html`: ten side-by-side blur cases to check any browser by eye (Sonoma, Firefox…).
-- `assets/Glass.tsx`: React + Framer Motion wrapper (`liquid`, `tinted`, and `sheen` for interactive glass only).
+- `assets/Glass.tsx`, `Glass.vue`, `Glass.svelte`: components for React (Framer Motion), Vue 3 and Svelte 5
+  (`thickness`, `tone`, `light`, `liquid`, `tinted`, `neutral`, and `sheen` for interactive glass only).
 - `assets/liquid-glass.ts` / `.js`: Liquid Glass refraction with chromatic aberration.
 - `assets/glass.tailwind.css`: Sonoma-safe Tailwind v4 utilities (`glass-blur-*`, `glass-neutral-blur-*`, `glass-none`).
 - `assets/adaptive-tone.js`: light/dark flip for small glass from the luminance behind it.
 - `assets/glass-tier.js`: full / lite / flat glass by device capability and power state.
 - `references/recipes.md`: code for every effect. `references/research.md`: sources and what each
-  established. `references/quirks.md`: browser and performance traps.
+  established. `references/material.md`: every layer explained, production presets, Apple's WWDC25 rules, register.
+  `references/quirks.md`: browser and performance traps.
   `references/native.md`: SwiftUI, UIKit, Flutter, React Native and Compose equivalents.
 - `scripts/glass-contrast.mjs`: worst-case contrast in three states. `scripts/frost-check.mjs`: does each
   surface actually blur (blur on vs off). `scripts/blur-audit.mjs`: static

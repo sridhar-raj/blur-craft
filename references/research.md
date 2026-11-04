@@ -246,6 +246,25 @@ readable by eye, which is why it's now a required step.
 **In the skill:** literal filters, the var() and wasted-blur lints, glass-tier.js, recipes 4c, 8b, 11 and
 12, the containing-block and iOS toolbar quirks, the testing notes, and solid glass at 4px.
 
+## Trigger test (does the skill load when it should?)
+
+Ten real prompts through `claude -p`, checking for an actual Skill call (or a read of SKILL.md): six that
+should load it (a "flat and cheap" settings sidebar, a backdrop-filter review, a blurred-dialog plan, a
+Tailwind blur missing in Safari, a Liquid Glass video dock, unreadable translucent toasts) and four
+near-misses that shouldn't (a Pillow image blur, a text-shadow, a z-index bug, a Blender glass bottle).
+First run: 9/10, missing the sidebar prompt, which never says "glass" or "blur". After naming
+sidebars/panels and macOS/iOS/visionOS-style requests in the description: the sidebar prompt loaded the
+skill 3/3 times and all four near-misses still stayed away.
+
+## Own measurement: what blur actually costs
+
+Chromium with `--disable-gpu` (software compositing, so blur cost becomes dropped frames), vsync on,
+1600×900 at 2×, a rotating striped backdrop that forces a re-blur every frame, 240 frames per run, two runs:
+no blur 60fps; one surface at 30% area: 60fps at every radius from 4 to 64px; 30% total area split into
+1, 4 or 9 surfaces: 60fps; one surface at 60% area: 59fps; at 90%: 51fps, p95 33.4ms. Area is the cost
+driver; radius and count barely register. (An earlier attempt with the frame cap removed measured nothing
+and was discarded.)
+
 ## Round 4: forced colors, capture, Tailwind, theming, native, a same-design A/B
 
 - CSS Color Adjust 1: forced colours force background-color (alpha kept), strip box-shadow, text-shadow and

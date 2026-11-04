@@ -27,7 +27,7 @@ function files(p) {
   if (s.isFile()) return [p];
   return readdirSync(p).flatMap((n) =>
     n === "node_modules" || n.startsWith(".") ? [] : files(join(p, n))
-  ).filter((f) => [".css", ".scss", ".tsx", ".ts", ".jsx", ".js", ".mjs", ".html"].includes(extname(f)));
+  ).filter((f) => [".css", ".scss", ".tsx", ".ts", ".jsx", ".js", ".mjs", ".html", ".vue", ".svelte"].includes(extname(f)));
 }
 
 function lineOf(src, i) { return src.slice(0, i).split("\n").length; }
@@ -51,7 +51,7 @@ function units(f) {
   const src = readFileSync(f, "utf8");
   // Test fixtures that contain broken cases on purpose opt out with this marker anywhere in the file.
   if (src.includes("blur-audit: ignore-file")) return [];
-  if (extname(f) !== ".html") return [{ f, src, isCss: /\.s?css$/.test(f) }];
+  if (![".html", ".vue", ".svelte"].includes(extname(f))) return [{ f, src, isCss: /\.s?css$/.test(f) }];
   const keep = (tag) => {
     let out = "", last = 0;
     for (const m of src.matchAll(new RegExp(`(<${tag}\\b[^>]*>)([\\s\\S]*?)</${tag}>`, "gi"))) {
@@ -189,7 +189,7 @@ function staticAudit(target) {
 
   // Markup that uses a shared glass class (class="glass …" / className="glass …") is one surface per use,
   // even though the CSS has a single .glass rule.
-  for (const f of list.filter((f) => /\.(html|tsx|jsx)$/.test(f))) {
+  for (const f of list.filter((f) => /\.(html|tsx|jsx|vue|svelte)$/.test(f))) {
     const raw = readFileSync(f, "utf8");
     let i = 0;
     for (const m of raw.matchAll(/class(?:Name)?=(["'`{])([^"'`}]*)/g))

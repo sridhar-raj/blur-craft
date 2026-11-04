@@ -2,115 +2,394 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>blur-craft examples</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harbor Radio · blur-craft example</title>
+<meta name="description" content="One working product built with blur-craft: every glass use case, live.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/glass.css">
+<link rel="stylesheet" href="../assets/surfaces.css">
 <style>
-  :root { --bg: #0b0b10; --panel: #13131a; --line: #26252f; --fg: #eceaf3; --muted: #9a98ab; --accent: #c9b2ff; }
+  /* Harbor Radio: one product, every glass use case in its real place. All glass comes from the skill's
+     glass.css + surfaces.css; this file only lays the product out. */
+  :root { --ink: #f6f2ee; --ground: #0d0a15; --muted: rgb(246 242 238 / 0.72); --accent: #ff7a59; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 -apple-system, "Segoe UI", sans-serif; }
-  .wrap { max-width: 1500px; margin: 0 auto; padding: 32px max(16px, 3vw) 64px; display: grid; gap: 48px; }
-  header h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
-  header p { margin: 0; color: var(--muted); max-width: 70ch; }
-  a { color: var(--accent); }
-  section { display: grid; gap: 14px; }
-  section h2 { font-size: 20px; margin: 0; }
-  .brief { color: var(--muted); margin: 0; max-width: 90ch; }
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .col { display: grid; gap: 8px; align-content: start; min-width: 0; }
-  .col h3 { font-size: 14px; margin: 0; display: flex; justify-content: space-between; gap: 8px; }
-  .col h3 span { color: var(--muted); font-weight: 400; }
-  .frame { aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; }
-  .frame iframe { width: 1600px; height: 900px; border: 0; transform-origin: 0 0; }
-  ul { margin: 0; padding-left: 18px; color: #cfcde0; } li { margin: 3px 0; }
-  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 0; }
-  @media (max-width: 900px) { .pair { grid-template-columns: 1fr; } }
+  html { background: var(--ground); scroll-padding-top: 80px; }   /* opaque html: Safari skips a layer */
+  body { margin: 0; color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; padding-bottom: 120px; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; }
+  :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  a { color: inherit; }
+
+  /* 1 · Sticky nav: glass only once content scrolls under it (gs-bar--on-scroll) */
+  .gs-bar { gap: 20px; padding-inline: max(16px, 4vw); }
+  .brand { font: 600 19px Fraunces, serif; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
+  .brand i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .navlinks { display: flex; gap: 20px; font-size: 14px; margin-left: 8px; }
+  .navlinks a { text-decoration: none; opacity: 0.9; }
+  .navright { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 999px; background: rgb(255 255 255 / 0.1); font-size: 14px; }
+  .pill kbd { font: 12px Inter, sans-serif; opacity: 0.7; border: 1px solid rgb(255 255 255 / 0.25); border-radius: 5px; padding: 0 5px; }
+
+  /* Hero with the harbour scene: the light behind the "on air" glass */
+  .hero { position: relative; height: min(86vh, 820px); min-height: 600px; margin-top: -56px; overflow: hidden; }
+  #art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .hero-copy { position: absolute; left: max(16px, 6vw); bottom: 18%; max-width: 560px; }
+  .hero-copy h1 { font: 600 clamp(40px, 5.6vw, 80px)/1.02 Fraunces, serif; margin: 0 0 14px; letter-spacing: -0.02em; text-shadow: 0 2px 30px rgb(0 0 0 / 0.35); text-wrap: balance; }
+  .hero-copy p { margin: 0; max-width: 44ch; font-size: 17px; text-shadow: 0 1px 12px rgb(0 0 0 / 0.45); }
+
+  /* 2 · On-air card: regular glass over the sun, rim aimed at it, live listener count */
+  .onair { position: absolute; right: max(16px, 6vw); top: 30%; width: min(360px, calc(100% - 32px)); padding: 20px; display: grid; gap: 10px; --glass-light: 255 214 170; --glass-rim-angle: 45deg; --glass-pad: 20px;
+    --glass-dim: rgb(10 10 18 / 0.62); }   /* over the sun: the skill's photo range (0.6-0.75) */
+  .onair .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .live { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: 0.05em; }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: #ff5a5a; box-shadow: 0 0 0 0 rgb(255 90 90 / 0.6); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgb(255 90 90 / 0); } }
+  .onair h2 { margin: 0; font: 600 22px Fraunces, serif; }
+  .listeners { font-variant-numeric: tabular-nums; }
+  .eq { display: flex; gap: 3px; align-items: flex-end; height: 22px; }
+  .eq b { width: 3px; border-radius: 2px; background: rgb(255 255 255 / 0.85); height: 30%; transition: height 0.18s; }
+
+  /* 3 · Content layer: solid cards (no glass on content, per the skill) */
+  main { position: relative; padding: 48px max(16px, 6vw) 0; }
+  h3.section { font: 600 26px Fraunces, serif; margin: 0 0 18px; }
+  .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 48px; }   /* 8 stations: 4 × 2, no orphans */
+  .station { display: grid; gap: 10px; text-align: left; padding: 0; background: #17131f; border-radius: 18px; overflow: hidden; border: 1px solid rgb(255 255 255 / 0.06); }
+  .station canvas { width: 100%; aspect-ratio: 4 / 3; display: block; }
+  .station .meta { padding: 0 14px 14px; display: grid; gap: 2px; }
+  .station strong { font-weight: 600; }
+  .station span { color: var(--muted); font-size: 13px; }
+  .station[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .schedule { list-style: none; padding: 0; margin: 0 0 48px; display: grid; gap: 8px; }
+  .schedule li { display: grid; grid-template-columns: 70px 1fr auto; gap: 16px; align-items: center; padding: 14px 16px; background: #15111c; border-radius: 14px; }
+  .schedule time { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .schedule button { padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / 0.08); font-size: 13px; }
+  .why { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 0 0 40px; padding: 0; list-style: none; }
+  .why li { background: #15111c; border-radius: 14px; padding: 14px 16px; color: var(--muted); font-size: 14px; }
+  .why b { color: var(--ink); display: block; margin-bottom: 4px; }
+  .why code { font-size: 12px; color: #ffd2b8; }
+
+  /* 4 · Progressive blur under the dock: content dissolves instead of being cut */
+  .fade-edge { position: fixed; left: 0; right: 0; bottom: 0; height: 150px; pointer-events: none; z-index: 40; }
+  .fade-edge > div { position: absolute; inset: 0; }
+
+  /* 5 · Dock: clear glass + Liquid Glass (Chromium), a real control, so it gets the pointer sheen */
+  .dock { position: fixed; left: 0; right: 0; bottom: max(18px, env(safe-area-inset-bottom, 0px)); margin: 0 auto; width: min(640px, calc(100% - 24px)); z-index: 50; --glass-light: 255 200 160; --glass-pad: 10px;
+    --glass-dim: rgb(10 10 18 / 0.6); }   /* it passes over bright cover art */
+  .dock .cover { width: 46px; height: 46px; border-radius: 12px; flex: none; }
+  .dock .meta { display: grid; line-height: 1.25; min-width: 0; }
+  .dock .meta strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dock .bar { position: absolute; left: 22px; right: 22px; bottom: 6px; height: 3px; border-radius: 2px; background: rgb(255 255 255 / 0.18); overflow: hidden; }
+  .dock .bar i { display: block; height: 100%; width: 0; background: #fff; border-radius: 2px; }
+  .dock .ctrls { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .dock .round { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
+  .dock .play { width: 48px; height: 48px; background: #fff; color: #120e18; }
+  .dock .rec { background: rgb(255 90 90 / 0.22); }
+  .swap { display: inline-block; transition: opacity 0.2s, filter 0.2s, transform 0.2s; }
+  .swap.out { opacity: 0; filter: blur(2px); transform: scale(0.97); }   /* 2px blur-bridged crossfade */
+
+  /* 6 · Command palette: thick menu glass over a flat veil */
+  .palette { position: fixed; z-index: 91; top: 14vh; left: 0; right: 0; margin: 0 auto; width: min(560px, calc(100% - 24px)); padding: 8px; display: grid; gap: 4px; }
+  .palette input { width: 100%; height: 48px; padding: 0 14px; border: 0; border-radius: 10px; background: rgb(255 255 255 / 0.07); outline: none; font-size: 16px; }
+  .palette input::placeholder { color: rgb(255 255 255 / 0.7); }
+  .palette ul { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
+  .palette li button { width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; }
+  .palette li button:is(:hover, :focus-visible, [aria-selected="true"]) { background: rgb(255 255 255 / 0.1); outline: none; }
+
+  /* 7 · Dialog */
+  .gs-dialog h4 { margin: 2px 0 6px; font: 600 24px Fraunces, serif; }
+  .choices { display: grid; gap: 8px; margin: 14px 0 18px; }
+  .choices label { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / 0.06); }
+  .actions { display: flex; gap: 10px; }
+  .actions button { flex: 1; min-height: 44px; border-radius: 12px; font-weight: 600; }
+  .ghost { background: rgb(255 255 255 / 0.1); }
+  .solid { background: #fff; color: #120e18; }
+
+  /* 8 · Toast */
+  .toast-wrap { position: fixed; right: max(16px, 4vw); bottom: 110px; z-index: 60; }
+  .gs-toast { transition: opacity 0.25s, transform 0.25s; }
+  .gs-toast[hidden] { display: flex !important; opacity: 0; transform: translateY(8px); pointer-events: none; }
+  .gs-toast i { width: 9px; height: 9px; border-radius: 50%; background: #7dffb1; flex: none; }
+
+  /* 9 · Settings popover (a menu: thick glass) */
+  .settings { position: fixed; z-index: 70; top: 64px; right: max(16px, 4vw); width: 280px; padding: 14px; display: grid; gap: 12px; font-size: 14px; }
+  .settings label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .settings small { color: rgb(255 255 255 / 0.8); }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 760px) {
+    .navlinks, .pill kbd { display: none; }
+    .onair { top: auto; bottom: 6%; }
+    .hero-copy { bottom: 42%; }
+    .toast-wrap { left: 12px; right: 12px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dock { --glass-dim: rgb(10 10 18 / 0.74); }   /* on phones it sits over the sun's reflection: measured */
+    .hero-copy { right: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .live i { animation: none; } .swap, .gs-toast { transition: none; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>blur-craft: with and without the skill</h1>
-    <p>Each pair is the same brief given to the same model, once without the skill and once with it. The pages are live: hover, press play, click. Open them in Chrome to see the Liquid Glass refraction. <a href="https://github.com/sridhar-raj/blur-craft">github.com/sridhar-raj/blur-craft</a></p>
-  </header>
-  <section>
-    <h2>Fairest test: one design, only the glass changes</h2>
-    <p class="brief">The examples below let each agent design its own page. <a href="same/">This one doesn't</a>: one fixed harbour page, switch between glass written without a skill, by a generic public glassmorphism skill, and by blur-craft, with measured contrast for each.</p>
-  </section>
 
-  <section>
-    <h2>1. Stillwater: meditation app hero</h2>
-    <p class="brief">"A landing hero for a meditation app: calm and premium, a frosted glass player card over a slowly moving background."</p>
-    <div class="pair">
-      <div class="col"><h3>Without the skill <a href="stillwater-without-skill.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="stillwater-without-skill.html" loading="lazy" title="Stillwater without the skill"></iframe></div>
-        <ul><li>28px blur over a flat tint: the card reads as a grey slab</li><li>Plain 1px white border, no lit edge</li></ul></div>
-      <div class="col"><h3>With the skill <a href="stillwater-with-skill.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="stillwater-with-skill.html" loading="lazy" title="Stillwater with the skill"></iframe></div>
-        <ul><li>The sun is placed under the card, so the sunset (violet to peach) shows through the glass</li><li>Rim lit on the sun's side; the horizon bends through the lower edge (Liquid Glass)</li><li>2px blur crossfade on play/pause and the breath cue</li></ul></div>
-    </div>
-    <p class="verdict">The skill wins on the glass: it's the most luminous object on the page instead of a grey box.</p>
-  </section>
+<header class="gs-bar gs-bar--on-scroll" id="bar">
+  <div class="gs-bar__backdrop"></div><div class="gs-bar__edge"></div>
+  <span class="brand"><i aria-hidden="true"></i>Harbor Radio</span>
+  <nav class="navlinks" aria-label="Main"><a href="#stations">Stations</a><a href="#schedule">Schedule</a><a href="#why">How it's built</a></nav>
+  <div class="navright">
+    <button class="pill" id="openPalette" aria-haspopup="dialog">Search <kbd>⌘K</kbd></button>
+    <button class="pill" id="openSettings" aria-haspopup="true" aria-expanded="false">Settings</button>
+  </div>
+</header>
 
-  <section>
-    <h2>2. Tidal Room: music app with a now-playing dock</h2>
-    <p class="brief">"The home screen of a music streaming app: a wall of album covers and a floating now-playing dock. Premium and immersive."</p>
-    <div class="pair">
-      <div class="col"><h3>Without the skill <a href="music-without.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="music-without.html" loading="lazy" title="Music app without the skill"></iframe></div>
-        <ul><li>A dark, heavily dimmed dock: safe but flat</li><li>Elegant serif greeting</li></ul></div>
-      <div class="col"><h3>With the skill <a href="music-with.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="music-with.html" loading="lazy" title="Music app with the skill"></iframe></div>
-        <ul><li>The dock carries the covers' amber, magenta and teal through the glass, with an amber rim aimed at the light</li><li>The page tints itself from the playing cover; click any cover to change it</li><li>The ambient blur is baked once, so it holds 60fps (it was 22fps when blurred live)</li></ul></div>
-    </div>
-    <p class="verdict">The skill's dock is clearly richer glass. The version without it has the more refined greeting type: the skill only governs the glass.</p>
-  </section>
+<section class="hero" aria-label="On air">
+  <canvas id="art" aria-hidden="true"></canvas>
+  <div class="hero-copy">
+    <h1>The harbour, live, after dark.</h1>
+    <p>Twenty-four hour radio from the lighthouse district: late jazz, field recordings and the night ferry's horn.</p>
+  </div>
+  <article class="onair glass glass--thick" aria-label="On air now">
+    <div class="row"><span class="live glass-label"><i aria-hidden="true"></i>ON AIR</span><span class="glass-secondary listeners" id="listeners" aria-live="off">2,184 listening</span></div>
+    <h2 class="glass-label" id="onairTitle">Low Tide Sessions</h2>
+    <div class="row"><span class="glass-secondary">with Mara Vell · until 23:00</span><span class="eq" aria-hidden="true" id="eq"><b></b><b></b><b></b><b></b><b></b></span></div>
+  </article>
+</section>
 
-  <section>
-    <h2>3. Northbank: banking dashboard with an approval dialog</h2>
-    <p class="brief">"A business banking dashboard: sticky top bar, balance, chart, transactions, and an 'Approve payment' dialog for £4,200 open over it. Premium, calm, trustworthy."</p>
-    <div class="pair">
-      <div class="col"><h3>Without the skill <a href="bank-without.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="bank-without.html" loading="lazy" title="Bank without the skill"></iframe></div>
-        <ul><li>Light theme, a solid white dialog over a softly blurred page</li><li>Glass only on the sticky bar</li></ul></div>
-      <div class="col"><h3>With the skill (v2) <a href="bank-with.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="bank-with.html" loading="lazy" title="Bank with the skill"></iframe></div>
-        <ul><li>A dark glass dialog with a brass-lit rim over a focus veil</li><li>An extended-backdrop sticky bar with a glassy edge</li><li>Focus starts on the dialog, not on "Approve"</li></ul></div>
-    </div>
-    <p class="verdict">A draw, and the lesson the skill took from it: for money, a light, nearly solid dialog reads as more trustworthy than dark glass. The skill now matches the brief's register (immersive, calm or trusted) and has a <code>glass--solid</code> material for payments and deletes.</p>
-  </section>
-  <section>
-    <h2>4. Atlas Stays: hotel booking over a photo</h2>
-    <p class="brief">"A boutique hotel booking landing page: a full-bleed coastal town at golden hour, a sticky nav, a search bar and a featured stay card over the image. Premium and inviting, and every word must be easy to read."</p>
-    <div class="pair">
-      <div class="col"><h3>Without the skill <a href="travel-without.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="travel-without.html" loading="lazy" title="Travel page without the skill"></iframe></div>
-        <ul><li>Near-solid cream panels (90%): very readable, but they sit on the scene like stickers</li><li>Text on the photo protected by dark gradients</li></ul></div>
-      <div class="col"><h3>With the skill (v3) <a href="travel-with.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="travel-with.html" loading="lazy" title="Travel page with the skill"></iframe></div>
-        <ul><li>Dusk-tinted glass that belongs to the scene; the card straddles the sun with a gold rim aimed at it</li><li>Liquid Glass on the search bar with a light prism fringe; extended-backdrop sticky nav</li><li>Every line measured against the brightest pixel behind it: 4.7:1 minimum, 9.5:1+ in the tinted level</li></ul></div>
-    </div>
-    <p class="verdict">The skill wins on atmosphere with readability measured, not guessed. This test also found that Chromium leaves Liquid Glass's rim unblurred when the blur is in the CSS chain; the asset now frosts inside the SVG filter.</p>
-  </section>
-  <section>
-    <h2>5. Lumen: photo editor chrome over a photo</h2>
-    <p class="brief">"The editing screen of a photo app: a large photo with a toolbar, tool rail, Adjust panel and filmstrip floating over it. Premium and professional, and every control must stay readable whatever the photo looks like."</p>
-    <div class="pair">
-      <div class="col"><h3>Without the skill <a href="editor-without.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="editor-without.html" loading="lazy" title="Editor without the skill"></iframe></div>
-        <ul><li>Dark tinted glass with a brightness cut; vivid scene</li><li>Its author estimated ~6:1 contrast. Measured with the blur off (iOS Low Power Mode): 6 lines fail, lowest 3.35:1</li></ul></div>
-      <div class="col"><h3>With the skill (v4) <a href="editor-with.html" target="_blank">open ↗</a></h3>
-        <div class="frame"><iframe src="editor-with.html" loading="lazy" title="Editor with the skill"></iframe></div>
-        <ul><li>Thick, low-saturation glass so the chrome doesn't recolour the photo; toolbar grouped by function, Export the one solid primary</li><li>Measured on the worst frame pushed +2 EV: lowest 5.44:1 normal, 4.88:1 blur off, 6.7:1 high contrast</li><li>Rim angle sampled from the photo around each panel</li></ul></div>
-    </div>
-    <p class="verdict">Visually close; the difference is proof. The skill's build passes on the brightest photo in every state, the other fails in Low Power conditions. This test also produced neutral glass, a tinted level that only adds opacity, and a faster dialog veil.</p>
-  </section>
+<main>
+  <h3 class="section" id="stations">Stations</h3>
+  <div class="grid" id="grid"></div>
+
+  <h3 class="section" id="schedule">Tonight</h3>
+  <ul class="schedule" id="sched"></ul>
+
+  <h3 class="section" id="why">What's glass here, and why</h3>
+  <ul class="why">
+    <li><b>Sticky nav</b>Turns to glass only when content scrolls under it, in pure CSS. Extended backdrop, so colour arrives before content does. <code>.gs-bar--on-scroll</code></li>
+    <li><b>On-air card</b>Thick glass, because it sits right over the sun; the rim is aimed at the light. <code>.glass--thick</code>, <code>--glass-rim-angle</code></li>
+    <li><b>Station cards</b>Solid, not glass: they're content. Glass belongs to the controls floating over it.</li>
+    <li><b>Player dock</b>Frosted glass with Liquid Glass refraction in Chrome (frosted, not clear: it carries text). A real control, so it's the only surface with a pointer sheen. <code>watchLiquidGlass()</code></li>
+    <li><b>Fade under the dock</b>Progressive blur: content dissolves instead of being cut.</li>
+    <li><b>Search palette</b>Thick menu glass over a flat veil; the chrome underneath stops blurring while it's open. <code>.gs-menu</code>, <code>.gs-veil--flat</code></li>
+    <li><b>Record dialog</b>Thick glass, focus kept inside, the page behind made inert. <code>.gs-dialog</code></li>
+    <li><b>Toast</b>Regular glass, announced to screen readers, gone after three seconds. <code>.gs-toast</code></li>
+    <li><b>Settings</b>Tinted glass (iOS 26.1's Clear/Tinted switch) and the measured device tier. <code>data-glass</code>, <code>glass-tier.js</code></li>
+  </ul>
+</main>
+
+<div class="fade-edge" id="fade" aria-hidden="true"></div>
+
+<div class="dock gs-dock glass glass--regular" id="dock" role="region" aria-label="Player">
+  <canvas class="cover" id="dockCover" width="92" height="92" aria-hidden="true"></canvas>
+  <div class="meta"><strong class="glass-label" id="dockTitle">Low Tide Sessions</strong><span class="glass-secondary" id="dockSub">Harbor Jazz · live</span></div>
+  <div class="ctrls">
+    <button class="round rec" id="openRecord" aria-label="Schedule a recording">●</button>
+    <button class="round play" id="play" aria-label="Pause"><span class="swap" id="playIcon">❚❚</span></button>
+  </div>
+  <div class="bar" aria-hidden="true"><i id="progress"></i></div>
 </div>
-<script>
-  // Scale each 1600x900 page down to its frame.
-  const fit = () => document.querySelectorAll(".frame").forEach((f) => {
-    f.querySelector("iframe").style.transform = `scale(${f.clientWidth / 1600})`;
+
+<div class="toast-wrap"><div class="gs-toast glass glass--regular" id="toast" role="status" hidden><i aria-hidden="true"></i><span class="glass-label" id="toastText"></span></div></div>
+
+<div class="settings gs-menu glass" id="settings" hidden>
+  <label>Tinted glass <input type="checkbox" id="tinted"></label>
+  <label>Device tier <small id="tierOut">measuring…</small></label>
+  <small>Tinted turns on by itself with the "increase contrast" setting.</small>
+</div>
+
+<div class="gs-veil gs-veil--flat" id="veil" hidden></div>
+
+<div class="palette gs-menu glass" id="palette" role="dialog" aria-modal="true" aria-label="Search stations" hidden>
+  <input id="q" type="search" placeholder="Search stations and shows" autocomplete="off" aria-controls="results">
+  <ul id="results" role="listbox" aria-label="Results"></ul>
+</div>
+
+<div class="gs-dialog glass glass--thick" id="record" role="dialog" aria-modal="true" aria-labelledby="recTitle" tabindex="-1" hidden>
+  <span class="glass-secondary">Schedule a recording</span>
+  <h4 class="glass-label" id="recTitle">Low Tide Sessions</h4>
+  <span class="glass-secondary" id="recWhen">Tonight · Harbor Jazz</span>
+  <div class="choices">
+    <label class="glass-label"><input type="radio" name="len" value="full" checked> The whole show</label>
+    <label class="glass-label"><input type="radio" name="len" value="next"> The next 30 minutes</label>
+  </div>
+  <div class="actions"><button class="ghost glass-label" id="cancelRec">Cancel</button><button class="solid" id="confirmRec">Schedule</button></div>
+</div>
+
+<script type="module">
+import { watchLiquidGlass } from "../assets/liquid-glass.js";
+import { applyGlassTier } from "../assets/glass-tier.js";
+const $ = (id) => document.getElementById(id);
+const root = document.documentElement;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+
+// ---------- Data ----------
+const STATIONS = [
+  ["Harbor Jazz", "Late sets from the quay", ["#ffb36b", "#ff5e7a", "#4b1f6e"]],
+  ["Fog Signals", "Field recordings", ["#9fd3c7", "#385170", "#142d4c"]],
+  ["Night Ferry", "Ambient crossings", ["#7b4dff", "#2a1b5c", "#0d0a1f"]],
+  ["Lighthouse FM", "Talk and requests", ["#ffd36b", "#e0633a", "#3a1530"]],
+  ["Saltwater Soul", "Old soul, new pressings", ["#ff8a5c", "#c2185b", "#2b0b2e"]],
+  ["Tidewater", "Slow electronic", ["#3df5d0", "#1e6091", "#0b1f3a"]],
+  ["Dockside Blues", "Electric blues", ["#4aa3ff", "#1d3557", "#0b132b"]],
+  ["Gull Radio", "Folk at dawn", ["#ffe66d", "#ff6b6b", "#4b2142"]],
+];
+const SCHEDULE = [["22:00", "Low Tide Sessions", "Mara Vell"], ["23:00", "The Night Ferry", "Okonkwo Trio"], ["00:30", "Fog Signals", "field recordings"], ["02:00", "Harbour Lights", "Ines Arrow"]];
+
+// ---------- Scene (the light behind the glass) ----------
+const art = $("art"), x = art.getContext("2d");
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function drawScene() {
+  const s = devicePixelRatio, W = (art.width = art.clientWidth * s), H = (art.height = art.clientHeight * s); seed = 7;
+  const sea = H * 0.7; let g = x.createLinearGradient(0, 0, 0, sea);
+  g.addColorStop(0, "#1b1440"); g.addColorStop(0.45, "#6b3a78"); g.addColorStop(0.82, "#ff8a5c"); g.addColorStop(1, "#ffc98a");
+  x.fillStyle = g; x.fillRect(0, 0, W, sea);
+  const sx = W * 0.74, sy = sea - 50 * s;
+  g = x.createRadialGradient(sx, sy, 0, sx, sy, 380 * s); g.addColorStop(0, "rgba(255,236,190,.95)"); g.addColorStop(0.14, "rgba(255,200,140,.7)"); g.addColorStop(1, "rgba(255,140,90,0)");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  for (let i = 0; i < 9; i++) { x.fillStyle = `rgba(255,${180 + rnd() * 50},${150 + rnd() * 60},${0.16 + rnd() * 0.2})`; x.beginPath(); x.ellipse(rnd() * W, sea * (0.15 + rnd() * 0.5), (160 + rnd() * 260) * s, (6 + rnd() * 10) * s, 0, 0, 7); x.fill(); }
+  x.fillStyle = "#3a2350"; x.beginPath(); x.moveTo(0, sea); for (let X = 0; X <= W; X += 20 * s) x.lineTo(X, sea - (60 + 50 * Math.sin(X / (180 * s)) + 30 * Math.sin(X / (61 * s))) * s); x.lineTo(W, sea); x.fill();
+  for (let i = 0; i < 240; i++) {
+    const bx = rnd() * W, bw = (14 + rnd() * 34) * s, bh = (30 + rnd() * 110) * s * (1 - Math.abs(bx / W - 0.4) * 0.7), by = sea - bh;
+    x.fillStyle = `hsl(${270 + rnd() * 30} ${25 + rnd() * 15}% ${14 + rnd() * 10}%)`; x.fillRect(bx, by, bw, bh + 4 * s);
+    for (let wy = by + 6 * s; wy < sea - 6 * s; wy += 11 * s) for (let wx = bx + 4 * s; wx < bx + bw - 5 * s; wx += 9 * s) if (rnd() < 0.42) { x.fillStyle = `rgba(255,${190 + rnd() * 50},${110 + rnd() * 60},${0.55 + rnd() * 0.45})`; x.fillRect(wx, wy, 4 * s, 5 * s); }
+  }
+  const lx = W * (W / s < 760 ? 0.93 : 0.86);   // on phones, keep the lighthouse clear of the intro text x.fillStyle = "#efe6e0"; x.fillRect(lx, sea - 180 * s, 20 * s, 180 * s); x.fillStyle = "#c2423a"; for (let k = 0; k < 4; k++) x.fillRect(lx, sea - (40 + k * 42) * s, 20 * s, 13 * s);
+  g = x.createLinearGradient(0, sea, 0, H); g.addColorStop(0, "#5a3466"); g.addColorStop(1, "#0d0a15"); x.fillStyle = g; x.fillRect(0, sea, W, H - sea);
+  for (let y = sea + 2 * s; y < H; y += (3 + (y - sea) / (60 * s)) * s) { const k = (y - sea) / (H - sea), w = (90 + k * 520) * s; x.fillStyle = `rgba(255,210,150,${0.5 * (1 - k)})`; x.fillRect(sx - w / 2 + (rnd() - 0.5) * 60 * s, y, w * (0.3 + rnd() * 0.7), 2 * s); }
+}
+drawScene(); addEventListener("resize", drawScene);
+
+// ---------- Covers (colourful content scrolling under the glass) ----------
+function cover(canvas, [a, b, c], i) {
+  const w = canvas.width, h = canvas.height, ctx = canvas.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, a); g.addColorStop(0.55, b); g.addColorStop(1, c); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.globalAlpha = 0.9; ctx.fillStyle = a; ctx.beginPath(); ctx.arc(w * (0.3 + (i % 3) * 0.2), h * 0.42, h * 0.22, 0, 7); ctx.fill();
+  ctx.globalAlpha = 0.5; ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, w / 120);
+  for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.moveTo(0, h * (0.62 + k * 0.06)); ctx.lineTo(w, h * (0.6 + k * 0.06)); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+}
+const grid = $("grid");
+let current = 0;
+STATIONS.forEach(([name, desc, pal], i) => {
+  const b = document.createElement("button"); b.className = "station"; b.setAttribute("aria-pressed", String(i === 0));
+  const c = document.createElement("canvas"); c.width = 440; c.height = 330; cover(c, pal, i);
+  b.append(c); b.insertAdjacentHTML("beforeend", `<span class="meta"><strong>${name}</strong><span>${desc}</span></span>`);
+  b.addEventListener("click", () => tune(i));
+  grid.append(b);
+});
+const sched = $("sched");
+SCHEDULE.forEach(([t, show, host]) => {
+  const li = document.createElement("li");
+  li.innerHTML = `<time>${t}</time><span><strong>${show}</strong> · <span style="color:var(--muted)">${host}</span></span><button>Record</button>`;
+  li.querySelector("button").addEventListener("click", () => openRecord(show, t));
+  sched.append(li);
+});
+
+// ---------- Progressive blur under the dock (recipe 2, plain JS) ----------
+const fade = $("fade");
+for (let i = 0; i < 6; i++) {
+  const d = document.createElement("div"), blur = 24 / 2 ** (5 - i), mask = `linear-gradient(to bottom, transparent ${(i / 6) * 100}%, #000 ${((i + 1) / 6) * 100}%)`;
+  d.style.cssText = `backdrop-filter:blur(${blur}px);-webkit-backdrop-filter:blur(${blur}px);mask-image:${mask};-webkit-mask-image:${mask}`;
+  fade.append(d);
+}
+
+// ---------- Player (real time) ----------
+let playing = true, elapsed = 0;
+const dockCover = $("dockCover");
+function tune(i) {
+  current = i; const [name, desc, pal] = STATIONS[i];
+  cover(dockCover, pal, i);
+  swapText($("dockTitle"), name); $("dockSub").textContent = `${desc} · live`;
+  for (const [k, b] of [...grid.children].entries()) b.setAttribute("aria-pressed", String(k === i));
+  elapsed = 0; toast(`Tuned to ${name}`);
+}
+function swapText(el, text) {   // 2px blur-bridged crossfade (recipe 4b)
+  if (reduce.matches) { el.textContent = text; return; }
+  el.classList.add("swap", "out"); setTimeout(() => { el.textContent = text; el.classList.remove("out"); }, 180);
+}
+cover(dockCover, STATIONS[0][2], 0);
+$("play").addEventListener("click", () => {
+  playing = !playing;
+  const icon = $("playIcon"); icon.classList.add("out");
+  setTimeout(() => { icon.textContent = playing ? "❚❚" : "▶"; icon.classList.remove("out"); }, 160);
+  $("play").setAttribute("aria-label", playing ? "Pause" : "Play");
+});
+setInterval(() => {
+  if (playing) { elapsed = (elapsed + 1) % 180; $("progress").style.width = `${(elapsed / 180) * 100}%`; }
+  const n = 2184 + Math.round(Math.sin(Date.now() / 9000) * 40 + Math.random() * 8);
+  $("listeners").textContent = `${n.toLocaleString("en-GB")} listening`;
+}, 1000);
+const bars = [...$("eq").children];
+(function eq() { if (playing && !reduce.matches) bars.forEach((b) => (b.style.height = `${25 + Math.random() * 75}%`)); setTimeout(eq, 220); })();
+
+// Liquid Glass on the dock (Chromium; frosted material elsewhere). The dock is a control: it gets the sheen.
+const dock = $("dock");
+watchLiquidGlass(dock, { bezel: 16, strength: 32, blur: 14, aberration: 0.6 });   // frosted: the dock carries text
+dock.addEventListener("pointermove", (e) => {
+  if (e.pointerType !== "mouse" || reduce.matches) return;
+  const r = dock.getBoundingClientRect();
+  dock.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+  dock.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+});
+dock.addEventListener("pointerleave", () => { dock.style.removeProperty("--mx"); dock.style.removeProperty("--my"); });
+
+// ---------- Toast ----------
+let toastTimer;
+function toast(text) {
+  $("toastText").textContent = text; $("toast").hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => ($("toast").hidden = true), 3000);
+}
+
+// ---------- Modals: palette and record dialog (flat veil, chrome stops blurring, page inert) ----------
+let openEl = null, returnTo = null;
+const page = [document.querySelector(".hero"), document.querySelector("main"), $("bar"), dock];
+function openModal(el, focusEl) {
+  closeModal(false); returnTo = document.activeElement; openEl = el;
+  root.classList.add("gs-modal-open"); page.forEach((p) => (p.inert = true));
+  $("veil").hidden = false; el.hidden = false; (focusEl || el).focus();
+}
+function closeModal(restore = true) {
+  if (!openEl) return;
+  openEl.hidden = true; $("veil").hidden = true; root.classList.remove("gs-modal-open"); page.forEach((p) => (p.inert = false));
+  openEl = null; if (restore) returnTo?.focus();
+}
+$("veil").addEventListener("click", () => closeModal());
+addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
+  else if (e.key === "Escape") { closeModal(); closeSettings(); }
+});
+
+function render(q = "") {
+  const list = $("results"); list.innerHTML = "";
+  STATIONS.map((s, i) => [s, i]).filter(([[n, d]]) => (n + " " + d).toLowerCase().includes(q.toLowerCase())).forEach(([[n, d], i]) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.setAttribute("role", "option"); b.innerHTML = `<span class="glass-label">${n}</span><span class="glass-secondary">${d}</span>`;
+    b.addEventListener("click", () => { closeModal(); tune(i); });
+    li.append(b); list.append(li);
   });
-  addEventListener("resize", fit); fit();
+  if (!list.children.length) list.innerHTML = `<li class="glass-secondary" style="padding:10px 12px">No station matches “${q}”.</li>`;
+}
+function openPalette() { $("q").value = ""; render(); openModal($("palette"), $("q")); }
+$("openPalette").addEventListener("click", openPalette);
+$("q").addEventListener("input", (e) => render(e.target.value));
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter") $("results").querySelector("button")?.click(); });
+
+function openRecord(show = STATIONS[current][0], time = "now") {
+  $("recTitle").textContent = show;
+  $("recWhen").textContent = time === "now" ? `Starting now · ${STATIONS[current][0]}` : `Tonight at ${time}`;
+  openModal($("record"));
+  $("record").dataset.show = show; $("record").dataset.time = time;
+}
+$("openRecord").addEventListener("click", () => openRecord(STATIONS[current][0], "now"));
+$("cancelRec").addEventListener("click", () => closeModal());
+$("confirmRec").addEventListener("click", () => { const s = $("record").dataset.show; closeModal(); toast(`Recording scheduled: ${s}`); });
+
+// ---------- Settings: tinted level + device tier ----------
+function closeSettings() { $("settings").hidden = true; $("openSettings").setAttribute("aria-expanded", "false"); }
+$("openSettings").addEventListener("click", () => {
+  const open = $("settings").hidden; $("settings").hidden = !open; $("openSettings").setAttribute("aria-expanded", String(open));
+});
+$("tinted").addEventListener("input", (e) => { root.dataset.glass = e.target.checked ? "tinted" : ""; });
+const idle = window.requestIdleCallback || ((f) => setTimeout(f, 300));
+idle(() => applyGlassTier().then(({ tier }) => ($("tierOut").textContent = `${tier} (measured on this device)`)));
 </script>
 </body>
 </html>
