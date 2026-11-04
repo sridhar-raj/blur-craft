@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><title>blur-craft examples</title><meta name=viewport content='width=device-width,initial-scale=1'>
+<style>
+body{margin:0;background:#0b0b10;color:#eceaf3;font:14px/1.5 -apple-system,sans-serif;padding:20px}
+h1{font-size:20px;margin:0 0 4px} p.sub{color:#9a98ab;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.col h2{font-size:15px;margin:0 0 8px} .col h2 span{color:#9a98ab;font-weight:400}
+iframe{width:100%;aspect-ratio:16/9;border:1px solid #2a2835;border-radius:10px;background:#000}
+ul{margin:10px 0 0;padding-left:18px;color:#c9c7d6} li{margin:3px 0}
+.open{color:#b79cff}
+</style>
+<h1>Same brief, with and without the blur-craft skill</h1>
+<p class="sub"><a class=open href="https://github.com/sridhar-raj/blur-craft">github.com/sridhar-raj/blur-craft</a> · Open in Chrome to see the Liquid Glass refraction. Brief: a Stillwater meditation hero with a frosted glass player card over a slowly moving background. Both are live; hover and press play.</p>
+<div class="grid">
+ <div class="col"><h2>Without the skill <span>· <a class="open" href="stillwater-without-skill.html" target="_blank">open full size</a></span></h2>
+  <iframe src="stillwater-without-skill.html"></iframe>
+  <ul><li>Glass blur 28px with a flat tint: reads as a grey card, little colour comes through</li>
+  <li>Card covers 15% of the screen, mostly over flat dark sky, so the frosting has little to show</li>
+  <li>Plain 1px white border; no lit rim or refraction</li>
+  <li>Fallbacks for no-blur and reduced transparency (good)</li>
+  <li>58 fps headless</li></ul></div>
+ <div class="col"><h2>With the updated skill <span>· <a class="open" href="stillwater-with-skill.html" target="_blank">open full size</a></span></h2>
+  <iframe src="stillwater-with-skill.html"></iframe>
+  <ul><li>The sun is placed under the card on purpose, so the sunset gradient (violet to peach) shows through the glass</li>
+  <li>Five-layer material: 32px blur at 180% saturation, gradient fill, a peach rim aimed at the sun, specular sheen</li>
+  <li>Liquid Glass refraction: the horizon and ripples bend through the card's lower edge (Chrome)</li>
+  <li>Vibrant white text, a waveform progress bar, a 2px blur crossfade on play/pause and the breath cue</li>
+  <li>Reduced-transparency fallback is a lit solid panel, not a broken one; audit 0 fail, 0 warn</li></ul></div>
+</div>
